@@ -1,0 +1,1 @@
+workload summary | sessions=25 steps=125 max_prompt_len=86239 max_prefix_len=67190 max_input_len=28766 max_output_len=6381 total_output_len=78138 max_arrival_time_ms=0.000 total_tool_wait_after_ms=1492867.000

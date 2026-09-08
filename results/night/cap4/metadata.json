@@ -1,0 +1,14 @@
+{
+ "lane": "B",
+ "policy": "static=4",
+ "trace": "/data/xbw/turnstile/data/replay_night200.csv",
+ "trace_md5": "35cf3ca19e",
+ "gpu": 2,
+ "port": 30001,
+ "started": 1788834760.8508847,
+ "pool_tokens": 114495,
+ "cap": 4,
+ "runner_rc": 0,
+ "wall_s": 14026.9,
+ "finished": 1788848845.4919043
+}
