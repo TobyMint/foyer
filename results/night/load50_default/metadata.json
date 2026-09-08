@@ -1,0 +1,13 @@
+{
+ "lane": "graded50",
+ "policy": "default",
+ "trace": "/data/xbw/turnstile/data/replay_night50.csv",
+ "trace_md5": "62a8d290a5",
+ "gpu": 0,
+ "port": 30000,
+ "started": 1788869431.0505006,
+ "pool_tokens": 76018,
+ "runner_rc": 0,
+ "wall_s": 4795.6,
+ "finished": 1788874348.769492
+}

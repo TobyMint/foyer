@@ -1,0 +1,21 @@
+{
+ "lane": "aimd25",
+ "policy": "aimd",
+ "trace": "/data/xbw/turnstile/data/replay_night25.csv",
+ "trace_md5": "b3b06583db",
+ "gpu": 2,
+ "port": 30002,
+ "started": 1788875357.684142,
+ "pool_tokens": 114495,
+ "controller_params": {
+  "u_low": 0.35,
+  "u_high": 0.75,
+  "h_thresh": 0.03,
+  "alpha": 2.0,
+  "beta": 0.5,
+  "initial": 2
+ },
+ "runner_rc": 0,
+ "wall_s": 1831.8,
+ "finished": 1788877251.2905006
+}
