@@ -122,7 +122,7 @@ def main():
                 "gpu": args.gpu, "port": args.port, "started": time.time()}
         log(f"=== run {name} (policy {mode}) ===")
 
-        server = start_server(args.gpu, args.port)
+        server = start_server(args.gpu, args.port, name)
         pool_tokens = get_pool_tokens(args.port)
         meta["pool_tokens"] = pool_tokens
         log(f"server healthy, pool={pool_tokens}")
