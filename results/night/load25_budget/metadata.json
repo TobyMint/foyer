@@ -1,0 +1,18 @@
+{
+ "lane": "graded25b",
+ "policy": "budget",
+ "trace": "/data/xbw/turnstile/data/replay_night25.csv",
+ "trace_md5": "b3b06583db",
+ "gpu": 2,
+ "port": 30001,
+ "started": 1788850831.3766527,
+ "pool_tokens": 72647,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "starve_seconds": 180.0
+ },
+ "runner_rc": 0,
+ "wall_s": 2780.0,
+ "finished": 1788853675.6619034
+}
