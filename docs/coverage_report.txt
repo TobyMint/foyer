@@ -1,0 +1,71 @@
+=== 1. model/provider breakdown ===
+('codex', 'gpt-5.5', 165365, 1070)
+('claude', 'claude-opus-4-8', 141747, 1947)
+('claude', 'claude-opus-4-7', 93236, 744)
+('codex', 'gpt-5.6-sol', 66294, 206)
+('codex', 'gpt-5.4', 59980, 609)
+('codex', 'gpt-5.3-codex', 29712, 178)
+('claude', 'claude-opus-4-6', 20149, 527)
+('claude', 'claude-haiku-4-5-20251001', 18479, 1126)
+('codex', 'codex-auto-review', 13389, 328)
+('claude', 'claude-sonnet-4-6', 12799, 361)
+('claude', 'claude-fable-5', 10297, 168)
+('codex', 'gpt-5.2-codex', 7436, 172)
+('codex', 'gpt-5-codex', 5604, 61)
+('codex', 'gpt-5.3-codex-spark', 4272, 50)
+('claude', 'claude-sonnet-5', 3789, 66)
+('claude', 'claude-sonnet-4-5-20250929', 3583, 208)
+('codex', 'gpt-5.1-codex-max', 2652, 39)
+('codex', 'gpt-5', 1725, 16)
+('codex', 'gpt-5.1-codex', 1339, 12)
+('codex', 'gpt-5.1', 759, 10)
+('codex', 'gpt-5.2', 755, 6)
+('claude', 'claude-opus-4-5-20251101', 434, 206)
+('claude', 'claude-opus-4-1-20250805', 360, 4)
+('codex', 'gpt-5.4-mini', 338, 16)
+('codex', 'gpt-5.6-terra', 327, 4)
+('claude', 'glm-5.2', 270, 3)
+('claude', 'minimax/minimax-m2.1', 215, 16)
+('claude', 'claude-sonnet-4-20250514', 87, 2)
+('codex', 'gpt-5.6-luna', 46, 2)
+('codex', 'gpt-5.1-codex-mini', 15, 10)
+
+=== 2. input_tokens_total == prefix+append? ===
+P(prefix<=total)=1.0000  P(total==prefix+append)=1.0000
+
+=== 3. per-session peak context ===
+sessions=8058, rounds/session avg=82.6 p50=16 max=21351
+
+=== 4. context CDF (share of SESSIONS with peak_ctx <= X | share of ROUNDS) ===
+thresh | %sessions(peak_ctx) | %sessions(peak_ctx+out) | %rounds(ctx)
+   8000 |   1.3% |   1.2% |   0.3%
+  16000 |   4.4% |   4.2% |   1.5%
+  32000 |  19.6% |  18.9% |   6.5%
+  65536 |  47.3% |  45.7% |  21.1%
+ 131072 |  76.3% |  75.9% |  49.6%
+ 262144 |  95.5% |  95.4% |  85.9%
+ 524288 |  99.0% |  99.0% |  95.1%
+
+=== 5. output tokens per round ===
+p50=249 p90=1332 p99=5542 max=64000 avg=589
+
+=== 6. KV capacity fit (single copy of full session) ===
+model: KV bytes/token = 2(K+V)*layers*kv_heads*head_dim*bytes
+3090-24G [w=15.2G,act=1.3G]: kv_budget=7.5GiB -> Qwen2.5-Coder-7B: 140K tok | Qwen3-8B: 55K tok
+   Qwen2.5-Coder-7B @conc=1: 100.0% sessions fully fit (8053063.0K tok each)
+   Qwen2.5-Coder-7B @conc=8: 100.0% sessions fully fit (1006632.0K tok each)
+   Qwen3-8B @conc=1: 100.0% sessions fully fit (8053063.0K tok each)
+   Qwen3-8B @conc=8: 100.0% sessions fully fit (1006632.0K tok each)
+3090-24G memfrac0.85 [kv_pool]: kv_budget=4.2GiB -> Qwen2.5-Coder-7B: 79K tok | Qwen3-8B: 31K tok
+   Qwen2.5-Coder-7B @conc=1: 100.0% sessions fully fit (4509715K tok each)
+   Qwen2.5-Coder-7B @conc=8: 100.0% sessions fully fit (563714K tok each)
+   Qwen3-8B @conc=1: 100.0% sessions fully fit (4509715K tok each)
+   Qwen3-8B @conc=8: 100.0% sessions fully fit (563714K tok each)
+A100-80G [w=15.2G,act=2G]: kv_budget=62.8GiB -> Qwen2.5-Coder-7B: 1176K tok | Qwen3-8B: 457K tok
+   Qwen2.5-Coder-7B @conc=1: 100.0% sessions fully fit (67430986.0K tok each)
+   Qwen2.5-Coder-7B @conc=8: 100.0% sessions fully fit (8428873.0K tok each)
+   Qwen3-8B @conc=1: 100.0% sessions fully fit (67430986.0K tok each)
+   Qwen3-8B @conc=8: 100.0% sessions fully fit (8428873.0K tok each)
+
+=== 7. tool wait distribution (from tool_calls) ===
+tool wall ms: p50=218 p90=10052 p99=151614 avg=15606 n=743050

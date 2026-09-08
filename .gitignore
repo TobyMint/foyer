@@ -1,0 +1,16 @@
+# Large data artifacts (fetched separately — see README "Reproducing")
+enwik9*
+*.duckdb
+*.zip
+vendor/
+target/
+
+# Runtime noise
+__pycache__/
+*.pyc
+server_*.log
+*.log
+nohup.out
+
+# Local secrets
+.env
