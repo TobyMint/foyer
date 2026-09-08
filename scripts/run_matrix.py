@@ -34,10 +34,31 @@ def log(*a):
     print(f"[{time.strftime('%H:%M:%S')}]", *a, flush=True)
 
 
-def start_server(gpu, port):
+def port_free(port):
+    import socket
+    with socket.socket() as s:
+        try:
+            s.bind(("0.0.0.0", port))
+            return True
+        except OSError:
+            return False
+
+
+def start_server(gpu, port, run_name="server"):
     # Kill anything already bound to this port (stale servers poison isolation).
+    # SIGTERM alone is not enough: a draining sglang can hold the port for minutes,
+    # and a health check against the OLD server passes while every replay request
+    # gets its connection closed. Wait for an actual successful bind, escalating
+    # to SIGKILL if the old process lingers.
     subprocess.run(["pkill", "-f", f"launch_server.*--port {port}"], check=False)
     time.sleep(3)
+    t0 = time.time()
+    while not port_free(port):
+        if time.time() - t0 > 10:
+            subprocess.run(["pkill", "-9", "-f", f"launch_server.*--port {port}"], check=False)
+        time.sleep(3)
+        if time.time() - t0 > 90:
+            raise RuntimeError(f"port {port} still occupied after 90 s")
     env = dict(os.environ)
     env["PATH"] = f"{BASE}/envs/main/bin:{env.get('PATH','')}"
     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
@@ -49,7 +70,7 @@ def start_server(gpu, port):
            "--model-path", MODEL_DIR, "--context-length", "98304",
            "--mem-fraction-static", "0.88", "--port", str(port),
            "--host", "0.0.0.0", "--enable-metrics", "--enable-cache-report"]
-    proc = subprocess.Popen(cmd, env=env, stdout=open(f"{OUT_ROOT}/server_{port}.log", "w"),
+    proc = subprocess.Popen(cmd, env=env, stdout=open(f"{OUT_ROOT}/server_{port}_{run_name}.log", "w"),
                             stderr=subprocess.STDOUT)
     url = f"http://127.0.0.1:{port}/health"
     t0 = time.time()
@@ -58,6 +79,14 @@ def start_server(gpu, port):
             raise RuntimeError(f"server on port {port} exited during startup (rc={proc.returncode})")
         try:
             if urllib.request.urlopen(url, timeout=3).status == 200:
+                # Health can pass while the engine is still fragile; send one real
+                # warm-up completion so a half-dead server fails HERE, not mid-run.
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:{port}/v1/completions",
+                    data=json.dumps({"model": "x", "prompt": "warmup",
+                                     "max_tokens": 1, "temperature": 0}).encode(),
+                    headers={"Content-Type": "application/json"})
+                urllib.request.urlopen(req, timeout=120)
                 return proc
         except Exception:
             pass
@@ -122,7 +151,7 @@ def main():
                 "gpu": args.gpu, "port": args.port, "started": time.time()}
         log(f"=== run {name} (policy {mode}) ===")
 
-        server = start_server(args.gpu, args.port, name)
+        server = start_server(args.gpu, args.port)
         pool_tokens = get_pool_tokens(args.port)
         meta["pool_tokens"] = pool_tokens
         log(f"server healthy, pool={pool_tokens}")
