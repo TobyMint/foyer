@@ -66,6 +66,7 @@ def start_server(gpu, port, run_name="server"):
     env["PATH"] = f"{BASE}/envs/cxx/compiler-bin:{env['PATH']}"
     env["NVCC_CCBIN"] = f"{BASE}/envs/cxx/bin/x86_64-conda-linux-gnu-g++"
     env["CCACHE_DISABLE"] = "1"
+    env["PYTHONUNBUFFERED"] = "1"
     cmd = [sys.executable, "-m", "sglang.launch_server",
            "--model-path", MODEL_DIR, "--context-length", "98304",
            "--mem-fraction-static", "0.88", "--port", str(port),
