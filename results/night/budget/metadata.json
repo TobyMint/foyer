@@ -1,0 +1,18 @@
+{
+ "lane": "B",
+ "policy": "budget",
+ "trace": "/data/xbw/turnstile/data/replay_night200.csv",
+ "trace_md5": "35cf3ca19e",
+ "gpu": 2,
+ "port": 30001,
+ "started": 1788805726.6995578,
+ "pool_tokens": 114495,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "starve_seconds": 180.0
+ },
+ "runner_rc": "TIMEOUT",
+ "wall_s": 14400.0,
+ "finished": 1788820243.7785068
+}
