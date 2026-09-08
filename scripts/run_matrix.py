@@ -27,6 +27,7 @@ TRACE = os.environ.get("TURNSTILE_TRACE", f"{BASE}/data/replay_night200.csv")
 TEXT = f"{BASE}/data/enwik9"
 OUT_ROOT = f"{BASE}/results/night"
 RUN_TIMEOUT_S = 6 * 3600
+MEMFRAC = os.environ.get("TURNSTILE_MEMFRAC", "0.88")
 HEALTH_TIMEOUT_S = 420
 
 
@@ -69,7 +70,7 @@ def start_server(gpu, port, run_name="server"):
     env["PYTHONUNBUFFERED"] = "1"
     cmd = [sys.executable, "-m", "sglang.launch_server",
            "--model-path", MODEL_DIR, "--context-length", "98304",
-           "--mem-fraction-static", "0.88", "--port", str(port),
+           "--mem-fraction-static", MEMFRAC, "--port", str(port),
            "--host", "0.0.0.0", "--enable-metrics", "--enable-cache-report"]
     proc = subprocess.Popen(cmd, env=env, stdout=open(f"{OUT_ROOT}/server_{port}_{run_name}.log", "w"),
                             stderr=subprocess.STDOUT)
