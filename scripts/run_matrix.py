@@ -8,6 +8,7 @@ Policies:
   static=N     cap-file pinned to N (uniform instrumentation across gated runs)
   aimd         Concur-style cache-feedback AIMD controller sets the cap
   budget       token-budget feed-forward controller sets the cap
+  budget2      v0.5: high-water floor + single-flight admission + TTFT-SLO valve
 """
 import argparse
 import hashlib
@@ -192,6 +193,19 @@ def main():
             cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
                                          "starve_seconds": 180.0}
+        elif mode == "budget2":
+            controller = subprocess.Popen(
+                [PY, f"{BASE}/TraceLab/replay/scripts/controller_budget2.py",
+                 "--cap-file", capfile, "--step-log", f"{run_dir}/steps.jsonl",
+                 "--admission-log", f"{run_dir}/admissions.jsonl", "--trace", TRACE,
+                 "--decision-log", f"{run_dir}/controller.jsonl", "--pool-tokens", str(pool_tokens),
+                 "--metrics-port", str(args.port)],
+                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
+            meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
+                                         "hard_stop": 0.85, "highwater_decay": 0.995,
+                                         "slo_ms": 10000, "starve_seconds": 240.0,
+                                         "starve_cooldown": 300.0}
 
         cmd = [RUNNER, "--trace", TRACE, "--text-file", TEXT,
                "--tokenizer", f"{MODEL_DIR}/tokenizer.json", "--model", "qwen2.5-coder-7b",
