@@ -1,0 +1,22 @@
+{
+ "lane": "repA",
+ "policy": "budget2",
+ "trace": "/data/xbw/turnstile/data/replay_night200.csv",
+ "trace_md5": "35cf3ca19e",
+ "gpu": 3,
+ "port": 30000,
+ "started": 1788937123.2673123,
+ "pool_tokens": 114495,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "hard_stop": 0.85,
+  "highwater_decay": 0.995,
+  "slo_ms": 10000,
+  "starve_seconds": 240.0,
+  "starve_cooldown": 300.0
+ },
+ "runner_rc": 0,
+ "wall_s": 13886.1,
+ "finished": 1788951099.6816654
+}
