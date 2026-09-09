@@ -16,6 +16,18 @@ env["PATH"] = f"{BASE}/envs/cxx/compiler-bin:{env['PATH']}"
 env["NVCC_CCBIN"] = f"{BASE}/envs/cxx/bin/x86_64-conda-linux-gnu-g++"
 env["CCACHE_DISABLE"] = "1"
 
+# a leaked server from a failed previous smoke holds the port/GPU — clear it first
+import socket
+subprocess.run(["pkill", "-f", f"launch_server.*--port {PORT}"])
+_t0 = time.time()
+while time.time() - _t0 < 30:
+    with socket.socket() as s:
+        try:
+            s.bind(("0.0.0.0", PORT))
+            break
+        except OSError:
+            time.sleep(2)
+
 srv = subprocess.Popen(
     [sys.executable, "-m", "sglang.launch_server", "--model-path", MODEL,
      "--context-length", "98304", "--mem-fraction-static", "0.85", "--port", str(PORT),
@@ -33,6 +45,15 @@ print(f"[{time.strftime('%H:%M:%S')}] server healthy", flush=True)
 
 PERMIT = f"{BASE}/smoke_a2_permit.json"
 json.dump({"admit": [], "paused": []}, open(PERMIT, "w"))
+# stale artifacts + orphaned runners from a failed prior attempt poison the run:
+# the controller would read last attempt's queued events and admit phantoms.
+subprocess.run(["pkill", "-f", "session_runner.*smoke_permit4"])
+for stale in ("admissions.jsonl", "steps.jsonl", "summary.json", "controller.jsonl",
+              "runner.out", "ctrl.out"):
+    try:
+        os.remove(f"{OUT}/{stale}")
+    except FileNotFoundError:
+        pass
 ctrl = subprocess.Popen(
     [sys.executable, f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
      "--permit-file", PERMIT, "--admission-log", f"{OUT}/admissions.jsonl",
@@ -48,7 +69,7 @@ runner = subprocess.Popen(
      "--log-path", f"{OUT}/steps.jsonl", "--summary-path", f"{OUT}/summary.json",
      "--permit-file", PERMIT, "--admission-log", f"{OUT}/admissions.jsonl"],
     stdout=open(f"{OUT}/runner.out", "w"), stderr=subprocess.STDOUT)
-rc = runner.wait(timeout=420)
+rc = runner.wait(timeout=600)
 time.sleep(3)
 ctrl.terminate()
 
