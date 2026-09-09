@@ -35,6 +35,9 @@ async fn main() -> Result<()> {
     if args.fail_on_context_overflow && args.max_model_len.is_none() {
         return Err(anyhow!("--fail-on-context-overflow requires --max-model-len"));
     }
+    if args.cap_file.is_some() && args.permit_file.is_some() {
+        return Err(anyhow!("--cap-file and --permit-file are mutually exclusive admission modes"));
+    }
 
     let sessions = load_sessions(&args.trace, args.max_sessions)?;
     let workload_summary = WorkloadSummary::from_sessions(&sessions, args.max_model_len);
@@ -108,8 +111,10 @@ async fn main() -> Result<()> {
             .max_active_sessions
             .map(|n| Arc::new(Semaphore::new(n))),
         cap_file: args.cap_file.clone(),
+        permit_file: args.permit_file.clone(),
         active_sessions: Arc::new(AtomicUsize::new(0)),
         cap_cache: Arc::new(Mutex::new(None)),
+        permit_cache: Arc::new(Mutex::new(None)),
         admission_log,
     });
 

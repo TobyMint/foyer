@@ -68,6 +68,15 @@ pub(crate) struct Args {
     #[arg(long)]
     pub(crate) cap_file: Option<String>,
 
+    /// Permit-file admission mode (supersedes --cap-file): the file holds JSON
+    /// {"admit": [session_id...], "paused": [session_id...]} describing the exact set
+    /// of sessions allowed to hold an admission slot. Only named sessions may enter
+    /// (no slot racing), and paused sessions release their slot at the next step
+    /// boundary until re-admitted (Concur-style pause/resume). Mutually exclusive
+    /// with --cap-file.
+    #[arg(long)]
+    pub(crate) permit_file: Option<String>,
+
     /// JSONL log of admission events (admit/release) with per-session wait times.
     #[arg(long)]
     pub(crate) admission_log: Option<String>,

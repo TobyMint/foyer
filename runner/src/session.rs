@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -22,15 +23,84 @@ pub(crate) struct AppState {
     /// Dynamic admission control: when set, sessions are gated by the integer cap read
     /// from this file (polled, 250 ms cache) instead of the static semaphore.
     pub(crate) cap_file: Option<String>,
+    /// Permit-file admission control: the controller names exactly which sessions may
+    /// hold a slot (see cli.rs). Mutually exclusive with cap_file.
+    pub(crate) permit_file: Option<String>,
     /// Number of sessions currently admitted under the dynamic gate.
     pub(crate) active_sessions: Arc<AtomicUsize>,
     /// (last poll instant, last cap value) cache for cap-file reads.
     pub(crate) cap_cache: Arc<Mutex<Option<(Instant, usize)>>>,
+    /// (last poll instant, last table) cache for permit-file reads.
+    pub(crate) permit_cache: Arc<Mutex<Option<(Instant, Arc<PermitTable>)>>>,
     /// JSONL admission-event sink.
     pub(crate) admission_log: Option<Arc<Mutex<std::io::BufWriter<std::fs::File>>>>,
 }
 
+/// Desired admission state, written atomically (os.replace) by the controller:
+/// `admit` lists session ids allowed to hold an admission slot; `paused` lists active
+/// sessions that must release theirs at the next step boundary. Full-state semantics —
+/// the file always describes the entire desired world, never deltas.
+pub(crate) struct PermitTable {
+    pub(crate) admitted: HashSet<String>,
+    pub(crate) paused: HashSet<String>,
+}
+
+fn parse_permit_file(text: &str) -> Option<PermitTable> {
+    let value: serde_json::Value = serde_json::from_str(text).ok()?;
+    let ids = |key: &str| -> HashSet<String> {
+        value
+            .get(key)
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|x| x.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    Some(PermitTable {
+        admitted: ids("admit"),
+        paused: ids("paused"),
+    })
+}
+
 impl AppState {
+    /// Current permit table, cached for 250 ms (the controller rewrites the file via
+    /// os.replace, so a torn read is impossible; a missing file means nobody is admitted).
+    pub(crate) fn permit_table(&self) -> Arc<PermitTable> {
+        let path = match &self.permit_file {
+            Some(path) => path,
+            None => {
+                return Arc::new(PermitTable {
+                    admitted: HashSet::new(),
+                    paused: HashSet::new(),
+                })
+            }
+        };
+        let mut cache = self.permit_cache.lock().unwrap();
+        if let Some((at, table)) = &*cache {
+            if at.elapsed() < Duration::from_millis(250) {
+                return table.clone();
+            }
+        }
+        let table = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|text| parse_permit_file(&text))
+            .map(Arc::new)
+            .unwrap_or_else(|| {
+                Arc::new(PermitTable {
+                    admitted: HashSet::new(),
+                    paused: HashSet::new(),
+                })
+            });
+        *cache = Some((Instant::now(), table.clone()));
+        table
+    }
+
+    pub(crate) fn session_paused(&self, session_id: &str) -> bool {
+        self.permit_table().paused.contains(session_id)
+    }
+
     /// Current dynamic cap, falling back to --max-active-sessions (or unlimited) until the
     /// cap file yields its first parseable value.
     pub(crate) fn current_cap(&self) -> usize {
@@ -54,6 +124,7 @@ impl AppState {
     }
 
     /// Append one admission event; failures are swallowed (logging must never kill a run).
+    /// `prompt_tokens` is the arrival payload size for admit/resume events (0 otherwise).
     pub(crate) fn log_admission(
         &self,
         event: &str,
@@ -62,13 +133,14 @@ impl AppState {
         cap: usize,
         active: usize,
         waited_since: Instant,
+        prompt_tokens: usize,
     ) {
         let sink = match &self.admission_log {
             Some(sink) => sink,
             None => return,
         };
         let line = format!(
-            "{{\"ts\":{:.3},\"event\":\"{}\",\"session_id\":\"{}\",\"ordinal\":{},\"cap\":{},\"active\":{},\"waited_ms\":{:.1}}}\n",
+            "{{\"ts\":{:.3},\"event\":\"{}\",\"session_id\":\"{}\",\"ordinal\":{},\"cap\":{},\"active\":{},\"waited_ms\":{:.1},\"prompt_tokens\":{}}}\n",
             unix_seconds_now(),
             event,
             session_id,
@@ -76,6 +148,7 @@ impl AppState {
             cap,
             active,
             waited_since.elapsed().as_secs_f64() * 1000.0,
+            prompt_tokens,
         );
         if let Ok(mut writer) = sink.lock() {
             let _ = writer.write_all(line.as_bytes());
@@ -95,7 +168,13 @@ pub(crate) struct AdmissionGate {
 }
 
 impl AdmissionGate {
-    async fn acquire(state: &Arc<AppState>, session_id: &str, session_ordinal: usize) -> Self {
+    /// Legacy count-cap mode: first session to observe active < cap grabs the slot.
+    async fn acquire(
+        state: &Arc<AppState>,
+        session_id: &str,
+        session_ordinal: usize,
+        prompt_tokens: usize,
+    ) -> Self {
         let waited_since = Instant::now();
         loop {
             let cap = state.current_cap();
@@ -109,6 +188,7 @@ impl AdmissionGate {
                     cap,
                     active + 1,
                     waited_since,
+                    prompt_tokens,
                 );
                 return Self {
                     state: state.clone(),
@@ -116,6 +196,51 @@ impl AdmissionGate {
                     session_ordinal,
                     waited_since,
                 };
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+
+    /// Permit mode: only a session NAMED in the permit table may enter — the controller's
+    /// projection target and the admitted session are the same by construction.
+    async fn acquire_permit(
+        state: &Arc<AppState>,
+        session_id: &str,
+        session_ordinal: usize,
+        event: &str,
+        prompt_tokens: usize,
+    ) -> Self {
+        let waited_since = Instant::now();
+        loop {
+            let table = state.permit_table();
+            if table.admitted.contains(session_id) && !table.paused.contains(session_id) {
+                let active = state.active_sessions.fetch_add(1, Ordering::Relaxed) + 1;
+                state.log_admission(
+                    event,
+                    session_id,
+                    session_ordinal,
+                    0,
+                    active,
+                    waited_since,
+                    prompt_tokens,
+                );
+                return Self {
+                    state: state.clone(),
+                    session_id: session_id.to_string(),
+                    session_ordinal,
+                    waited_since,
+                };
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+
+    /// Block until the controller re-admits a paused session.
+    async fn wait_unpaused(state: &Arc<AppState>, session_id: &str) {
+        loop {
+            let table = state.permit_table();
+            if table.admitted.contains(session_id) && !table.paused.contains(session_id) {
+                return;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
@@ -133,6 +258,7 @@ impl Drop for AdmissionGate {
             cap,
             active,
             self.waited_since,
+            0,
         );
     }
 }
@@ -180,15 +306,48 @@ pub(crate) async fn run_session(
     steps: Vec<SessionStep>,
 ) {
     wait_for_session_arrival(&state, &steps).await;
-    let _session_gate = if state.cap_file.is_some() {
-        SessionGate::Dynamic(AdmissionGate::acquire(&state, &session_id, session_ordinal).await)
+    // Arrival payload size (round-1 prefix + input): legitimately observable at arrival,
+    // logged with admit/resume events so controllers can be audited against it.
+    let first_prompt_tokens = steps
+        .first()
+        .map(|step| step.prefix_len + step.input_len)
+        .unwrap_or(0);
+    // Announce the arrival BEFORE gating: in permit mode a waiting session is otherwise
+    // invisible to the controller (it has sent no request yet). The queued event — with
+    // the arrival payload size — is the admission problem's observable input.
+    if state.permit_file.is_some() {
+        state.log_admission(
+            "queued",
+            &session_id,
+            session_ordinal,
+            0,
+            state.active_sessions.load(Ordering::Relaxed),
+            Instant::now(),
+            first_prompt_tokens,
+        );
+    }
+    let mut session_gate: Option<SessionGate> = if state.permit_file.is_some() {
+        Some(SessionGate::Dynamic(
+            AdmissionGate::acquire_permit(
+                &state,
+                &session_id,
+                session_ordinal,
+                "admit",
+                first_prompt_tokens,
+            )
+            .await,
+        ))
+    } else if state.cap_file.is_some() {
+        Some(SessionGate::Dynamic(
+            AdmissionGate::acquire(&state, &session_id, session_ordinal, first_prompt_tokens).await,
+        ))
     } else {
         match &state.session_semaphore {
             Some(semaphore) => match semaphore.clone().acquire_owned().await.ok() {
-                Some(permit) => SessionGate::Static(permit),
-                None => SessionGate::None,
+                Some(permit) => Some(SessionGate::Static(permit)),
+                None => None,
             },
-            None => SessionGate::None,
+            None => None,
         }
     };
 
@@ -205,6 +364,33 @@ pub(crate) async fn run_session(
     let mut prompt_builder = PromptBuilder::new(token_provider);
 
     for step in steps {
+        // Concur-style step-boundary pause: a paused session finishes its current round,
+        // then releases its admission slot until the controller re-admits it.
+        if state.permit_file.is_some() && state.session_paused(&session_id) {
+            if session_gate.take().is_some() {
+                state.log_admission(
+                    "pause",
+                    &session_id,
+                    session_ordinal,
+                    0,
+                    state.active_sessions.load(Ordering::Relaxed),
+                    Instant::now(),
+                    0,
+                );
+            }
+            AdmissionGate::wait_unpaused(&state, &session_id).await;
+            session_gate = Some(SessionGate::Dynamic(
+                AdmissionGate::acquire_permit(
+                    &state,
+                    &session_id,
+                    session_ordinal,
+                    "resume",
+                    0,
+                )
+                .await,
+            ));
+        }
+
         let prompt_ids = prompt_builder.build_prompt(&step);
         let request_id = format!("{}_round_{:06}", session_id, step.round_idx);
         state.stats.record_submit();
