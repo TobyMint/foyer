@@ -206,6 +206,21 @@ def main():
                                          "hard_stop": 0.85, "highwater_decay": 0.995,
                                          "slo_ms": 10000, "starve_seconds": 240.0,
                                          "starve_cooldown": 300.0}
+        elif mode.startswith("budget2_"):
+            # Ablations: one removed component per mode (paper ablation table).
+            flagmap = {"budget2_nohw": "--disable-highwater",       # dip leak back
+                       "budget2_nosf": "--disable-single-flight",   # stampedes back
+                       "budget2_nosv": "--disable-slo-valve"}       # no quality freeze
+            controller = subprocess.Popen(
+                [PY, f"{BASE}/TraceLab/replay/scripts/controller_budget2.py",
+                 flagmap[mode],
+                 "--cap-file", capfile, "--step-log", f"{run_dir}/steps.jsonl",
+                 "--admission-log", f"{run_dir}/admissions.jsonl", "--trace", TRACE,
+                 "--decision-log", f"{run_dir}/controller.jsonl", "--pool-tokens", str(pool_tokens),
+                 "--metrics-port", str(args.port)],
+                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
+            meta["controller_params"] = {"ablation": mode}
 
         cmd = [RUNNER, "--trace", TRACE, "--text-file", TEXT,
                "--tokenizer", f"{MODEL_DIR}/tokenizer.json", "--model", "qwen2.5-coder-7b",

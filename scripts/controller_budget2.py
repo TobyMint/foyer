@@ -89,6 +89,13 @@ def main():
     ap.add_argument("--slo-window", type=int, default=20)
     ap.add_argument("--interval", type=float, default=2.0)
     ap.add_argument("--max-minutes", type=float, default=300.0)
+    # Ablation switches: each removes one v0.5 component (paper Section ablations).
+    ap.add_argument("--disable-highwater", action="store_true",
+                    help="use instantaneous usage as floor (v0.4 behavior: dip leak)")
+    ap.add_argument("--disable-single-flight", action="store_true",
+                    help="allow multi-admit per cycle, no prev-started gate (v0.4 stampedes)")
+    ap.add_argument("--disable-slo-valve", action="store_true",
+                    help="no TTFT-SLO admission freeze")
     args = ap.parse_args()
 
     budget = args.pool_tokens * args.target_util
@@ -184,7 +191,7 @@ def main():
             # retractions (evicted sessions re-prefill on their next round).
             # Only a dip that PERSISTS (high-water decayed for minutes) is real.
             highwater = max(usage, highwater * args.highwater_decay)
-            floor = max(usage, highwater)
+            floor = usage if args.disable_highwater else max(usage, highwater)
             resident = floor * args.pool_tokens
             queued = [sid for sid in order if sid not in active and sid not in finished]
             for sid in queued:
@@ -218,19 +225,30 @@ def main():
             forced = False
             oldest_wait = 0.0
             hard_stop = usage >= args.hard_stop_usage
-            valve = slo_breach or hard_stop
+            valve = hard_stop or (slo_breach and not args.disable_slo_valve)
             # Single-flight: <=1 newcomer per cycle, and only once the previous
             # newcomer has visibly started executing (>=1 completed round, or 60 s
             # elapsed — a stuck first round must not block admission forever).
-            prev_started = (last_admitted_sid is None
-                            or last_round.get(last_admitted_sid, -1) >= 0
-                            or now - last_admit_ts > 60)
+            prev_started = True
+            if not args.disable_single_flight:
+                prev_started = (last_admitted_sid is None
+                                or last_round.get(last_admitted_sid, -1) >= 0
+                                or now - last_admit_ts > 60)
             if not valve and prev_started and queued:
-                sid = queued[0]  # oldest waiter (trace order == arrival order)
-                need = (first_prompt[sid] + horizon(sid, None, None)) * args.margin
-                if projection + need <= budget:
-                    fits = 1
-                    projection += need
+                if args.disable_single_flight:
+                    for sid in queued:  # v0.4-style: admit every session that fits
+                        need = (first_prompt[sid] + horizon(sid, None, None)) * args.margin
+                        if projection + need <= budget:
+                            fits += 1
+                            projection += need
+                        else:
+                            break
+                else:
+                    sid = queued[0]  # oldest waiter (trace order == arrival order)
+                    need = (first_prompt[sid] + horizon(sid, None, None)) * args.margin
+                    if projection + need <= budget:
+                        fits = 1
+                        projection += need
             for sid in queued:
                 waiting_since.setdefault(sid, now)
                 oldest_wait = max(oldest_wait, now - waiting_since[sid])
