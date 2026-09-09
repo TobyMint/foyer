@@ -9,6 +9,8 @@ Policies:
   aimd         Concur-style cache-feedback AIMD controller sets the cap
   budget       token-budget feed-forward controller sets the cap
   budget2      v0.5: high-water floor + single-flight admission + TTFT-SLO valve
+  budget3      online-predictor Foyer: named-permit admission, no trace future
+  aimd2        faithful Concur: u_low-grow law, permit pause/resume (aimd2:k=v,... to tune)
 """
 import argparse
 import hashlib
@@ -221,6 +223,47 @@ def main():
                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"ablation": mode}
+        elif mode == "budget3":
+            # Online-predictor Foyer: named-permit admission, no trace future.
+            permitfile = f"{BASE}/permit_{args.lane}.json"
+            with open(permitfile, "w") as f:
+                json.dump({"admit": [], "paused": []}, f)
+            controller = subprocess.Popen(
+                [PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+                 "--permit-file", permitfile,
+                 "--step-log", f"{run_dir}/steps.jsonl",
+                 "--admission-log", f"{run_dir}/admissions.jsonl",
+                 "--decision-log", f"{run_dir}/controller.jsonl", "--pool-tokens", str(pool_tokens),
+                 "--metrics-port", str(args.port)],
+                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
+            meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
+                                         "horizon_rounds": 3, "highwater_decay": 0.995,
+                                         "slo_ms": 10000}
+        elif mode.startswith("aimd2"):
+            # Faithful Concur: grow only below u_low, permit-based pause/resume.
+            permitfile = f"{BASE}/permit_{args.lane}.json"
+            with open(permitfile, "w") as f:
+                json.dump({"admit": [], "paused": []}, f)
+            extra = []
+            if ":" in mode:  # e.g. aimd2:alpha=4,interval=2
+                flagmap = {"alpha": "--alpha", "beta": "--beta", "interval": "--interval",
+                           "u_low": "--u-low", "u_high": "--u-high",
+                           "h_thresh": "--h-thresh", "initial": "--initial-cap"}
+                for kv in mode.split(":", 1)[1].split(","):
+                    k, v = kv.split("=", 1)
+                    extra += [flagmap[k], v]
+            controller = subprocess.Popen(
+                [PY, f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
+                 "--permit-file", permitfile,
+                 "--admission-log", f"{run_dir}/admissions.jsonl",
+                 "--metrics-url", f"http://127.0.0.1:{args.port}/metrics",
+                 "--decision-log", f"{run_dir}/controller.jsonl"] + extra,
+                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
+            meta["controller_params"] = {"law": "u_low grow / thrash cut / pause-resume",
+                                         "u_low": 0.35, "u_high": 0.75, "h_thresh": 0.03,
+                                         "alpha": 2.0, "beta": 0.5, "interval": 30.0}
 
         cmd = [RUNNER, "--trace", TRACE, "--text-file", TEXT,
                "--tokenizer", f"{MODEL_DIR}/tokenizer.json", "--model", "qwen2.5-coder-7b",

@@ -69,6 +69,13 @@ log("server healthy")
 
 # --- permit timeline + runner
 write_permit(["s1"], [])
+# the runner truncates its admission log only after minutes of token-pool building;
+# a stale log from a previous smoke run would make wait_queued pass on old events.
+for stale in ("admissions.jsonl", "steps.jsonl", "summary.json"):
+    try:
+        os.remove(f"{OUT}/{stale}")
+    except FileNotFoundError:
+        pass
 runner = subprocess.Popen(
     [f"{BASE}/TraceLab/replay/target/release/session_runner",
      "--trace", TRACE, "--text-file", f"{BASE}/data/enwik9",
@@ -88,6 +95,25 @@ def update(admit, paused):
 
 
 T0 = time.time()
+
+
+def wait_queued(n, timeout=300):
+    """Wait until n sessions have arrived at the gate — the runner spends minutes
+    building its token pool before sessions appear, so wall-clock sleeps mis-time
+    the permit timeline."""
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        try:
+            evs = [json.loads(l) for l in open(f"{OUT}/admissions.jsonl")]
+            if sum(1 for e in evs if e["event"] == "queued") >= n:
+                return time.time()
+        except FileNotFoundError:
+            pass
+        time.sleep(1)
+    sys.exit(f"only saw fewer than {n} queued events after {timeout}s")
+
+
+wait_queued(4)
 time.sleep(10)   # s1 running solo
 update(["s2", "s3"], ["s1"])   # pause s1 at its next step boundary
 time.sleep(8)
