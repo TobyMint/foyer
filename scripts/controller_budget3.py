@@ -72,6 +72,8 @@ def main():
     ap.add_argument("--disable-highwater", action="store_true")
     ap.add_argument("--disable-single-flight", action="store_true")
     ap.add_argument("--disable-slo-valve", action="store_true")
+    ap.add_argument("--disable-shedding", action="store_true",
+                    help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
     args = ap.parse_args()
 
     budget = args.pool_tokens * args.target_util
@@ -200,6 +202,25 @@ def main():
             valve = usage >= args.hard_stop_usage
             if not args.disable_slo_valve and len(ttfts) >= max(5, args.slo_window // 2):
                 valve = valve or sorted(ttfts)[len(ttfts) // 2] > args.slo_ms
+
+            # 5b. SHEDDING: unlike v0.5 (whose cap could only grow — over-admitted
+            # sessions stayed forever and the SLO valve was toothless), named permits
+            # let us revoke. On valve, pause the YOUNGEST active sessions until the
+            # oldest fit inside the budget; paused sessions re-enter via the normal
+            # FIFO admission path once the valve clears and the projection has room.
+            shed = []
+            if valve and active and not args.disable_shedding:
+                keep, acc = [], 0.0
+                limit = budget * 0.90
+                for sid in sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0):
+                    c = sess[sid]["ctx"] or sess[sid]["prompt0"]
+                    if not keep or acc + c <= limit:
+                        keep.append(sid)
+                        acc += c
+                shed = [sid for sid in active if sid not in set(keep)]
+                if shed:
+                    for sid in shed:
+                        sess[sid]["active"] = False
             prev_started = (last_admitted_sid is None
                             or sess.get(last_admitted_sid, {}).get("last_round", -1) >= 0
                             or now - last_admit_ts > 60)
@@ -226,8 +247,9 @@ def main():
                 last_forced_ts = now
 
             # 7. write the full desired permit state (full-state semantics)
+            active = [sid for sid in active if sid not in set(shed)]
             admitted_now = set(active) | ({candidate} if candidate else set())
-            write_permit(args.permit_file, admitted_now)
+            write_permit(args.permit_file, admitted_now, shed)
 
             log.write(json.dumps({
                 "ts": round(now, 3),
@@ -236,7 +258,7 @@ def main():
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
                 "growth_sum": round(growth_sum), "budget": round(budget),
                 "candidate": candidate, "need": round(need), "forced": forced,
-                "valve": valve,
+                "valve": valve, "shed_n": len(shed),
                 "ttft_p50_ms": round(sorted(ttfts)[len(ttfts) // 2]) if ttfts else None,
                 "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
             }) + "\n")
