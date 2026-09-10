@@ -1,0 +1,16 @@
+{
+ "lane": "repB",
+ "policy": "budget2_nosv",
+ "trace": "/data/xbw/turnstile/data/replay_night200.csv",
+ "trace_md5": "35cf3ca19e",
+ "gpu": 2,
+ "port": 30001,
+ "started": 1789000407.994486,
+ "pool_tokens": 114495,
+ "controller_params": {
+  "ablation": "budget2_nosv"
+ },
+ "runner_rc": 0,
+ "wall_s": 13845.1,
+ "finished": 1789014368.1101305
+}
