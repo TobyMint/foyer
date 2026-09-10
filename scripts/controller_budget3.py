@@ -123,6 +123,8 @@ def main():
     metrics_url = f"http://127.0.0.1:{args.metrics_port}/metrics"
     with open(args.decision_log, "w") as log:
         while time.time() < deadline:
+          try:
+            now = time.time()
             now = time.time()
 
             # 1. arrivals / admission events
@@ -263,6 +265,15 @@ def main():
                 "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
             }) + "\n")
             log.flush()
+            time.sleep(args.interval)
+          except Exception as exc:  # a transient fault must skip ONE cycle, not kill
+            try:
+                log.write(json.dumps({
+                    "ts": round(time.time(), 3), "cycle_error": repr(exc),
+                }) + "\n")
+                log.flush()
+            except Exception:
+                pass
             time.sleep(args.interval)
 
 

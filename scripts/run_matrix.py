@@ -235,7 +235,7 @@ def main():
                  "--admission-log", f"{run_dir}/admissions.jsonl",
                  "--decision-log", f"{run_dir}/controller.jsonl", "--pool-tokens", str(pool_tokens),
                  "--metrics-port", str(args.port)],
-                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                 stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
                                          "horizon_rounds": 3, "highwater_decay": 0.995,
@@ -259,7 +259,7 @@ def main():
                  "--admission-log", f"{run_dir}/admissions.jsonl",
                  "--metrics-url", f"http://127.0.0.1:{args.port}/metrics",
                  "--decision-log", f"{run_dir}/controller.jsonl"] + extra,
-                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                 stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"law": "u_low grow / thrash cut / pause-resume",
                                          "u_low": 0.35, "u_high": 0.75, "h_thresh": 0.03,
