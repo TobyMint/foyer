@@ -29,7 +29,7 @@ MODEL_DIR = f"{BASE}/models/qwen25-coder-7b-yarn96k"
 TRACE = os.environ.get("TURNSTILE_TRACE", f"{BASE}/data/replay_night200.csv")
 TEXT = f"{BASE}/data/enwik9"
 OUT_ROOT = f"{BASE}/results/night"
-RUN_TIMEOUT_S = 6 * 3600
+RUN_TIMEOUT_S = int(os.environ.get("TURNSTILE_RUN_TIMEOUT_H", "6")) * 3600
 MEMFRAC = os.environ.get("TURNSTILE_MEMFRAC", "0.88")
 HEALTH_TIMEOUT_S = 420
 
