@@ -150,7 +150,11 @@ def main():
                 elif etype == "resume":
                     s["active"] = True
                 elif etype == "pause":
+                    # a shed pause emits release+pause back-to-back; the release
+                    # handler above marks finished — undo it, a paused session is
+                    # NOT done and must be eligible for re-admission
                     s["active"] = False
+                    s["finished"] = False
                 elif etype == "release":
                     s["active"] = False
                     s["finished"] = True
