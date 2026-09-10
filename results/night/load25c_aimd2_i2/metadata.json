@@ -1,0 +1,22 @@
+{
+ "lane": "p0a",
+ "policy": "aimd2:interval=2",
+ "trace": "/data/xbw/turnstile/data/replay_night25.csv",
+ "trace_md5": "b3b06583db",
+ "gpu": 3,
+ "port": 30000,
+ "started": 1789005941.6685755,
+ "pool_tokens": 101432,
+ "controller_params": {
+  "law": "u_low grow / thrash cut / pause-resume",
+  "u_low": 0.35,
+  "u_high": 0.75,
+  "h_thresh": 0.03,
+  "alpha": 2.0,
+  "beta": 0.5,
+  "interval": 30.0
+ },
+ "runner_rc": 0,
+ "wall_s": 2365.7,
+ "finished": 1789008426.65912
+}
