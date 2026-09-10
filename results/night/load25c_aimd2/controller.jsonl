@@ -1,0 +1,71 @@
+{"ts": 1789003808.324, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003838.374, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003868.392, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003898.409, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003928.425, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003958.44, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789003988.458, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789004018.473, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 0, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789004048.489, "W": 1.0, "prev": 1.0, "action": "hold", "U": 0.0, "H": 0.998046875, "active_n": 1, "paused_n": 0, "waiting_n": 24, "newly_admitted": ["claude:00a24909-986f-18d3-c090-ab9e0603a55e"]}
+{"ts": 1789004078.506, "W": 3.0, "prev": 1.0, "action": "grow", "U": 0.21702224150169572, "H": 0.0, "active_n": 3, "paused_n": 0, "waiting_n": 22, "newly_admitted": ["claude:03a507f2-0448-911c-45b1-bf9ffb711f09", "claude:04a9794a-2fdc-d2aa-68c7-ef5483c0631b"]}
+{"ts": 1789004108.523, "W": 5.0, "prev": 3.0, "action": "grow", "U": 0.22479099298051897, "H": 0.0, "active_n": 5, "paused_n": 0, "waiting_n": 19, "newly_admitted": ["claude:064a9dd6-9fc1-d38a-69fa-90276d693510", "claude:0679bd31-d48f-8e64-2bfb-132a58a4a046", "claude:07b58c8a-45da-9e7b-45c3-7c3efd75b584"]}
+{"ts": 1789004138.542, "W": 3, "prev": 5.0, "action": "cut", "U": 0.8064516129032258, "H": 0.0, "active_n": 3, "paused_n": 2, "waiting_n": 19, "newly_admitted": []}
+{"ts": 1789004168.563, "W": 2, "prev": 3, "action": "cut", "U": 0.7582222572758104, "H": 0.0, "active_n": 2, "paused_n": 3, "waiting_n": 19, "newly_admitted": []}
+{"ts": 1789004198.582, "W": 2, "prev": 2, "action": "hold", "U": 0.3565541446486316, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 19, "newly_admitted": ["claude:064a9dd6-9fc1-d38a-69fa-90276d693510"]}
+{"ts": 1789004228.601, "W": 2, "prev": 2, "action": "hold", "U": 0.3703564949917186, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 19, "newly_admitted": []}
+{"ts": 1789004258.619, "W": 2, "prev": 2, "action": "hold", "U": 0.3841588453348056, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 19, "newly_admitted": []}
+{"ts": 1789004288.638, "W": 2, "prev": 2, "action": "hold", "U": 0.39796119567789257, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 19, "newly_admitted": []}
+{"ts": 1789004318.659, "W": 2, "prev": 2, "action": "hold", "U": 0.3983555485448379, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 19, "newly_admitted": ["claude:0679bd31-d48f-8e64-2bfb-132a58a4a046"]}
+{"ts": 1789004348.677, "W": 4.0, "prev": 2, "action": "grow", "U": 0.1939920340720877, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 18, "newly_admitted": ["claude:07b58c8a-45da-9e7b-45c3-7c3efd75b584", "claude:1239c2da-a410-5d33-aa09-aa78a30c25b8"]}
+{"ts": 1789004378.696, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.44476102216263114, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 17, "newly_admitted": ["claude:03e8c8c3-42b0-999a-6eee-5cb9e7f3991e"]}
+{"ts": 1789004408.715, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.4851427557378342, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 17, "newly_admitted": []}
+{"ts": 1789004438.734, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.7274331571890528, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 17, "newly_admitted": []}
+{"ts": 1789004468.751, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.3767252937928859, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 16, "newly_admitted": ["claude:12d1f040-d9d4-556a-0df5-aa4e08f0aac2"]}
+{"ts": 1789004498.77, "W": 2, "prev": 4.0, "action": "cut", "U": 0.8779182112153955, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 16, "newly_admitted": []}
+{"ts": 1789004528.787, "W": 1, "prev": 2, "action": "cut", "U": 0.8023207666219734, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 16, "newly_admitted": []}
+{"ts": 1789004558.806, "W": 3.0, "prev": 1, "action": "grow", "U": 0.1870317059705024, "H": 0.0, "active_n": 3, "paused_n": 0, "waiting_n": 16, "newly_admitted": ["claude:03e8c8c3-42b0-999a-6eee-5cb9e7f3991e", "claude:12d1f040-d9d4-556a-0df5-aa4e08f0aac2"]}
+{"ts": 1789004588.825, "W": 5.0, "prev": 3.0, "action": "grow", "U": 0.18956542314062624, "H": 0.0, "active_n": 5, "paused_n": 0, "waiting_n": 12, "newly_admitted": ["claude:1798dee5-2908-3f61-5f61-5a9f5a0b3600", "claude:1a81eeef-4cc0-1bd2-c32e-1637d2bebee7", "claude:1b502dba-0b66-4a90-d08c-3070e8e988b0", "claude:1622a000-3088-40b1-c9c2-e632ac23f5f7"]}
+{"ts": 1789004618.844, "W": 5.0, "prev": 5.0, "action": "hold", "U": 0.5355607697767962, "H": 0.0, "active_n": 5, "paused_n": 0, "waiting_n": 12, "newly_admitted": []}
+{"ts": 1789004648.862, "W": 3, "prev": 5.0, "action": "cut", "U": 0.9421681520624655, "H": 0.0, "active_n": 3, "paused_n": 2, "waiting_n": 12, "newly_admitted": []}
+{"ts": 1789004678.879, "W": 3, "prev": 3, "action": "hold", "U": 0.4974761416515498, "H": 0.0, "active_n": 3, "paused_n": 2, "waiting_n": 12, "newly_admitted": []}
+{"ts": 1789004708.895, "W": 5.0, "prev": 3, "action": "grow", "U": 0.26608959697136997, "H": 0.0, "active_n": 5, "paused_n": 0, "waiting_n": 10, "newly_admitted": ["claude:1b502dba-0b66-4a90-d08c-3070e8e988b0", "claude:1622a000-3088-40b1-c9c2-e632ac23f5f7", "claude:0557340a-5a5d-a853-229c-406e81229fc7", "claude:0ad27a67-5489-0c83-6fd7-ae95e098b220"]}
+{"ts": 1789004738.914, "W": 7.0, "prev": 5.0, "action": "grow", "U": 0.1068203328338197, "H": 0.0, "active_n": 7, "paused_n": 0, "waiting_n": 7, "newly_admitted": ["claude:2c069ecf-3c6c-141b-8a8f-7225acd67c04", "claude:1a34e8ad-8e6d-d726-e07b-1366935a91a8", "claude:19e0632d-3b38-66e1-edee-190b27cdec2b"]}
+{"ts": 1789004768.933, "W": 4, "prev": 7.0, "action": "cut", "U": 0.8323310197965139, "H": 0.0, "active_n": 4, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004798.951, "W": 4, "prev": 4, "action": "hold", "U": 0.773838630806846, "H": 0.9064625850340136, "active_n": 4, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004828.97, "W": 4, "prev": 4, "action": "hold", "U": 0.624812682388201, "H": 0.0, "active_n": 4, "paused_n": 2, "waiting_n": 7, "newly_admitted": ["claude:2c069ecf-3c6c-141b-8a8f-7225acd67c04"]}
+{"ts": 1789004858.995, "W": 2, "prev": 4, "action": "cut", "U": 0.7968786970581276, "H": 0.0, "active_n": 2, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004889.012, "W": 1, "prev": 2, "action": "cut", "U": 0.8205398690748482, "H": 0.0, "active_n": 1, "paused_n": 4, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004919.031, "W": 1, "prev": 1, "action": "hold", "U": 0.4238701790362016, "H": 0.0, "active_n": 1, "paused_n": 4, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004949.05, "W": 1, "prev": 1, "action": "hold", "U": 0.4349120593106712, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789004979.07, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005009.091, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005039.11, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005069.13, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005099.149, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005129.167, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005159.187, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005189.206, "W": 1, "prev": 1, "action": "hold", "U": 0.0, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005219.226, "W": 1, "prev": 1, "action": "hold", "U": 0.44083721113652496, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005249.243, "W": 1, "prev": 1, "action": "hold", "U": 0.4542452086126666, "H": 0.0, "active_n": 1, "paused_n": 3, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005279.26, "W": 1, "prev": 1, "action": "hold", "U": 0.45897744301601073, "H": 0.0, "active_n": 1, "paused_n": 2, "waiting_n": 7, "newly_admitted": ["claude:2c069ecf-3c6c-141b-8a8f-7225acd67c04"]}
+{"ts": 1789005309.279, "W": 3.0, "prev": 1, "action": "grow", "U": 0.2475057181165707, "H": 0.0, "active_n": 3, "paused_n": 0, "waiting_n": 7, "newly_admitted": ["claude:1a34e8ad-8e6d-d726-e07b-1366935a91a8", "claude:19e0632d-3b38-66e1-edee-190b27cdec2b"]}
+{"ts": 1789005339.296, "W": 3.0, "prev": 3.0, "action": "hold", "U": 0.7051325025632936, "H": 0.9263239273289524, "active_n": 3, "paused_n": 0, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005369.315, "W": 2, "prev": 3.0, "action": "cut", "U": 0.7610320214527959, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 7, "newly_admitted": []}
+{"ts": 1789005399.335, "W": 4.0, "prev": 2, "action": "grow", "U": 0.2859551226437416, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 3, "newly_admitted": ["claude:23456ba9-b2f4-685c-7d5d-c508e7f03b5e", "claude:2ba9bab3-5800-4310-2c1d-49815a74d72e", "claude:1df5e048-52d2-a5e3-5e43-7fd9016b12d7", "claude:2d4c4e66-478a-e324-7f8e-afb089c2efad"]}
+{"ts": 1789005429.354, "W": 2, "prev": 4.0, "action": "cut", "U": 0.9243729789415569, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 3, "newly_admitted": []}
+{"ts": 1789005459.374, "W": 4.0, "prev": 2, "action": "grow", "U": 0.18340365959460525, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 3, "newly_admitted": ["claude:1df5e048-52d2-a5e3-5e43-7fd9016b12d7", "claude:2d4c4e66-478a-e324-7f8e-afb089c2efad"]}
+{"ts": 1789005489.392, "W": 2, "prev": 4.0, "action": "cut", "U": 0.9342613770802114, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 3, "newly_admitted": []}
+{"ts": 1789005519.411, "W": 2, "prev": 2, "action": "hold", "U": 0.43418250650682233, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 3, "newly_admitted": []}
+{"ts": 1789005549.43, "W": 4.0, "prev": 2, "action": "grow", "U": 0.21977285274863947, "H": 0.0, "active_n": 4, "paused_n": 0, "waiting_n": 0, "newly_admitted": ["claude:2d4c4e66-478a-e324-7f8e-afb089c2efad", "claude:1421ac71-5a5a-ffdc-267a-17e31d0c619d", "claude:2db9f08a-7894-d09b-eb77-7b84331b1a77", "claude:265e7118-4e7d-7ff8-ede6-1b340456adcd"]}
+{"ts": 1789005579.45, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.9006822304598154, "H": 0.8692376452560338, "active_n": 4, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005609.47, "W": 2, "prev": 4.0, "action": "cut", "U": 0.8682762836185819, "H": 0.0, "active_n": 2, "paused_n": 2, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005639.487, "W": 2, "prev": 2, "action": "hold", "U": 0.5697215868759365, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 0, "newly_admitted": ["claude:2db9f08a-7894-d09b-eb77-7b84331b1a77"]}
+{"ts": 1789005669.509, "W": 2, "prev": 2, "action": "hold", "U": 0.5949601703604385, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005699.53, "W": 2, "prev": 2, "action": "hold", "U": 0.6363967978547204, "H": 0.0, "active_n": 2, "paused_n": 1, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005729.551, "W": 4.0, "prev": 2, "action": "grow", "U": 0.34171661802981307, "H": 0.0, "active_n": 2, "paused_n": 0, "waiting_n": 0, "newly_admitted": ["claude:265e7118-4e7d-7ff8-ede6-1b340456adcd"]}
+{"ts": 1789005759.569, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.6679450272103479, "H": 0.0, "active_n": 2, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005789.59, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.5991107342850382, "H": 0.0, "active_n": 1, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005819.609, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.6296435050082814, "H": 0.0, "active_n": 1, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005849.857, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.6422627967505323, "H": 0.0, "active_n": 1, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005879.873, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.6548820884927833, "H": 0.0, "active_n": 1, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
+{"ts": 1789005909.895, "W": 4.0, "prev": 4.0, "action": "hold", "U": 0.6678957331019797, "H": 0.0, "active_n": 1, "paused_n": 0, "waiting_n": 0, "newly_admitted": []}
