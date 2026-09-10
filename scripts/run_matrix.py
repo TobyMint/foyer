@@ -228,14 +228,25 @@ def main():
             permitfile = f"{BASE}/permit_{args.lane}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
-            controller = subprocess.Popen(
-                [PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
-                 "--permit-file", permitfile,
-                 "--step-log", f"{run_dir}/steps.jsonl",
-                 "--admission-log", f"{run_dir}/admissions.jsonl",
-                 "--decision-log", f"{run_dir}/controller.jsonl", "--pool-tokens", str(pool_tokens),
-                 "--metrics-port", str(args.port)],
-                 stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
+            # Supervised: the controller is log-driven (state rebuilds from the
+            # admission/step logs), so if it dies the wrapper relaunches it within
+            # 20 s and it resumes seamlessly — until the run's summary exists.
+            ctrl_cmd = " ".join([
+                PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+                "--permit-file", permitfile,
+                "--step-log", f"{run_dir}/steps.jsonl",
+                "--admission-log", f"{run_dir}/admissions.jsonl",
+                "--decision-log", f"{run_dir}/controller.jsonl",
+                "--pool-tokens", str(pool_tokens),
+                "--metrics-port", str(args.port),
+                "--max-minutes", "600"])
+            supervisor = (
+                f'while [ ! -f {run_dir}/summary.json ]; do '
+                f'{ctrl_cmd} >> {run_dir}/ctrl.out 2>&1; '
+                f'echo "$(date +%H:%M:%S) controller exited, relaunching" >> {run_dir}/ctrl.out; '
+                f'sleep 20; done')
+            controller = subprocess.Popen(["bash", "-c", supervisor],
+                                          start_new_session=True)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
                                          "horizon_rounds": 3, "highwater_decay": 0.995,
@@ -287,7 +298,10 @@ def main():
         meta["wall_s"] = round(time.time() - t0, 1)
 
         if controller:
-            controller.terminate()
+            try:  # supervised controllers lead their own process group
+                os.killpg(os.getpgid(controller.pid), signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                controller.terminate()
         monitor.terminate()
         wait_port_dead(server, args.port)
         meta["finished"] = time.time()

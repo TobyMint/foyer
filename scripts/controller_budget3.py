@@ -121,7 +121,8 @@ def main():
         return vals
 
     metrics_url = f"http://127.0.0.1:{args.metrics_port}/metrics"
-    with open(args.decision_log, "w") as log:
+    # append: a supervised restart must not truncate the decision history
+    with open(args.decision_log, "a") as log:
         while time.time() < deadline:
           try:
             now = time.time()
