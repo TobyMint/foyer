@@ -238,8 +238,10 @@ def main():
                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"ablation": mode}
-        elif mode == "budget3":
+        elif mode == "budget3" or mode.startswith("budget3:"):
             # Online-predictor Foyer: named-permit admission, no trace future.
+            # NOTE: param variants route here too (mode "budget3:target=0.8;..."),
+            # exactly the bug GPT-audit-2 found: `== "budget3"` left them ungated.
             permitfile = f"{BASE}/permit_{args.lane}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)

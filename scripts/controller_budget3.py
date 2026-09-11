@@ -231,31 +231,35 @@ def main():
             prev_started = (last_admitted_sid is None
                             or sess.get(last_admitted_sid, {}).get("last_round", -1) >= 0
                             or now - last_admit_ts > 60)
-            candidate = None
+            candidates = []   # named sessions this cycle authorizes (explicit set —
+                              # GPT audit 2: a scalar candidate dropped batch admits)
             need = 0.0
             if waiting and not valve and (prev_started or args.disable_single_flight):
                 head = waiting if args.disable_single_flight else waiting[:1]
                 for sid in head:
                     s = sess[sid]
-                    n = (s["prompt0"] + forecast(s)) * args.margin
+                    # resume/shed survivors must be budgeted at their KNOWN current
+                    # context, not their original arrival size (GPT audit 2: the
+                    # prompt0-based need under-counted paused sessions massively)
+                    base = s["ctx"] or s["prompt0"]
+                    n = (base + forecast(s)) * args.margin
                     if projection + n <= budget:
-                        candidate = sid
-                        need = n
+                        candidates.append(sid)
                         projection += n
                         if not args.disable_single_flight:
                             break
 
             # 6. rate-limited starve guard (gated on the floor, not the instant value)
             forced = False
-            if (waiting and candidate is None and oldest_wait >= args.starve_seconds
+            if (waiting and not candidates and oldest_wait >= args.starve_seconds
                     and floor < 0.5 and now - last_forced_ts >= args.starve_cooldown):
-                candidate = waiting[0]
+                candidates = [waiting[0]]
                 forced = True
                 last_forced_ts = now
 
             # 7. write the full desired permit state (full-state semantics)
             active = [sid for sid in active if sid not in set(shed)]
-            admitted_now = set(active) | ({candidate} if candidate else set())
+            admitted_now = set(active) | set(candidates)
             write_permit(args.permit_file, admitted_now, shed)
 
             log.write(json.dumps({
@@ -264,7 +268,8 @@ def main():
                 "usage": round(usage, 3), "highwater": round(highwater, 3),
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
                 "growth_sum": round(growth_sum), "budget": round(budget),
-                "candidate": candidate, "need": round(need), "forced": forced,
+                "candidate": (candidates[0] if candidates else None),
+                "n_admitted": len(candidates), "need": round(need), "forced": forced,
                 "valve": valve, "shed_n": len(shed),
                 "ttft_p50_ms": round(sorted(ttfts)[len(ttfts) // 2]) if ttfts else None,
                 "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
