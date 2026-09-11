@@ -5,7 +5,7 @@
  "trace_md5": "b3b06583db",
  "gpu": 2,
  "port": 30006,
- "started": 1789124900.611838,
+ "started": 1789143827.669603,
  "pool_tokens": 101432,
  "controller_params": {
   "target_util": 0.75,
@@ -16,6 +16,6 @@
   "tuned": "margin=1.0;sf=0"
  },
  "runner_rc": 0,
- "wall_s": 3062.6,
- "finished": 1789128059.517347
+ "wall_s": 2981.9,
+ "finished": 1789146879.4982224
 }
