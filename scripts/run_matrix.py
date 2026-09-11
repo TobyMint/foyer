@@ -63,6 +63,21 @@ def start_server(gpu, port, run_name="server"):
         time.sleep(3)
         if time.time() - t0 > 90:
             raise RuntimeError(f"port {port} still occupied after 90 s")
+    # Port closed != VRAM released: a predecessor's 15 GB can take tens of seconds
+    # to drain, and loading into the tail of it OOMs the new server (rc=-9 via the
+    # launcher's watchdog). Wait until the card is actually empty.
+    t0 = time.time()
+    while time.time() - t0 < 180:
+        try:
+            out = subprocess.run(
+                ["nvidia-smi", "--query-gpu=memory.used",
+                 "--format=csv,noheader,nounits", "-i", str(gpu)],
+                capture_output=True, text=True, timeout=10).stdout.strip()
+            if out.isdigit() and int(out) < 2000:
+                break
+        except Exception:
+            pass
+        time.sleep(5)
     env = dict(os.environ)
     env["PATH"] = f"{BASE}/envs/main/bin:{env.get('PATH','')}"
     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
