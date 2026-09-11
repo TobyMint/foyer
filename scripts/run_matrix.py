@@ -243,11 +243,25 @@ def main():
             permitfile = f"{BASE}/permit_{args.lane}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
-            # Supervised: the controller is log-driven (state rebuilds from the
-            # admission/step logs), so if it dies the wrapper relaunches it within
-            # 20 s and it resumes seamlessly — until the run's summary exists.
+            extra = []
+            if ":" in mode:  # e.g. budget3:target=0.85,margin=1.0,sf=0
+                flagmap = {"target": "--target-util", "margin": "--margin",
+                           "horizon": "--horizon-rounds", "hw": "--highwater-decay"}
+                for kv in mode.split(":", 1)[1].split(","):
+                    k, v = kv.split("=", 1)
+                    if k == "sf" and v == "0":
+                        extra.append("--disable-single-flight")
+                    elif k == "shed" and v == "0":
+                        extra.append("--disable-shedding")
+                    elif k == "slo" and v == "0":
+                        extra.append("--disable-slo-valve")
+                    else:
+                        extra += [flagmap[k], v]
+            # Supervised: log-driven state → a dead controller is relaunched in
+            # 20 s and resumes seamlessly, until the run's summary exists.
             ctrl_cmd = " ".join([
                 PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+                *extra,
                 "--permit-file", permitfile,
                 "--step-log", f"{run_dir}/steps.jsonl",
                 "--admission-log", f"{run_dir}/admissions.jsonl",
@@ -265,7 +279,8 @@ def main():
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"target_util": 0.75, "margin": 1.15,
                                          "horizon_rounds": 3, "highwater_decay": 0.995,
-                                         "slo_ms": 10000}
+                                         "slo_ms": 10000,
+                                         "tuned": (mode.split(":", 1)[1] if ":" in mode else "default")}
         elif mode.startswith("aimd2"):
             # Faithful Concur: grow only below u_low, permit-based pause/resume.
             permitfile = f"{BASE}/permit_{args.lane}.json"
