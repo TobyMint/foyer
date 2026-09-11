@@ -244,10 +244,10 @@ def main():
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
             extra = []
-            if ":" in mode:  # e.g. budget3:target=0.85,margin=1.0,sf=0
+            if ":" in mode:  # e.g. budget3:target=0.85;sf=0 (params sep by ; — comma is the run separator)
                 flagmap = {"target": "--target-util", "margin": "--margin",
                            "horizon": "--horizon-rounds", "hw": "--highwater-decay"}
-                for kv in mode.split(":", 1)[1].split(","):
+                for kv in mode.split(":", 1)[1].split(";"):
                     k, v = kv.split("=", 1)
                     if k == "sf" and v == "0":
                         extra.append("--disable-single-flight")
@@ -287,11 +287,11 @@ def main():
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
             extra = []
-            if ":" in mode:  # e.g. aimd2:alpha=4,interval=2
+            if ":" in mode:  # e.g. aimd2:alpha=4;interval=2 (params sep by ;)
                 flagmap = {"alpha": "--alpha", "beta": "--beta", "interval": "--interval",
                            "u_low": "--u-low", "u_high": "--u-high",
                            "h_thresh": "--h-thresh", "initial": "--initial-cap"}
-                for kv in mode.split(":", 1)[1].split(","):
+                for kv in mode.split(":", 1)[1].split(";"):
                     k, v = kv.split("=", 1)
                     extra += [flagmap[k], v]
             controller = subprocess.Popen(
