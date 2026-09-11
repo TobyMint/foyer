@@ -6,8 +6,12 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location(
-    "run_matrix", os.path.join(HERE, "..", "scripts", "run_matrix.py"))
+_CANDIDATES = [
+    os.path.join(HERE, "..", "scripts", "run_matrix.py"),            # laptop repo layout
+    os.path.join(HERE, "..", "TraceLab", "replay", "scripts", "run_matrix.py"),  # server layout
+]
+_RM = next(p for p in _CANDIDATES if os.path.exists(p))
+spec = importlib.util.spec_from_file_location("run_matrix", _RM)
 rm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rm)
 
