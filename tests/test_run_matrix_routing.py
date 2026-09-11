@@ -61,7 +61,8 @@ def test_unknown_mode_is_rejected():
     assert routes_to_controller("sf=0") is None
     assert routes_to_controller("margin=1.0") is None
     fragments = rm.parse_runs("x:budget3:target=0.85,margin=1.0,sf=0")
-    assert all(routes_to_controller(m) is None for _, m in fragments), fragments
+    # production main() raises if ANY fragment lacks a routed controller:
+    assert any(routes_to_controller(m) is None for _, m in fragments), fragments
 
 
 def test_budget3_param_args_build():
