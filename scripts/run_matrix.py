@@ -48,6 +48,56 @@ def port_free(port):
             return False
 
 
+def route_mode(mode):
+    """Single source of truth for mode → controller routing. Unit tests call THIS
+    function (not a copy of its logic) — GPT/Codex audit-2 requirement."""
+    if mode == "budget3" or mode.startswith("budget3:"):
+        return "budget3"
+    if mode == "aimd2" or mode.startswith("aimd2:"):
+        return "aimd2"
+    if mode.startswith("budget3_"):
+        return "budget3_ablation"
+    if mode.startswith("budget2_"):
+        return "budget2_ablation"
+    if mode.startswith("static=") or mode == "default":
+        return "static"
+    if mode == "aimd":
+        return "aimd_legacy"
+    return None  # unknown mode = refuse to run (never silently ungated)
+
+
+def budget3_param_args(mode):
+    """Parse 'budget3:k=v;k2=v2' into controller argv. Params separated by ';'
+    (comma is the run separator)."""
+    extra = []
+    if ":" in mode:
+        flagmap = {"target": "--target-util", "margin": "--margin",
+                   "horizon": "--horizon-rounds", "hw": "--highwater-decay"}
+        for kv in mode.split(":", 1)[1].split(";"):
+            k, v = kv.split("=", 1)
+            if k == "sf" and v == "0":
+                extra.append("--disable-single-flight")
+            elif k == "shed" and v == "0":
+                extra.append("--disable-shedding")
+            elif k == "slo" and v == "0":
+                extra.append("--disable-slo-valve")
+            else:
+                extra += [flagmap[k], v]
+    return extra
+
+
+def aimd2_param_args(mode):
+    extra = []
+    if ":" in mode:
+        flagmap = {"alpha": "--alpha", "beta": "--beta", "interval": "--interval",
+                   "u_low": "--u-low", "u_high": "--u-high",
+                   "h_thresh": "--h-thresh", "initial": "--initial-cap"}
+        for kv in mode.split(":", 1)[1].split(";"):
+            k, v = kv.split("=", 1)
+            extra += [flagmap[k], v]
+    return extra
+
+
 def start_server(gpu, port, run_name="server"):
     # Kill anything already bound to this port (stale servers poison isolation).
     # SIGTERM alone is not enough: a draining sglang can hold the port for minutes,
@@ -162,6 +212,11 @@ def main():
     os.makedirs(OUT_ROOT, exist_ok=True)
     trace_md5 = hashlib.md5(open(TRACE, "rb").read()).hexdigest()[:10]
     runs = parse_runs(args.runs)
+    for name, mode in runs:
+        if route_mode(mode) is None:
+            # audit-2: unknown modes must fail loudly — a silent fall-through means
+            # an ungated runner (the t85/t90 incident)
+            raise SystemExit(f"unknown policy mode {mode!r} (run {name!r}) — refusing to start")
     log(f"lane {args.lane} gpu {args.gpu} port {args.port} runs {runs}")
 
     for name, mode in runs:
@@ -238,32 +293,18 @@ def main():
                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"ablation": mode}
-        elif mode == "budget3" or mode.startswith("budget3:"):
+        elif route_mode(mode) == "budget3":
             # Online-predictor Foyer: named-permit admission, no trace future.
-            # NOTE: param variants route here too (mode "budget3:target=0.8;..."),
-            # exactly the bug GPT-audit-2 found: `== "budget3"` left them ungated.
+            # Routing via route_mode() — GPT-audit-2: `== "budget3"` left param
+            # variants ungated.
             permitfile = f"{BASE}/permit_{args.lane}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
-            extra = []
-            if ":" in mode:  # e.g. budget3:target=0.85;sf=0 (params sep by ; — comma is the run separator)
-                flagmap = {"target": "--target-util", "margin": "--margin",
-                           "horizon": "--horizon-rounds", "hw": "--highwater-decay"}
-                for kv in mode.split(":", 1)[1].split(";"):
-                    k, v = kv.split("=", 1)
-                    if k == "sf" and v == "0":
-                        extra.append("--disable-single-flight")
-                    elif k == "shed" and v == "0":
-                        extra.append("--disable-shedding")
-                    elif k == "slo" and v == "0":
-                        extra.append("--disable-slo-valve")
-                    else:
-                        extra += [flagmap[k], v]
             # Supervised: log-driven state → a dead controller is relaunched in
             # 20 s and resumes seamlessly, until the run's summary exists.
             ctrl_cmd = " ".join([
                 PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
-                *extra,
+                *budget3_param_args(mode),
                 "--permit-file", permitfile,
                 "--step-log", f"{run_dir}/steps.jsonl",
                 "--admission-log", f"{run_dir}/admissions.jsonl",
@@ -283,25 +324,17 @@ def main():
                                          "horizon_rounds": 3, "highwater_decay": 0.995,
                                          "slo_ms": 10000,
                                          "tuned": (mode.split(":", 1)[1] if ":" in mode else "default")}
-        elif mode.startswith("aimd2"):
+        elif route_mode(mode) == "aimd2":
             # Faithful Concur: grow only below u_low, permit-based pause/resume.
             permitfile = f"{BASE}/permit_{args.lane}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
-            extra = []
-            if ":" in mode:  # e.g. aimd2:alpha=4;interval=2 (params sep by ;)
-                flagmap = {"alpha": "--alpha", "beta": "--beta", "interval": "--interval",
-                           "u_low": "--u-low", "u_high": "--u-high",
-                           "h_thresh": "--h-thresh", "initial": "--initial-cap"}
-                for kv in mode.split(":", 1)[1].split(";"):
-                    k, v = kv.split("=", 1)
-                    extra += [flagmap[k], v]
             controller = subprocess.Popen(
                 [PY, f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
                  "--permit-file", permitfile,
                  "--admission-log", f"{run_dir}/admissions.jsonl",
                  "--metrics-url", f"http://127.0.0.1:{args.port}/metrics",
-                 "--decision-log", f"{run_dir}/controller.jsonl"] + extra,
+                 "--decision-log", f"{run_dir}/controller.jsonl"] + aimd2_param_args(mode),
                  stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"law": "u_low grow / thrash cut / pause-resume",

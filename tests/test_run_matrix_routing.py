@@ -32,16 +32,9 @@ def test_parse_runs_plain_modes():
 
 
 def routes_to_controller(mode):
-    """Mirror of the dispatch conditions in main(): which controller branch a mode
-    activates. budget3:param=... MUST route to the budget3 controller (GPT audit 2
-    found param variants fell through and ran ungated)."""
-    if mode == "budget3" or mode.startswith("budget3:"):
-        return "budget3"
-    if mode == "aimd2" or mode.startswith("aimd2:"):
-        return "aimd2"
-    if mode.startswith("budget2_") or mode.startswith("budget3_"):
-        return "budget2-family"
-    return "other"
+    """Tests call the PRODUCTION routing function — not a copy of its logic
+    (Codex audit: a duplicated-logic test is a false-confidence test)."""
+    return rm.route_mode(mode)
 
 
 def test_param_modes_route_to_their_controllers():
@@ -52,25 +45,41 @@ def test_param_modes_route_to_their_controllers():
         "budget3:target=0.85;margin=1.0;sf=0": "budget3",
         "aimd2": "aimd2",
         "aimd2:alpha=4;interval=2": "aimd2",
+        "budget2_nohw": "budget2_ablation",
+        "static=4": "static",
+        "default": "static",
     }
     for mode, expect in cases.items():
         got = routes_to_controller(mode)
         assert got == expect, f"mode {mode!r} routed to {got!r}, want {expect!r}"
 
 
-def test_unknown_mode_is_not_silent():
+def test_unknown_mode_is_rejected():
     # the audit's core scenario: an unknown mode must never silently fall through
-    # to an ungated runner. Unknown modes must raise or be rejected upstream.
-    try:
-        routes = routes_to_controller("sf=0")
-    except Exception:
-        routes = "rejected"
-    assert routes == "other"
+    # to an ungated runner. Protection chain: parse_runs splits the comma-broken
+    # string into fragments, route_mode() returns None for fragments, main() raises.
+    assert routes_to_controller("sf=0") is None
+    assert routes_to_controller("margin=1.0") is None
+    fragments = rm.parse_runs("x:budget3:target=0.85,margin=1.0,sf=0")
+    assert all(routes_to_controller(m) is None for _, m in fragments), fragments
+
+
+def test_budget3_param_args_build():
+    args = rm.budget3_param_args("budget3:target=0.85;sf=0")
+    assert args == ["--target-util", "0.85", "--disable-single-flight"], args
+    assert rm.budget3_param_args("budget3") == []
+
+
+def test_aimd2_param_args_build():
+    args = rm.aimd2_param_args("aimd2:alpha=4;interval=2")
+    assert args == ["--alpha", "4", "--interval", "2"], args
 
 
 if __name__ == "__main__":
     test_parse_runs_splits_on_comma_only()
     test_parse_runs_plain_modes()
     test_param_modes_route_to_their_controllers()
-    test_unknown_mode_is_not_silent()
+    test_unknown_mode_is_rejected()
+    test_budget3_param_args_build()
+    test_aimd2_param_args_build()
     print("ALL ROUTING TESTS PASS")
