@@ -74,12 +74,27 @@ def main():
     ap.add_argument("--disable-slo-valve", action="store_true")
     ap.add_argument("--disable-shedding", action="store_true",
                     help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
-    ap.add_argument("--predictor", choices=["ema", "zero", "global"], default="ema",
+    ap.add_argument("--predictor", choices=["ema", "zero", "global", "oracle"], default="ema",
                     help="growth forecaster arm for the Experiment-2 ablation: "
                          "ema = per-session EMA blended with global prior (default); "
                          "zero = no growth prediction (needs = known ctx only); "
-                         "global = running global mean only (no per-session adaptation)")
+                         "global = running global mean only (no per-session adaptation); "
+                         "oracle = reads the trace's future rounds (CLAIRVOYANT — "
+                         "ablation-only arm, NOT deployable; requires --trace)")
+    ap.add_argument("--trace", default=None,
+                    help="trace CSV, required only for --predictor oracle (ablation arm)")
     args = ap.parse_args()
+
+    oracle_future = {}
+    if args.predictor == "oracle":
+        if not args.trace:
+            ap.error("--predictor oracle requires --trace (ablation-only arm)")
+        import csv as _csv
+        for row in _csv.DictReader(open(args.trace)):
+            sid = row["session_id"]
+            # total KV growth this session will ever need beyond its first prompt
+            oracle_future[sid] = (oracle_future.get(sid, 0)
+                                  + int(row["input_len"]) + int(row["output_len"]))
 
     budget = args.pool_tokens * args.target_util
     sess = {}          # sid -> dict(arrived_ts, prompt0, active, finished, ctx, last_round, ema, n_obs)
@@ -95,6 +110,10 @@ def main():
 
     def forecast(s):
         """Forecast context growth over the next horizon rounds (tokens)."""
+        if args.predictor == "oracle":
+            # CLAIRVOYANT ablation arm: exact future-round growth from the trace
+            # (same accounting as budget2's reservation). Never deployable.
+            return float(oracle_future.get(s["sid"], 0.0))
         if args.predictor == "zero":
             return 0.0
         if args.predictor == "global":
@@ -136,16 +155,15 @@ def main():
         while time.time() < deadline:
           try:
             now = time.time()
-            now = time.time()
 
             # 1. arrivals / admission events
             for ev in read_jsonl(args.admission_log):
                 sid = ev.get("session_id")
                 if not sid:
                     continue
-                s = sess.setdefault(sid, dict(arrived_ts=None, prompt0=0, active=False,
-                                              finished=False, ctx=0, last_round=-1,
-                                              ema=None, n_obs=0))
+                s = sess.setdefault(sid, dict(sid=sid, arrived_ts=None, prompt0=0,
+                                              active=False, finished=False, ctx=0,
+                                              last_round=-1, ema=None, n_obs=0))
                 etype = ev.get("event")
                 if etype == "queued":
                     if s["arrived_ts"] is None:
