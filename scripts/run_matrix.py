@@ -82,6 +82,8 @@ def budget3_param_args(mode):
                 extra.append("--disable-shedding")
             elif k == "slo" and v == "0":
                 extra.append("--disable-slo-valve")
+            elif k == "sg" and v == "0":
+                extra.append("--disable-starve-guard")
             else:
                 extra += [flagmap[k], v]
     return extra
@@ -309,6 +311,7 @@ def main():
             ctrl_cmd = " ".join([
                 PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
                 *budget3_param_args(mode),
+                "--trace", TRACE,
                 "--permit-file", permitfile,
                 "--step-log", f"{run_dir}/steps.jsonl",
                 "--admission-log", f"{run_dir}/admissions.jsonl",

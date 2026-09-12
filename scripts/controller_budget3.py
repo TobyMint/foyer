@@ -72,6 +72,9 @@ def main():
     ap.add_argument("--disable-highwater", action="store_true")
     ap.add_argument("--disable-single-flight", action="store_true")
     ap.add_argument("--disable-slo-valve", action="store_true")
+    ap.add_argument("--disable-starve-guard", action="store_true",
+                    help="Experiment-2 arm: no timed force-admission (attribution of "
+                         "the guard's 49% share of admissions)")
     ap.add_argument("--disable-shedding", action="store_true",
                     help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
     ap.add_argument("--predictor", choices=["ema", "zero", "global", "oracle"], default="ema",
@@ -279,7 +282,8 @@ def main():
 
             # 6. rate-limited starve guard (gated on the floor, not the instant value)
             forced = False
-            if (waiting and not candidates and oldest_wait >= args.starve_seconds
+            if (waiting and not candidates and not args.disable_starve_guard
+                    and oldest_wait >= args.starve_seconds
                     and floor < 0.5 and now - last_forced_ts >= args.starve_cooldown):
                 candidates = [waiting[0]]
                 forced = True
