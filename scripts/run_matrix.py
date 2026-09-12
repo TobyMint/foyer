@@ -141,6 +141,9 @@ def start_server(gpu, port, run_name="server"):
            "--model-path", MODEL_DIR, "--context-length", "98304",
            "--mem-fraction-static", MEMFRAC, "--port", str(port),
            "--host", "0.0.0.0", "--enable-metrics", "--enable-cache-report"]
+    # optional hierarchical-cache (host tier) args, e.g.
+    # TURNSTILE_HICACHE_ARGS="--enable-hierarchical-cache --hicache-ratio 2"
+    cmd += os.environ.get("TURNSTILE_HICACHE_ARGS", "").split()
     proc = subprocess.Popen(cmd, env=env, stdout=open(f"{OUT_ROOT}/server_{port}_{run_name}.log", "w"),
                             stderr=subprocess.STDOUT)
     url = f"http://127.0.0.1:{port}/health"
