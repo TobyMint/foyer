@@ -74,6 +74,11 @@ def main():
     ap.add_argument("--disable-slo-valve", action="store_true")
     ap.add_argument("--disable-shedding", action="store_true",
                     help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
+    ap.add_argument("--predictor", choices=["ema", "zero", "global"], default="ema",
+                    help="growth forecaster arm for the Experiment-2 ablation: "
+                         "ema = per-session EMA blended with global prior (default); "
+                         "zero = no growth prediction (needs = known ctx only); "
+                         "global = running global mean only (no per-session adaptation)")
     args = ap.parse_args()
 
     budget = args.pool_tokens * args.target_util
@@ -90,6 +95,11 @@ def main():
 
     def forecast(s):
         """Forecast context growth over the next horizon rounds (tokens)."""
+        if args.predictor == "zero":
+            return 0.0
+        if args.predictor == "global":
+            prior = glob_growth_sum / glob_growth_n if glob_growth_n else 0.0
+            return prior * args.horizon_rounds
         if s["ema"] is not None:
             est = s["ema"]
             if s["n_obs"] < 3:

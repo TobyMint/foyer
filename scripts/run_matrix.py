@@ -72,7 +72,8 @@ def budget3_param_args(mode):
     extra = []
     if ":" in mode:
         flagmap = {"target": "--target-util", "margin": "--margin",
-                   "horizon": "--horizon-rounds", "hw": "--highwater-decay"}
+                   "horizon": "--horizon-rounds", "hw": "--highwater-decay",
+                   "predictor": "--predictor"}
         for kv in mode.split(":", 1)[1].split(";"):
             k, v = kv.split("=", 1)
             if k == "sf" and v == "0":
