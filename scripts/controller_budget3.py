@@ -214,7 +214,7 @@ def main():
                     s["last_round"] = max(s["last_round"], ri)
                 ft = rec.get("first_token_ms")
                 if ft is not None and rec.get("status") == "SUCCESS":
-                    ttfts.append((r.get("complete_timestamp") or now, ft))
+                    ttfts.append((rec.get("complete_timestamp") or now, ft))
             # freshness: samples older than --ttft-freshness-s are discarded — a
             # stale window kept the valve latched shut with zero traffic (sg0
             # deadlock: guard-off exposed the liveness bug)
