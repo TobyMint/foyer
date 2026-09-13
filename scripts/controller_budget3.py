@@ -75,6 +75,9 @@ def main():
     ap.add_argument("--disable-starve-guard", action="store_true",
                     help="Experiment-2 arm: no timed force-admission (attribution of "
                          "the guard's 49% share of admissions)")
+    ap.add_argument("--ttft-freshness-s", type=float, default=600.0,
+                    help="TTFT samples older than this are discarded — the SLO valve "
+                         "must not latch on stale observations (liveness)")
     ap.add_argument("--disable-shedding", action="store_true",
                     help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
     ap.add_argument("--predictor", choices=["ema", "zero", "global", "oracle"], default="ema",
@@ -102,7 +105,7 @@ def main():
     budget = args.pool_tokens * args.target_util
     sess = {}          # sid -> dict(arrived_ts, prompt0, active, finished, ctx, last_round, ema, n_obs)
     highwater = 0.0
-    ttfts = deque(maxlen=args.slo_window)
+    ttfts = deque(maxlen=args.slo_window)   # (complete_timestamp, first_token_ms)
     glob_growth_sum = 0.0
     glob_growth_n = 0
     last_admitted_sid = None
@@ -211,8 +214,12 @@ def main():
                     s["last_round"] = max(s["last_round"], ri)
                 ft = rec.get("first_token_ms")
                 if ft is not None and rec.get("status") == "SUCCESS":
-                    ttfts.append(ft)
-            ttfts = deque(sorted(ttfts), maxlen=args.slo_window)
+                    ttfts.append((r.get("complete_timestamp") or now, ft))
+            # freshness: samples older than --ttft-freshness-s are discarded — a
+            # stale window kept the valve latched shut with zero traffic (sg0
+            # deadlock: guard-off exposed the liveness bug)
+            ttfts = deque([(t, v) for (t, v) in ttfts
+                           if t > now - args.ttft_freshness_s], maxlen=args.slo_window)
 
             # 3. spare capacity: high-water floor over retraction dips
             em = engine_metrics(metrics_url)
@@ -238,8 +245,9 @@ def main():
 
             # 5. admission decision (single-flight by default: one named permit per cycle)
             valve = usage >= args.hard_stop_usage
-            if not args.disable_slo_valve and len(ttfts) >= max(5, args.slo_window // 2):
-                valve = valve or sorted(ttfts)[len(ttfts) // 2] > args.slo_ms
+            fresh_vals = sorted(v for _, v in ttfts)
+            if not args.disable_slo_valve and len(fresh_vals) >= max(5, args.slo_window // 2):
+                valve = valve or fresh_vals[len(fresh_vals) // 2] > args.slo_ms
 
             # 5b. SHEDDING: unlike v0.5 (whose cap could only grow — over-admitted
             # sessions stayed forever and the SLO valve was toothless), named permits
@@ -303,7 +311,7 @@ def main():
                 "candidate": (candidates[0] if candidates else None),
                 "n_admitted": len(candidates), "need": round(need), "forced": forced,
                 "valve": valve, "shed_n": len(shed),
-                "ttft_p50_ms": round(sorted(ttfts)[len(ttfts) // 2]) if ttfts else None,
+                "ttft_p50_ms": round(fresh_vals[len(fresh_vals) // 2]) if fresh_vals else None,
                 "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
             }) + "\n")
             log.flush()
