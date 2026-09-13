@@ -1,0 +1,21 @@
+{
+ "lane": "p0v",
+ "policy": "budget3:predictor=zero",
+ "trace": "/data/xbw/turnstile/data/replay_night200_clean.csv",
+ "trace_md5": "4570fc5561",
+ "gpu": 0,
+ "port": 30012,
+ "started": 1789266356.9851153,
+ "pool_tokens": 101432,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "horizon_rounds": 3,
+  "highwater_decay": 0.995,
+  "slo_ms": 10000,
+  "tuned": "predictor=zero"
+ },
+ "runner_rc": 0,
+ "wall_s": 25470.6,
+ "finished": 1789291885.694678
+}
