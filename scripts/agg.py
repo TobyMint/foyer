@@ -41,9 +41,16 @@ def load_run(path):
     retr = 0.0
     metrics = os.path.join(path, "metrics.csv")
     if os.path.exists(metrics):
-        with open(metrics) as f:
-            rows = [r for r in csv.DictReader(f)]
-        vals = [float(r["sglang:num_retracted_reqs"]) for r in rows if r.get("sglang:num_retracted_reqs")]
+        # corrupt runs (killed mid-write by the external reaper) leave NUL bytes in
+        # metrics.csv — scrub them rather than aborting the whole aggregation
+        with open(metrics, errors="replace") as f:
+            rows = [r for r in csv.DictReader(l.replace("\x00", "") for l in f)]
+        vals = []
+        for r in rows:
+            try:
+                vals.append(float(r["sglang:num_retracted_reqs"]))
+            except (KeyError, TypeError, ValueError):
+                continue
         retr = max(vals) if vals else 0.0
     out["retractions"] = retr
     return out
