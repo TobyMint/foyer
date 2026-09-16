@@ -8,4 +8,4 @@ export TURNSTILE_TRACE=/data/xbw/turnstile/data/replay_realhr.csv
 S=/data/xbw/turnstile/TraceLab/replay/scripts/run_matrix.py
 P=/data/xbw/turnstile/envs/main/bin/python
 $P $S --lane realhr --gpu 2 --port 30031 --runs 'realhr_foyer:budget3:hw=0;target=0.95,realhr_cap2:static=2'
-touch /data/xbw/turnstile/results/night/lane_realhr_DONE
+bash /data/xbw/turnstile/scripts/lane_done.sh realhr realhr_foyer realhr_cap2

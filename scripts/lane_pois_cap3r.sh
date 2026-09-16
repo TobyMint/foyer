@@ -8,4 +8,4 @@ export TURNSTILE_TRACE=/data/xbw/turnstile/data/replay_pois200_l04.csv
 S=/data/xbw/turnstile/TraceLab/replay/scripts/run_matrix.py
 P=/data/xbw/turnstile/envs/main/bin/python
 $P $S --lane pois_cap3r --gpu 2 --port 30032 --runs 'pois200_cap3_r2:static=3'
-touch /data/xbw/turnstile/results/night/lane_pois_cap3r_DONE
+bash /data/xbw/turnstile/scripts/lane_done.sh pois_cap3r pois200_cap3_r2

@@ -7,4 +7,4 @@ export TURNSTILE_TRACE=/data/xbw/turnstile/data/replay_night25.csv
 S=/data/xbw/turnstile/TraceLab/replay/scripts/run_matrix.py
 P=/data/xbw/turnstile/envs/main/bin/python
 $P $S --lane thr_push2 --gpu 3 --port 30026 --runs 'thr25_push_r2:budget3:hw=0;target=0.95'
-touch /data/xbw/turnstile/results/night/lane_thr_push2_DONE
+bash /data/xbw/turnstile/scripts/lane_done.sh thr_push2 thr25_push_r2

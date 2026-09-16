@@ -8,4 +8,4 @@ export TURNSTILE_TRACE=/data/xbw/turnstile/data/replay_night200_clean.csv
 S=/data/xbw/turnstile/TraceLab/replay/scripts/run_matrix.py
 P=/data/xbw/turnstile/envs/main/bin/python
 $P $S --lane p200_fixr --gpu 3 --port 30033 --runs 'p200_fix_r2:budget3:hw=0;target=0.95'
-touch /data/xbw/turnstile/results/night/lane_p200_fixr_DONE
+bash /data/xbw/turnstile/scripts/lane_done.sh p200_fixr p200_fix_r2
