@@ -11,9 +11,9 @@ SCRIPT=$2
 free_hits=0
 while true; do
   used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$GPU")
-  if [ "$used" -lt 2000 ]; then
+  if [ "$used" -lt 300 ]; then
     free_hits=$((free_hits+1))
-    if [ "$free_hits" -ge 3 ]; then break; fi
+    if [ "$free_hits" -ge 6 ]; then break; fi
   else
     free_hits=0
   fi
