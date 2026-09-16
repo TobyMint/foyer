@@ -22,13 +22,19 @@ for name in sorted(os.listdir(NIGHT)):
         m = json.load(open(mp))
     except Exception:
         continue
-    trace = os.path.basename(m.get("trace", "") or "")
-    tier = "".join(ch for ch in trace if ch.isdigit()) or "?"
+    trace = os.path.basename(m.get("trace", "") or "").replace(".csv", "")
+    digits = "".join(ch for ch in name.split("_")[0] if ch.isdigit())
+    tier = digits or "—"
+    pool = m.get("pool_tokens")
     rows.append({
         "run": name,
         "policy": m.get("policy", "?"),
         "tier": tier,
-        "pool": m.get("pool_tokens"),
+        "trace": trace.replace("replay_", ""),
+        "pool": pool,
+        # a pool that is not the aligned 101,432 means another job held VRAM at
+        # server start: the run is not comparable to the current tables
+        "pool_warn": "" if pool == 101432 else f" ⚠{pool}" if pool else " ⚠?",
         "wall_min": round((m.get("wall_s") or 0) / 60, 1) if m.get("wall_s") else None,
         "started": time.strftime("%m-%d %H:%M", time.localtime(m["started"])) if m.get("started") else "?",
         "lane": m.get("lane", ""),
@@ -44,9 +50,13 @@ with open(OUT, "w") as f:
             "`sf=0` = single-flight admission OFF, `hw=0` = high-water floor OFF, "
             "`sg=0` = starve guard OFF, `predictor=` = growth forecaster | "
             "`aimd2` = Concur-style reactive control | `budget2` = clairvoyant reservation (non-deployable)\n\n")
-    f.write("| run | policy | tier | pool | wall(min) | started |\n")
-    f.write("|---|---|---|---|---|---|\n")
+    f.write("⚠ = KV pool differs from the aligned 101,432 — another job held VRAM at "
+            "server start, so the run is NOT comparable to the current tables "
+            "(run_matrix now aborts on this instead of recording it)\n\n")
+    f.write("| run | policy | tier | trace | pool | wall(min) | started |\n")
+    f.write("|---|---|---|---|---|---|---|\n")
     for r in rows:
-        f.write(f"| {r['run']} | `{r['policy']}` | {r['tier']} | {r['pool']} | "
+        f.write(f"| {r['run']} | `{r['policy']}` | {r['tier']} | {r['trace']} | "
+                f"{r['pool'] or '?'}{r['pool_warn']} | "
                 f"{r['wall_min'] if r['wall_min'] is not None else '—'} | {r['started']} |\n")
 print(f"{len(rows)} runs -> {OUT}")

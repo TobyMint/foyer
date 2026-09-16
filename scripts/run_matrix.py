@@ -32,6 +32,11 @@ OUT_ROOT = f"{BASE}/results/night"
 RUN_TIMEOUT_S = int(os.environ.get("TURNSTILE_RUN_TIMEOUT_H", "6")) * 3600
 MEMFRAC = os.environ.get("TURNSTILE_MEMFRAC", "0.88")
 HEALTH_TIMEOUT_S = 420
+# Every lane must land on the aligned KV pool; a smaller pool means another job
+# held VRAM at server start (silently un-comparable results). Override the env var
+# only for a deliberate different pool.
+EXPECT_POOL = int(os.environ.get("TURNSTILE_EXPECT_POOL", "101432"))
+MAX_POOL_ATTEMPTS = 3
 
 
 def log(*a):
@@ -232,10 +237,30 @@ def main():
                 "gpu": args.gpu, "port": args.port, "started": time.time()}
         log(f"=== run {name} (policy {mode}) ===")
 
-        server = start_server(args.gpu, args.port, name)
-        pool_tokens = get_pool_tokens(args.port)
+        # KV pool must match the intended size: SGLang sizes the pool from whatever
+        # VRAM is free at startup, so a neighbour's job on the same card silently
+        # halves it (caught 09-15: pool 48,234 vs 101,432 on a 200-tier run, which
+        # faked a quality regression; 84,528 on another). Restart until the pool is
+        # right; abort the lane rather than record a run we cannot compare.
+        attempt, pool_tokens = 1, None
+        while True:
+            server = start_server(args.gpu, args.port, name)
+            pool_tokens = get_pool_tokens(args.port)
+            if not EXPECT_POOL or pool_tokens == EXPECT_POOL:
+                break
+            log(f"POOL MISMATCH: got {pool_tokens}, expected {EXPECT_POOL} "
+                f"(attempt {attempt}) — restarting server")
+            wait_port_dead(server, args.port)
+            if attempt >= MAX_POOL_ATTEMPTS:
+                raise SystemExit(
+                    f"pool size {pool_tokens} != expected {EXPECT_POOL} after "
+                    f"{attempt} attempts (another job is holding VRAM on gpu "
+                    f"{args.gpu}) — aborting lane instead of recording a bad run")
+            attempt += 1
+            time.sleep(30)
         meta["pool_tokens"] = pool_tokens
-        log(f"server healthy, pool={pool_tokens}")
+        meta["pool_attempts"] = attempt
+        log(f"server healthy, pool={pool_tokens}" + (f" (attempt {attempt})" if attempt > 1 else ""))
 
         monitor = subprocess.Popen(
             [PY, f"{BASE}/TraceLab/replay/scripts/monitor.py",
