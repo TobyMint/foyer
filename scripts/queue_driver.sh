@@ -27,7 +27,12 @@ work_card() {
     for attempt in $(seq 1 24); do
       log "gpu$gpu: waiting for sustained-free GPU -> $script (attempt $attempt)"
       gpu_snapshot
-      bash scripts/wait_gpu_then_run.sh "$gpu" "scripts/$script"
+      # keep each attempt's output: the pool value a failed attempt produced is the
+      # evidence for whether a neighbour's residue is shrinking our KV pool
+      bash scripts/wait_gpu_then_run.sh "$gpu" "scripts/$script" \
+        >> "$N/lane_${script%.sh}_attempt${attempt}.log" 2>&1
+      grep -h "POOL MISMATCH\|pool=" "$N/lane_${script%.sh}_attempt${attempt}.log" 2>/dev/null \
+        | tail -2 | sed 's/^/    /' >> "$LOG"
       if [ -f "$N/$marker/summary.json" ]; then
         log "gpu$gpu: $marker COMPLETE"
         break
