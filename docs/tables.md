@@ -74,11 +74,9 @@
 | strategy | policy | wall(min) | fails | hit% | TTFT p50(ms) | SLO% | avg conc |
 |---|---|---|---|---|---|---|---|
 | cap2 | `static=2` | 310.5 | 0 | 67.7 | 2183 | 89.5 | 1.99 |
-| cap3 | `pois200_cap3_r2` | — | — | — | — | — | — |
+| cap3 | `static=3` | 259.2 | 0 | 49.8 | 5088 | 62.2 | 3.56 |
 | cap4 | `static=4` | 257.6 | 0 | 45.9 | 7215 | 55.7 | 3.94 |
 | Foyer fixed cfg | `budget3:hw=0;target=0.95` | 299.3 | 0 | 65.6 | 2369 | 88.6 | 2.12 |
-
-> ⚠ issues: pois200_cap3_r2: no result yet
 
 ### arrival shape — real measured peak hour (117 sessions)
 
