@@ -148,7 +148,7 @@ def main():
             action = "hold"
             if usage == 0.0:
                 action = "hold"   # engine idle: no information
-            elif usage > args.u_high and (not hit_measured or hit < args.h_thresh):
+            elif usage > args.u_high and hit_measured and hit < args.h_thresh:
                 window = max(math.ceil(window * args.beta), 1.0)
                 action = "cut"
             elif usage < args.u_low:

@@ -53,6 +53,14 @@ def port_free(port):
             return False
 
 
+def _digest(path):
+    try:
+        with open(path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()[:12]
+    except OSError:
+        return "unknown"
+
+
 def code_version():
     """Content hashes of the code that is actually about to run.
 
@@ -65,16 +73,30 @@ def code_version():
     regardless of version control, and it is what makes "these two runs used the
     same controller" a checkable claim instead of a promise.
     """
-    files = ["scripts/run_matrix.py", "scripts/controller_budget3.py",
-             "scripts/controller_aimd2.py", "scripts/controller_aimd.py",
-             "TraceLab/replay/target/release/session_runner"]
+    # Hash what will ACTUALLY execute, not what we assume will. The lab keeps TWO
+    # copies of these scripts (BASE/scripts and BASE/TraceLab/replay/scripts) and the
+    # lanes launch the latter, so hashing a fixed relative path recorded the wrong
+    # file — and a fix synced into the other copy looked applied while the runs went
+    # on using the old one. __file__ is this running script; the controllers are the
+    # paths the dispatch chain below actually passes to Popen.
+    files = [os.path.abspath(__file__),
+             f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+             f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
+             f"{BASE}/TraceLab/replay/scripts/controller_aimd.py",
+             f"{BASE}/TraceLab/replay/target/release/session_runner"]
     out = {}
-    for rel in files:
+    for p in files:
         try:
-            with open(os.path.join(BASE, rel), "rb") as f:
-                out[os.path.basename(rel)] = hashlib.md5(f.read()).hexdigest()[:12]
+            with open(p, "rb") as f:
+                out[os.path.basename(p)] = hashlib.md5(f.read()).hexdigest()[:12]
         except OSError:
-            out[os.path.basename(rel)] = "unknown"
+            out[os.path.basename(p)] = "unknown"
+    # Make the two-copy split visible instead of silently trusting one of them.
+    dupes = ["run_matrix.py", "controller_budget3.py", "controller_aimd2.py"]
+    out["path_divergence"] = sorted(
+        d for d in dupes
+        if _digest(os.path.join(BASE, "scripts", d)) !=
+           _digest(os.path.join(BASE, "TraceLab/replay/scripts", d))) or "none"
     try:
         sha = subprocess.run(["git", "-C", BASE, "rev-parse", "HEAD"],
                              capture_output=True, text=True, timeout=10).stdout.strip()
@@ -296,6 +318,13 @@ def main():
     for name, mode in runs:
         run_dir = f"{OUT_ROOT}/{name}"
         os.makedirs(run_dir, exist_ok=True)
+        # A lane that aborts part-way (pool guard) is retried wholesale by the queue
+        # driver. Without this, the retry re-runs the arms that already succeeded —
+        # hours of GPU per cycle. Only a real summary counts; an empty run dir left
+        # by a guard abort must NOT look finished.
+        if os.path.exists(f"{run_dir}/summary.json"):
+            log(f"run {name} already has a summary — skipping")
+            continue
         meta = {"lane": args.lane, "policy": mode, "trace": TRACE, "trace_md5": trace_md5,
                 "gpu": args.gpu, "port": args.port, "started": time.time(),
                 "code": code_version(), "build": build_config()}
