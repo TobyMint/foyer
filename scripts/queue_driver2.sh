@@ -53,9 +53,14 @@ done
 log "=== wave 1 not running, wave 2 starting ==="
 gpu_snapshot
 
-work_card 2 lane_aimd2_paper.sh aimd2_paper &
+# The marker must be the LANE'S LAST run, not its first: work_card treats a
+# present summary as "this lane is finished", so marking on the first run means a
+# lane whose first arm already completed is skipped entirely and its remaining
+# arms never run. run_matrix skips per-run on its own, so a whole-lane retry after
+# a partial kill only redoes the arms that did not finish.
+work_card 2 lane_aimd2_paper.sh aimd2_paper_rawH &
 P2=$!
-work_card 3 lane_aimd2_grid.sh aimd2_ul35 &
+work_card 3 lane_aimd2_grid.sh aimd2_uh75 &
 P3=$!
 wait $P2 $P3
 log "=== wave 2 finished all work ==="

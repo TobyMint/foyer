@@ -64,6 +64,23 @@ def port_free(port):
             return False
 
 
+def dump_meta(run_dir, meta):
+    """Write metadata.json atomically-ish, and MORE THAN ONCE per run.
+
+    It used to be written only after the runner returned. On 2026-09-18 an
+    external kill took the whole lane at 03:35: aimd2_ul35 had finished all 999
+    steps and written summary.json, but died in the gap before metadata — so a
+    complete result lost its provenance (pool, memfrac, code hashes, controller
+    params), and aimd2_paper lost 912 steps outright. Writing the config as soon
+    as it is known means a kill costs the run, not the ability to say what the
+    run was.
+    """
+    tmp = f"{run_dir}/metadata.json.tmp"
+    with open(tmp, "w") as f:
+        json.dump(meta, f, indent=1)
+    os.replace(tmp, f"{run_dir}/metadata.json")
+
+
 def _digest(path):
     try:
         with open(path, "rb") as f:
@@ -408,6 +425,9 @@ def main():
         # and a reviewer comparing two runs needs to see that it was the memory
         # fraction that moved, never the aligned token count.
         meta["memfrac_used"] = lane_memfrac
+        # write as soon as the run's configuration is settled: a kill from here on
+        # costs the result but not the record of what the run was
+        dump_meta(run_dir, meta)
         log(f"server healthy, pool={pool_tokens}" + (f" (attempt {attempt})" if attempt > 1 else ""))
 
         monitor = subprocess.Popen(
@@ -564,8 +584,7 @@ def main():
         monitor.terminate()
         wait_port_dead(server, args.port)
         meta["finished"] = time.time()
-        with open(f"{run_dir}/metadata.json", "w") as f:
-            json.dump(meta, f, indent=1)
+        dump_meta(run_dir, meta)
         log(f"run {name} done rc={meta['runner_rc']} wall={meta['wall_s']}s")
 
     with open(f"{OUT_ROOT}/lane_{args.lane}_DONE", "w") as f:
