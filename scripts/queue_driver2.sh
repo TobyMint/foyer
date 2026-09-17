@@ -41,12 +41,16 @@ work_card() {
   log "gpu$gpu: queue drained"
 }
 
-MARK=$(wc -l < "$LOG" 2>/dev/null || echo 0)
-log "=== wave 2 (Concur paper params) queued; waiting for wave 1 to drain ==="
-until tail -n +"$((MARK + 1))" "$LOG" | grep -q "queue driver finished all work"; do
+# Wait for wave 1 by PROCESS, not by its log line. The line-based version had to
+# ignore everything already in the log (or it re-matched the previous wave's line),
+# which meant that once wave 1 had finished before this driver started, it waited
+# forever for an occurrence that would never come. The bracket keeps the pattern
+# from matching this script's own command line.
+log "=== wave 2 (Concur paper params) queued ==="
+while pgrep -f 'scripts/queue_drive[r]\.sh' > /dev/null; do
   sleep 300
 done
-log "=== wave 1 drained, wave 2 starting ==="
+log "=== wave 1 not running, wave 2 starting ==="
 gpu_snapshot
 
 work_card 2 lane_aimd2_paper.sh aimd2_paper &
