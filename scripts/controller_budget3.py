@@ -45,6 +45,44 @@ def read_jsonl(path):
     return out
 
 
+def build_growth_traj(trace_path):
+    """{session_id: {round_idx: prompt_len}} from the trace.
+
+    prompt_len is the whole context the engine must hold at that round
+    (prefix_len + input_len == prompt_len in the runner's step records), which is
+    the quantity the admission accounting calls C(r).
+    """
+    import csv as _csv
+    traj = {}
+    for row in _csv.DictReader(open(trace_path)):
+        traj.setdefault(row["session_id"], {})[int(row["round_idx"])] = \
+            int(row["prefix_len"]) + int(row["input_len"])
+    return traj
+
+
+def oracle_forecast(traj, sid, last_round, horizon_rounds):
+    """CLAIRVOYANT ablation arm: the exact h-round-ahead context growth,
+    G*(t) = max(0, C(t+h) - C(t)), with t the session's last COMPLETED round.
+
+    Anchoring at the completed round is what makes this the exact answer to the
+    question the EMA/global/zero arms estimate: ctx already covers round t, so
+    ctx + G* = C(t+h) for every arm. Not deployable (reads the trace's future).
+
+    Returns 0.0 when the session is unknown, already finished, or has no round
+    strictly after t — all three mean "no further growth to reserve for".
+    """
+    rounds = traj.get(sid)
+    if not rounds:
+        return 0.0
+    keys = sorted(rounds)
+    a = last_round if last_round >= 0 else 0
+    a = max(k for k in keys if k <= a) if a >= keys[0] else keys[0]
+    ahead = [k for k in keys if a < k <= a + horizon_rounds]
+    if not ahead:
+        return 0.0
+    return float(max(0, rounds[ahead[-1]] - rounds[a]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--permit-file", required=True)
@@ -91,16 +129,23 @@ def main():
                     help="trace CSV, required only for --predictor oracle (ablation arm)")
     args = ap.parse_args()
 
-    oracle_future = {}
+    # Oracle arm: the EXACT answer to the question the other predictors estimate,
+    # i.e. G*(t) = max(0, C(t+h) - C(t)), where C(r) is the session's prompt length
+    # at round r and h = horizon_rounds. Both arms anchor at the session's last
+    # COMPLETED round, so they differ only in how well they answer the question,
+    # never in what they are asked.
+    #
+    # The previous version summed input_len+output_len over the session's entire
+    # lifetime and returned that constant forever: it never decayed as rounds
+    # completed and it double-counted round 0's input (already inside ctx). That
+    # made the arm a permanently-reserved lifetime footprint, not a clairvoyant
+    # predictor, so its makespan could not be read as "a more accurate prediction
+    # is more conservative".
+    traj = {}
     if args.predictor == "oracle":
         if not args.trace:
             ap.error("--predictor oracle requires --trace (ablation-only arm)")
-        import csv as _csv
-        for row in _csv.DictReader(open(args.trace)):
-            sid = row["session_id"]
-            # total KV growth this session will ever need beyond its first prompt
-            oracle_future[sid] = (oracle_future.get(sid, 0)
-                                  + int(row["input_len"]) + int(row["output_len"]))
+        traj = build_growth_traj(args.trace)
 
     budget = args.pool_tokens * args.target_util
     sess = {}          # sid -> dict(arrived_ts, prompt0, active, finished, ctx, last_round, ema, n_obs)
@@ -117,9 +162,7 @@ def main():
     def forecast(s):
         """Forecast context growth over the next horizon rounds (tokens)."""
         if args.predictor == "oracle":
-            # CLAIRVOYANT ablation arm: exact future-round growth from the trace
-            # (same accounting as budget2's reservation). Never deployable.
-            return float(oracle_future.get(s["sid"], 0.0))
+            return oracle_forecast(traj, s["sid"], s["last_round"], args.horizon_rounds)
         if args.predictor == "zero":
             return 0.0
         if args.predictor == "global":

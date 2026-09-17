@@ -80,6 +80,47 @@ def test_aimd2_param_args_build():
     assert args == ["--alpha", "4", "--interval", "2"], args
 
 
+# audit-3: the previous tests checked that route_mode RETURNS the right name, but
+# never that main() has a branch for every name it can return. "budget3_…" routes
+# to "budget3_ablation", which is not None (so the unknown-mode guard passed), had
+# no dispatch branch, and therefore left cap_args empty and started an UNGATED
+# runner. The tests below close that gap.
+KNOWN_UNIMPLEMENTED = {"budget3_ablation"}
+
+_PROBE_MODES = [
+    "budget3", "budget3:target=0.85", "budget3:target=0.80;margin=1.0;sf=0",
+    "budget3_nohw", "budget3_anything",
+    "aimd2", "aimd2:alpha=4;interval=2", "aimd",
+    "budget2", "budget2_nohw", "budget",
+    "static=4", "default",
+]
+
+
+def test_every_route_has_a_dispatch_branch():
+    """The invariant main() relies on: route_mode's reachable outputs are exactly
+    HANDLED_ROUTES plus the one deliberately unimplemented name."""
+    reachable = {routes_to_controller(m) for m in _PROBE_MODES}
+    reachable.discard(None)
+    unhandled = reachable - rm.HANDLED_ROUTES
+    assert unhandled == KNOWN_UNIMPLEMENTED, (
+        f"route_mode can return {sorted(unhandled)} with no dispatch branch in "
+        f"main() -> ungated runner. Either add the branch to HANDLED_ROUTES or "
+        f"teach route_mode to refuse the mode.")
+    missing = rm.HANDLED_ROUTES - reachable
+    assert not missing, f"HANDLED_ROUTES names never produced: {sorted(missing)}"
+
+
+def test_budget3_ablation_actually_refuses():
+    """The hole audit-3 found, asserted directly: a mode that routes to an
+    unimplemented branch must raise before any GPU work starts."""
+    mode = "budget3_nohw"
+    assert routes_to_controller(mode) not in rm.HANDLED_ROUTES
+    src = open(_RM).read()
+    assert "r not in HANDLED_ROUTES" in src, (
+        "main() no longer guards on the ROUTE (only on the mode string), so a "
+        "routed-but-undispatched mode can start an ungated runner again")
+
+
 if __name__ == "__main__":
     test_parse_runs_splits_on_comma_only()
     test_parse_runs_plain_modes()

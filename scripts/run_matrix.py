@@ -53,6 +53,57 @@ def port_free(port):
             return False
 
 
+def code_version():
+    """Content hashes of the code that is actually about to run.
+
+    audit-3: results from different versions may share a table when the RELEVANT
+    implementation is unchanged, but that argument needs the version recorded at
+    launch — a SHA written in afterwards is a guess, not evidence.
+
+    A git SHA is not available here: the lab working copy under BASE is not a git
+    working copy at all (checked 2026-09-17). Hashing the files is verifiable
+    regardless of version control, and it is what makes "these two runs used the
+    same controller" a checkable claim instead of a promise.
+    """
+    files = ["scripts/run_matrix.py", "scripts/controller_budget3.py",
+             "scripts/controller_aimd2.py", "scripts/controller_aimd.py",
+             "TraceLab/replay/target/release/session_runner"]
+    out = {}
+    for rel in files:
+        try:
+            with open(os.path.join(BASE, rel), "rb") as f:
+                out[os.path.basename(rel)] = hashlib.md5(f.read()).hexdigest()[:12]
+        except OSError:
+            out[os.path.basename(rel)] = "unknown"
+    try:
+        sha = subprocess.run(["git", "-C", BASE, "rev-parse", "HEAD"],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        sha = ""
+    out["git_sha"] = sha or "unknown (BASE is not a git working copy)"
+    return out
+
+
+def build_config():
+    """The knobs that are NOT part of the run string but change what the run means.
+    TURNSTILE_HICACHE_ARGS in particular was invisible in every past result: it is
+    how the host tier gets enabled, so two runs with the same policy string could
+    differ in whether eviction costs a recompute or a PCIe fetch."""
+    keys = ["TURNSTILE_HICACHE_ARGS", "TURNSTILE_EXPECT_POOL", "TURNSTILE_MEMFRAC",
+            "TURNSTILE_RUN_TIMEOUT_H", "TURNSTILE_TRACE"]
+    out = {k: os.environ.get(k, "unset") for k in keys}
+    out["hicache_enabled"] = bool(os.environ.get("TURNSTILE_HICACHE_ARGS", "").strip())
+    return out
+
+
+# Every value route_mode() can return EXCEPT the deliberately unimplemented
+# "budget3_ablation" — main() must dispatch on all of these, or a run silently
+# starts an ungated runner. tests/test_run_matrix_routing.py asserts this set
+# against route_mode()'s reachable outputs, so adding a route without a branch
+# fails the test rather than wasting a multi-hour GPU run.
+HANDLED_ROUTES = {"static", "budget2_ablation", "budget3", "aimd2", "aimd_legacy"}
+
+
 def route_mode(mode):
     """Single source of truth for mode → controller routing. Unit tests call THIS
     function (not a copy of its logic) — GPT/Codex audit-2 requirement."""
@@ -225,17 +276,29 @@ def main():
     trace_md5 = hashlib.md5(open(TRACE, "rb").read()).hexdigest()[:10]
     runs = parse_runs(args.runs)
     for name, mode in runs:
-        if route_mode(mode) is None:
+        r = route_mode(mode)
+        if r is None:
             # audit-2: unknown modes must fail loudly — a silent fall-through means
             # an ungated runner (the t85/t90 incident)
             raise SystemExit(f"unknown policy mode {mode!r} (run {name!r}) — refusing to start")
+        if r not in HANDLED_ROUTES:
+            # Defense in depth, and the hole audit-3 found: route_mode can produce a
+            # name that the dispatch chain below has no branch for ("budget3_…" →
+            # "budget3_ablation"). That is not None, so the check above passes, no
+            # branch matches, cap_args stays [] and the runner starts UNGATED.
+            # Checking the route (not the mode string) is what closes it: any new
+            # route_mode return value that nobody dispatches on now refuses to run.
+            raise SystemExit(
+                f"mode {mode!r} (run {name!r}) routes to {r!r}, which has no dispatch "
+                f"branch in main() — refusing to start an ungated runner")
     log(f"lane {args.lane} gpu {args.gpu} port {args.port} runs {runs}")
 
     for name, mode in runs:
         run_dir = f"{OUT_ROOT}/{name}"
         os.makedirs(run_dir, exist_ok=True)
         meta = {"lane": args.lane, "policy": mode, "trace": TRACE, "trace_md5": trace_md5,
-                "gpu": args.gpu, "port": args.port, "started": time.time()}
+                "gpu": args.gpu, "port": args.port, "started": time.time(),
+                "code": code_version(), "build": build_config()}
         log(f"=== run {name} (policy {mode}) ===")
 
         # KV pool must match the intended size: SGLang sizes the pool from whatever
@@ -391,6 +454,10 @@ def main():
                "--summary-path", f"{run_dir}/summary.json"] + cap_args
         if mode == "default":
             cmd += ["--admission-log", f"{run_dir}/admissions.jsonl"]
+        # The gating flags (--cap-file / --permit-file) live only in this argv: it is
+        # the artefact that proves the run was actually gated rather than merely
+        # labelled as such. audit-3 asked for exactly this.
+        meta["runner_argv"] = cmd
         log("runner:", " ".join(cmd))
 
         t0 = time.time()
