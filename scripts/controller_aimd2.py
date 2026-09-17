@@ -75,6 +75,10 @@ def main():
     ap.add_argument("--u-low", type=float, default=0.35)
     ap.add_argument("--u-high", type=float, default=0.75)
     ap.add_argument("--h-thresh", type=float, default=0.03)
+    # "windowed" computes H from the engine's cumulative counters (see below); "raw"
+    # reads the sglang:cache_hit_rate gauge verbatim, which is what the first
+    # generation of this controller did and is kept only to reproduce that arm.
+    ap.add_argument("--h-mode", choices=["windowed", "raw"], default="windowed")
     ap.add_argument("--alpha", type=float, default=2.0)
     ap.add_argument("--beta", type=float, default=0.5)
     ap.add_argument("--max-cap", type=int, default=64)
@@ -84,6 +88,7 @@ def main():
 
     # sessions: sid -> dict(arrived_ts, state in {waiting, active, paused, done})
     sess = {}
+    h_prev = [0.0, 0.0]   # last read of (cached_tokens_total, prompt_tokens_total)
     window = float(args.initial_cap)
     write_permit(args.permit_file, [], [])
     deadline = time.time() + args.max_minutes * 60
@@ -118,12 +123,32 @@ def main():
 
             m = get_metrics(args.metrics_url)
             usage = m.get("sglang:token_usage", 0.0)
-            hit = m.get("sglang:cache_hit_rate", 1.0)
+
+            # H_t must be the cache hit rate *observed during interval t*. The
+            # sglang:cache_hit_rate gauge is zeroed on its own (shorter) timer, so a 30s
+            # poll reads 0 whenever nothing finished in that sub-window — and 0 < h_thresh
+            # is true for every h_thresh, which silently deletes the gate: the cut
+            # condition degenerates to `usage > u_high` and h_thresh stops mattering.
+            # Take the delta of the cumulative counters instead, so H is defined whenever
+            # there was traffic. No traffic => no failure signal => the gate cannot fire
+            # (the formula requires H_t < H_thresh to hold, and an unmeasured H_t does not).
+            hit, hit_measured = None, False
+            if args.h_mode == "raw":
+                hit, hit_measured = m.get("sglang:cache_hit_rate", 1.0), True
+            else:
+                cached = m.get("sglang:cached_tokens_total")
+                prompt = m.get("sglang:prompt_tokens_total")
+                if cached is not None and prompt is not None:
+                    dc, dp = cached - h_prev[0], prompt - h_prev[1]
+                    h_prev[0], h_prev[1] = cached, prompt
+                    if dp > 0:
+                        hit, hit_measured = max(0.0, min(1.0, dc / dp)), True
+
             prev = window
             action = "hold"
             if usage == 0.0:
                 action = "hold"   # engine idle: no information
-            elif usage > args.u_high and hit < args.h_thresh:
+            elif usage > args.u_high and (not hit_measured or hit < args.h_thresh):
                 window = max(math.ceil(window * args.beta), 1.0)
                 action = "cut"
             elif usage < args.u_low:
@@ -156,7 +181,7 @@ def main():
             write_permit(args.permit_file, active, paused)
             log.write(json.dumps({
                 "ts": round(now, 3), "W": window, "prev": prev, "action": action,
-                "U": usage, "H": hit,
+                "U": usage, "H": hit, "H_measured": hit_measured,
                 "active_n": len(active), "paused_n": len(paused),
                 "waiting_n": len(waiting), "newly_admitted": newly,
             }) + "\n")

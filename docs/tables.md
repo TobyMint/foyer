@@ -26,9 +26,9 @@
 | aimd2 (Concur repro) | `aimd2` | 291.4 | 0 | 48.4 | 5558 | 65.9 | 3.62 |
 | Foyer (agg+HiCache) | `budget3:target=0.85;sf=0` | 459.1 | 0 | 69.8 | 1902 | 92.6 | 1.34 |
 | Foyer r3 | `budget3` | 555.3 | 0 | 68.6 | 1838 | 93.6 | 0.98 |
-| Foyer fixed cfg | `p200_fix_r2` | — | — | — | — | — | — |
+| Foyer fixed cfg | `budget3:hw=0;target=0.95` | 311.4 | 0 | 64.8 | 2442 | 87.3 | 2.02 |
 
-> ⚠ issues: budget200c_budget2: no metadata: wall from step spans, pool unchecked; p200_fix_r2: no result yet
+> ⚠ issues: budget200c_budget2: no metadata: wall from step spans, pool unchecked
 
 ### §5.3 predictor attribution (25-tier)
 

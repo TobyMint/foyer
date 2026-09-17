@@ -99,7 +99,8 @@ def aimd2_param_args(mode):
     if ":" in mode:
         flagmap = {"alpha": "--alpha", "beta": "--beta", "interval": "--interval",
                    "u_low": "--u-low", "u_high": "--u-high",
-                   "h_thresh": "--h-thresh", "initial": "--initial-cap"}
+                   "h_thresh": "--h-thresh", "initial": "--initial-cap",
+                   "h_mode": "--h-mode"}
         for kv in mode.split(":", 1)[1].split(";"):
             k, v = kv.split("=", 1)
             extra += [flagmap[k], v]
@@ -369,9 +370,19 @@ def main():
                  "--decision-log", f"{run_dir}/controller.jsonl"] + aimd2_param_args(mode),
                  stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
-            meta["controller_params"] = {"law": "u_low grow / thrash cut / pause-resume",
-                                         "u_low": 0.35, "u_high": 0.75, "h_thresh": 0.03,
-                                         "alpha": 2.0, "beta": 0.5, "interval": 30.0}
+            # Record the params the controller ACTUALLY ran with: the defaults are
+            # Concur-retuned-for-3090, but "aimd2:u_low=..." overrides them, and a
+            # hardcoded dict here would mislabel those runs in provenance.
+            prm = {"u_low": 0.35, "u_high": 0.75, "h_thresh": 0.03,
+                   "alpha": 2.0, "beta": 0.5, "interval": 30.0}
+            if ":" in mode:
+                for kv in mode.split(":", 1)[1].split(";"):
+                    k, v = kv.split("=", 1)
+                    if k in prm:
+                        prm[k] = float(v)
+                    elif k == "h_mode":
+                        prm[k] = v
+            meta["controller_params"] = {"law": "u_low grow / thrash cut / pause-resume", **prm}
 
         cmd = [RUNNER, "--trace", TRACE, "--text-file", TEXT,
                "--tokenizer", f"{MODEL_DIR}/tokenizer.json", "--model", "qwen2.5-coder-7b",
