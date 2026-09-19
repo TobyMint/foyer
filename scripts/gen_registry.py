@@ -12,6 +12,41 @@ import time
 NIGHT = sys.argv[1] if len(sys.argv) > 1 else "/data/xbw/turnstile/results/night"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "/tmp/runs_registry.md"
 
+
+def tier_of(trace):
+    """Tier comes from the trace, not the run name (run names like aimd2_paper
+    carry digits that are not tiers)."""
+    t = trace.lower()
+    if "realhr" in t:
+        return "peak"
+    if "pois200" in t:
+        return "200"
+    for n in ("200", "50", "25"):
+        if n in t:
+            return n
+    return "—"
+
+
+def wall_minutes(d):
+    """Prefer the run's recorded wall; fall back to the step span, same as make_tables."""
+    spans = []
+    try:
+        with open(os.path.join(d, "steps.jsonl")) as f:
+            for line in f:
+                try:
+                    r = json.loads(line)
+                except Exception:
+                    continue
+                s, c = r.get("submit_timestamp"), r.get("complete_timestamp")
+                if s and c:
+                    spans.append((s, c))
+    except OSError:
+        pass
+    if spans:
+        return (max(c for _, c in spans) - min(s for s, _ in spans)) / 60
+    return None
+
+
 rows = []
 for name in sorted(os.listdir(NIGHT)):
     d = os.path.join(NIGHT, name)
@@ -23,21 +58,21 @@ for name in sorted(os.listdir(NIGHT)):
     except Exception:
         continue
     trace = os.path.basename(m.get("trace", "") or "").replace(".csv", "")
-    digits = "".join(ch for ch in name.split("_")[0] if ch.isdigit())
-    tier = digits or "—"
     pool = m.get("pool_tokens")
+    wall = (m.get("wall_s") or 0) / 60 if m.get("wall_s") else wall_minutes(d)
     rows.append({
         "run": name,
         "policy": m.get("policy", "?"),
-        "tier": tier,
+        "tier": tier_of(trace),
         "trace": trace.replace("replay_", ""),
         "pool": pool,
         # a pool that is not the aligned 101,432 means another job held VRAM at
         # server start: the run is not comparable to the current tables
         "pool_warn": "" if pool == 101432 else f" ⚠{pool}" if pool else " ⚠?",
-        "wall_min": round((m.get("wall_s") or 0) / 60, 1) if m.get("wall_s") else None,
+        "wall_min": round(wall, 1) if wall else None,
         "started": time.strftime("%m-%d %H:%M", time.localtime(m["started"])) if m.get("started") else "?",
         "lane": m.get("lane", ""),
+        "done": os.path.isfile(os.path.join(d, "summary.json")),
     })
 
 rows.sort(key=lambda r: r["started"], reverse=True)
@@ -53,10 +88,14 @@ with open(OUT, "w") as f:
     f.write("⚠ = KV pool differs from the aligned 101,432 — another job held VRAM at "
             "server start, so the run is NOT comparable to the current tables "
             "(run_matrix now aborts on this instead of recording it)\n\n")
-    f.write("| run | policy | tier | trace | pool | wall(min) | started |\n")
-    f.write("|---|---|---|---|---|---|---|\n")
+    f.write("Status: `done` = summary.json exists; `running` = started but no summary yet "
+            "(in flight or killed). Wall falls back to the step span when the run "
+            "was killed before writing its wall.\n\n")
+    f.write("| run | policy | tier | trace | pool | wall(min) | status | started |\n")
+    f.write("|---|---|---|---|---|---|---|---|\n")
     for r in rows:
         f.write(f"| {r['run']} | `{r['policy']}` | {r['tier']} | {r['trace']} | "
                 f"{r['pool'] or '?'}{r['pool_warn']} | "
-                f"{r['wall_min'] if r['wall_min'] is not None else '—'} | {r['started']} |\n")
+                f"{r['wall_min'] if r['wall_min'] is not None else '—'} | "
+                f"{'done' if r['done'] else 'running'} | {r['started']} |\n")
 print(f"{len(rows)} runs -> {OUT}")

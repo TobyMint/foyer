@@ -1,5 +1,7 @@
 # Turnstile Day-0.5 审计 Memo（2026-09-07）
 
+> 🕓 **历史文档，勿作为现状引用。** 这是立项第 0.5 天的可行性审计（当时假设 memfrac 0.88、池子 102,917）；后续所有实验统一到 101,432 token 池。当前状态见 `HANDOFF.md`。
+
 ## 结论：三条审计全部通过，Day 1 可以开工
 
 ### ① 覆盖率（数据：syfi_coding_trace.duckdb，665,453 rounds / 8,058 sessions）

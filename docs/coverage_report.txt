@@ -69,3 +69,4 @@ A100-80G [w=15.2G,act=2G]: kv_budget=62.8GiB -> Qwen2.5-Coder-7B: 1176K tok | Qw
 
 === 7. tool wait distribution (from tool_calls) ===
 tool wall ms: p50=218 p90=10052 p99=151614 avg=15606 n=743050
+[历史文档 2026-09-07 — 勿作为现状引用；当前状态见 HANDOFF.md，数据表格见 docs/tables.md]
