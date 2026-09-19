@@ -43,7 +43,7 @@
 |---|---|---|
 | A | `controller_aimd2.py` 没有 `admit` 事件处理器 | 已确认，被准入会话状态停在 `waiting`；修法待 B 的结论 |
 | B | 控制器状态与日志不符 | **未查清**：430 条决策中 `waiting_n` 峰值仅 16，而日志有 200 个 queued；用正确状态机重放同一文件得 181。未查清前**不改控制器** |
-| C | Concur 论文原参数死锁 | u_low=0.2 + u_high=0.5 组合下窗口钉在 1、引擎全空闲、永不发 permit |
+| C | Concur 论文原参数死锁 | **已复现两次**（2026-09-19 第二次为确定性复现：控制器日志 W 恒为 1、U=0.0、active_n=0、action=hold，引擎空转 >1h 后人工终止）。证据存档 `results/night/_deadlock_evidence/aimd2_paper_20260919_attempt1/`；论文参数 arm 已从 lane 中移除，如需再跑应配短超时 |
 | D | runner 无断点续跑 | 被杀即整轮重来（曾损失 4.7 小时）|
 | E | `ctx` 只更新到已完成轮 | 滞后一轮，量级约池子的 2%（中位每轮增长 2,068 token），方向偏向超发 |
 | F | metadata 的 `controller_params` 在提前落盘之后才设 | 早期 metadata 缺该字段 |
