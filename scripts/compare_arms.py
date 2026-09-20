@@ -51,6 +51,33 @@ def pct(v, q):
     return v[min(len(v) - 1, int(q * len(v)))]
 
 
+def wall_from_runner_out(d):
+    """Fallback when run_matrix died before finalising metadata (no wall_s).
+
+    The runner prints its own elapsed on every progress line, so the LAST line
+    carries the run's true duration. This is not the same number run_matrix would
+    have written — that is `time.time() - t0` around runner.wait(), which includes
+    the runner's startup — but it is measured by the same run and is the best
+    available. Callers must treat it as a fallback, which is why the source is
+    reported alongside the value rather than silently substituted.
+    """
+    last = None
+    try:
+        with open(os.path.join(d, "runner.out")) as f:
+            for line in f:
+                if "elapsed=" in line:
+                    last = line
+    except FileNotFoundError:
+        return None
+    if not last:
+        return None
+    # the field reads "elapsed=22019.7s" — strip the unit before parsing
+    try:
+        return float(last.rsplit("elapsed=", 1)[1].split()[0].rstrip("s")) / 60.0
+    except (IndexError, ValueError):
+        return None
+
+
 def metrics(d):
     meta = json.load(open(os.path.join(d, "metadata.json")))
     summ = json.load(open(os.path.join(d, "summary.json")))
@@ -110,8 +137,20 @@ def metrics(d):
     if mrows:
         busy = 100.0 * sum(1 for x in mrows if x > 0.3) / len(mrows)
 
+    # wall_s is what run_matrix records around runner.wait(). When run_matrix is
+    # killed before it finalises, fall back to the runner's own last elapsed and
+    # say so — an unflagged substitution would misrepresent the number's origin.
+    wall_src = "metadata.wall_s"
+    wall = (meta.get("wall_s") or 0) / 60
+    if not wall:
+        fb = wall_from_runner_out(d)
+        if fb:
+            wall, wall_src = fb, "runner.out elapsed (metadata unfinished)"
+        else:
+            wall_src = "MISSING"
+
     return dict(
-        wall=(meta.get("wall_s") or 0) / 60,
+        wall=wall, wall_src=wall_src,
         pool=meta.get("pool_tokens"),
         policy=meta.get("policy"),
         hit=100 * (rep.get("server_prefix_hit_rate") or 0),
@@ -150,8 +189,9 @@ def main():
     print()
     for n, m in rows:
         flag = "" if m["pool"] == 101432 else "   ⚠ 池子=%s 非对齐值！" % m["pool"]
-        print("  %-24s policy=%-34s 步数=%d 失败=%d 引擎忙占比=%.0f%%%s" % (
-            n, m["policy"], m["steps"], m["fails"], m["busy"], flag))
+        src = "" if m["wall_src"] == "metadata.wall_s" else "   ⚠ 墙钟来源: %s" % m["wall_src"]
+        print("  %-24s policy=%-34s 步数=%d 失败=%d 引擎忙占比=%.0f%%%s%s" % (
+            n, m["policy"], m["steps"], m["fails"], m["busy"], flag, src))
     return 0
 
 
