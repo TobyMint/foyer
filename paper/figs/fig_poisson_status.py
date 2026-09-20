@@ -72,7 +72,10 @@ def load(name):
 
 # (label, run name or None, colour, status note)
 ROWS = [
-    ("不限流 default", "pois200_default", RED, "排队中（正在跑）"),
+    # "不限流 default" is deliberately NOT plotted: it is the no-control reference
+    # and its 1.6% hit rate sits an order of magnitude below every policy here, so
+    # it would force either a broken axis or a squashed cluster. It stays in the
+    # numbers wherever the prose needs it.
     ("静态 cap1", "pois200_cap1", BLUE, "排队中"),
     ("静态 cap2", "pois200_cap2", BLUE, None),
     ("静态 cap3", "pois200_cap3_r2", BLUE, None),
@@ -91,33 +94,23 @@ def main():
             data[label] = load(run)
 
     fig = plt.figure(figsize=(15.5, 7.2))
-    # Broken y-axis. Measured hit rates span 1.6% (uncontrolled) to 69.7%, and one
-    # linear axis can't hold both: at (30, 78) cap5 and default fell off the panel
-    # while the table still listed them, and at (0, 78) the 40-70 cluster that
-    # carries the entire tradeoff got squashed into the top third. Split into a
-    # tall upper panel (the cluster) and a short lower one (the thrashing corner).
-    SPLIT = 8.0
-    ax = fig.add_axes([0.055, 0.30, 0.40, 0.57])       # upper: every policy but default
-    ax_lo = fig.add_axes([0.055, 0.11, 0.40, 0.13])    # lower: the no-control corner
-
-    def panel_for(y):
-        return ax_lo if y <= SPLIT else ax
+    # Single linear axis, floored just under cap5 (27.5%). The no-control run is
+    # not plotted anymore, which is what made a broken axis necessary before: with
+    # everything shown the spread is 27.5-69.7 and one axis holds it comfortably.
+    ax = fig.add_axes([0.055, 0.11, 0.40, 0.76])
 
     # ---- left: Pareto -------------------------------------------------------
     for label, run, colour, _s in ROWS:
         if label not in data:
             continue
         d = data[label]
-        a = panel_for(d["hit"])
-        a.scatter([d["wall"]], [d["hit"]], s=150, marker="o", color=colour, zorder=5)
+        ax.scatter([d["wall"]], [d["hit"]], s=150, marker="o", color=colour, zorder=5)
         # Name only — the numbers live in the table on the right.
         dx, dy, ha = (11, 5, "left")
         if label.startswith("静态 cap2"):
             dx, dy, ha = (-11, 4, "right")
-        a.annotate(label, (d["wall"], d["hit"]), textcoords="offset points",
-                   xytext=(dx, dy), fontsize=10, color=colour, ha=ha)
-    # The frontier never reaches the lower panel (cap4 at 45.9% is its lowest
-    # point), so it is drawn whole on the upper axis.
+        ax.annotate(label, (d["wall"], d["hit"]), textcoords="offset points",
+                    xytext=(dx, dy), fontsize=10, color=colour, ha=ha)
     pts = sorted([(d["wall"], d["hit"]) for d in data.values()])
     frontier = []
     for w, h in pts:
@@ -126,35 +119,16 @@ def main():
     if len(frontier) > 1:
         ax.plot([p[0] for p in frontier], [p[1] for p in frontier], "--",
                 color=GRAY, lw=1.6, zorder=1, label="当前数据的前沿")
-
-    xs = [d["wall"] for d in data.values()]
-    for a in (ax, ax_lo):
-        a.set_xlim(min(xs) - 7, max(xs) + 4)
-        a.grid(alpha=0.3)
-    ax.set_ylim(SPLIT, 75)
-    ax_lo.set_ylim(0, SPLIT)
-    ax.set_yticks([10, 20, 30, 40, 50, 60, 70])
-    ax_lo.set_yticks([0, 4, 8])
-    ax.tick_params(labelbottom=False, bottom=False)
-    ax.spines["bottom"].set_visible(False)
-    ax_lo.spines["top"].set_visible(False)
-    # diagonal break marks at the join
-    for a_, ys in ((ax, (-0.014, 0.014)), (ax_lo, (0.986, 1.014))):
-        for xside in (-0.012, 1.012):
-            a_.plot([xside - 0.012, xside + 0.012], list(ys),
-                    transform=a_.transAxes, color="k", lw=1, clip_on=False)
-
     pending = [label for label, _r, _c, _s in ROWS if label not in data]
     if pending:
         note = "还没测的：" + "、".join(l.replace("静态 ", "") for l in pending)
         ax.text(0.5, 0.02, note, transform=ax.transAxes, ha="center", fontsize=9.5,
                 color="0.25", bbox=dict(boxstyle="round,pad=0.45", fc="#f5f5f5", ec="0.8"))
-    ax_lo.set_xlabel("端到端墙钟 (min) —— 越低越好")
+    ax.set_xlabel("端到端墙钟 (min) —— 越低越好")
     ax.set_ylabel("前缀缓存命中率 (%) —— 越高越好", labelpad=8)
     ax.set_title("泊松到达档（200 会话，λ=0.04/s）", fontsize=13)
-    # Lower right, not upper: the shorter upper panel pushed the legend down onto
-    # the Foyer + HiCache label, and the bottom-right of this panel is empty
-    # (nothing sits between y=10 and y=25 out at x>300).
+    ax.grid(alpha=0.3)
+    ax.set_ylim(20, 78)
     ax.legend(loc="lower right", fontsize=9)
 
     # ---- right: status table -------------------------------------------------
