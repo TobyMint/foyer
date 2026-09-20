@@ -27,7 +27,9 @@
 
 **每个 run 目录**：`summary.json`（指标汇总）、`metadata.json`（溯源：池子/trace 哈希/代码哈希/argv）、`steps.jsonl`（每步）、`admissions.jsonl`（准入事件）、`controller.jsonl`（决策）、`metrics.csv`（引擎时间序列）、`runner.out`。
 
-**管线（四层）**：`queue_driver*.sh`（每卡一条 lane，等空闲→跑→重试）→ `wait_gpu_then_run_fast.sh`（**2026-09-20 起**：每 30 秒轮询、连续 2 次低于 FREE_MIB=1000 即起跑；旧的 `wait_gpu_then_run.sh` 需连续 6 次 ×5 分钟 = 25 分钟，是池子守卫出现前的遗留保守设定）→ `lane_*.sh`（一条 lane 若干 arm，set -e）→ `run_matrix.py`（起服→校验池子→起 controller→跑 runner）。
+**管线（2026-09-20 起，自愈式）**：cron 每 5 分钟执行 `watchdog.sh` → 若某张卡的工作流不在，就用 setsid 拉起 `queue_stream.sh <gpu> <worklist>` → 工作流逐行读工作清单（`worklist_gpu2.txt` / `worklist_gpu3.txt`，每行 `<lane 脚本> <marker run>`），已完成（marker 的 summary 存在）就跳过，否则等卡→跑→重试，直到整条清单跑完 → `wait_gpu_then_run_fast.sh`（30 秒轮询、连续 2 次低于 FREE_MIB=1000 即起跑；旧的 `wait_gpu_then_run.sh` 需 25 分钟，是池子守卫出现前的遗留保守设定）→ `lane_*.sh`（一条 lane 若干 arm，set -e）→ `run_matrix.py`（起服→校验池子→起 controller→跑 runner）。
+
+**加新实验**：往对应 worklist 文件追加一行即可（`lane_xxx.sh marker_run`），工作流跑到那一行会自动执行；marker 必须是该 lane 的**最后一个** run。
 
 等待策略的依据：池子守卫会解算 mem_fraction_static 把池子拉回 101,432，可吸收约 1,150 MiB 的邻居残留；超出则**在记录任何产物之前**中止并重试。因此与即将起跑的邻居抢跑只损失一次尝试，不会污染数据。
 

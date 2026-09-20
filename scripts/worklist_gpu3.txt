@@ -1,0 +1,5 @@
+# gpu3 work list — "<lane script> <marker run>"
+lane_pois_main.sh pois200_cap1            # 泊松主表补全（default / cap5 / cap1）
+lane_rep200.sh p200_fix_r3                # 200 档修复配置重复（误差棒）
+lane_hicache200.sh p200_fix_hc            # 200 档 + HiCache（机制②在当前配置下的证据）
+lane_drift25.sh drift25_foyer             # 池子漂移实验：池子缩 25%，看最优 cap 是否移动
