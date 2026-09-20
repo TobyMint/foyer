@@ -76,7 +76,6 @@ ROWS = [
     ("静态 cap4", "pois200_cap4", BLUE, None),
     ("静态 cap5", "pois200_cap5", BLUE, "排队中"),
     ("Foyer（主表行）", "pois200_foyer", GREEN, None),
-    ("Foyer 重复 run", "pois200_foyer_r2", GREEN, "正在跑（误差棒）"),
     ("Foyer + HiCache", "pois200_foyer_hc", GREEN, "排队中"),
     ("Concur（重调参数）", "pois200_aimd2", ORANGE, None),
 ]
