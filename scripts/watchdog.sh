@@ -18,6 +18,10 @@ cd "$BASE" || exit 1
 for pair in "0:worklist_gpu0.txt" "1:worklist_gpu1.txt" "2:worklist_gpu2.txt" "3:worklist_gpu3.txt"; do
   gpu=${pair%%:*}
   list=${pair#*:}
+  marker="$N/.drained.$list"
+  if [ -f "$marker" ] && [ "$(cat "$marker" 2>/dev/null)" = "$(wc -l < "$BASE/scripts/$list" 2>/dev/null)" ]; then
+    continue
+  fi
   # ANCHOR the pattern, and match BOTH spellings (relative and absolute path). An unanchored `pgrep -f "queue_stream.sh $gpu "` also
   # matches any stale `bash -c` wrapper whose command line merely MENTIONS that
   # string — and this box is full of them, because whoever launched a stream did

@@ -50,3 +50,10 @@ while read -r lane marker _rest <&3; do
 done
 exec 3<&-
 log "work list $LIST drained (gpu$GPU)"
+# Record the line count we drained. watchdog.sh reads this so it does not restart a
+# stream that would immediately exit — without it the watchdog relaunches an empty
+# stream every 5 minutes forever, and that noise buries the stream failures the
+# same log is supposed to surface. Recording the COUNT rather than a bare flag
+# makes it self-healing: append a lane and the numbers disagree, so the stream
+# gets started again without anyone having to remember to clear a marker.
+wc -l < "$LIST" > "$N/.drained.$(basename "$LIST")"
