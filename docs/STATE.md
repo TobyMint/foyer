@@ -182,6 +182,39 @@ lane 的完成标志是 `summary.json`（runner 写的），所以**队列会正
 `runner.out` 的 `elapsed=` 并**显式标注来源**（`⚠ 墙钟来源: runner.out elapsed`）。
 注意 `elapsed=` 与 `wall_s` 口径不同（后者含 runner 启动开销）。
 
+### 9.6 queue_stream.sh 偷自己的清单（2026-09-21 05:08 发现）
+
+```bash
+while read -r lane marker _rest; do
+    bash wait_gpu_then_run_fast.sh ...      # ← 继承 stdin = 清单文件
+done < "$LIST"
+```
+
+循环体的子进程继承了清单文件作为 stdin；**任何读 stdin 的子进程都会吃掉清单内容**。
+而 bash 的 `read` 是带缓冲的（fd 偏移领先于已解析的行），所以下一次 `read` 会从**行中间**恢复。
+
+**实际后果**：gpu3 的流跑完 `lane_pois_main` 后打印了
+`gpu3 waiting -> can` —— `can` 是注释行 "…two streams **can** never race…" 里的一个词。
+然后它花了**五个小时**重试一个不存在的 lane `can`，而 t90 一直排在清单末尾没被启动。
+
+**已修**：清单改在 fd 3 上读（`exec 3< "$LIST"` + `read <&3`），子进程再显式给 `< /dev/null`。
+
+### 9.7 watchdog.sh 泄漏自己的锁（2026-09-21 05:10 发现）
+
+`exec 9>"$LOCK"; flock -n 9` 用的 fd **被子进程继承**，而子进程（queue_stream → wait_gpu
+→ run_matrix → sglang → runner）永不释放它。于是**看门狗每成功启动一个流就把自己永久锁死**，
+之后每次 cron 调用都在 `flock -n 9 || exit 0` 上静默退出。实测那次锁被一个六小时前启动的
+`queue_stream.sh` 持有。
+
+**已修**：子进程加 `9>&-`；并删除已泄漏的锁文件（`flock` 锁的是 inode，删掉文件后老持有者
+锁的是已解除链接的 inode，新文件不再冲突）。
+
+> **合起来看**：`watchdog.sh` 一个文件里有**三个各自独立、任何一个都足以让它失效**的缺陷
+> （9.1 未锚定的 pgrep、9.7 fd 泄漏，以及 9.2 依赖它的迁移脚本）。这解释了为什么
+> `watchdog.log` 从项目开始到 2026-09-21 04:39 一直是 0 字节。
+> **每个缺陷都因为上一层已经坏了而不可见**——唯一发现它们的方法是**去测那个东西本身，
+> 而不是相信说它正常的日志**。
+
 ### 9.5 已知的连通性小坑
 
 `aimd2` 的陈旧日志守卫（缺陷 B 的补丁）无法区分"上一次尝试的日志"与"本次自己的日志"，
