@@ -1,5 +1,4 @@
-# gpu2 work list — "<lane script> <marker run>". The marker is the lane's LAST run:
-# its summary.json means the whole lane is finished.
-lane_realhr_sweep.sh realhr_cap1          # 真实到达档的静态前沿补全（cap3 / cap4 / cap1）
-lane_oracle_fix.sh load25c_oracle_fix_push  # 修正实现后的 oracle 臂（默认骨架 + 当前配置）
-lane_rep25.sh thr25_push_r3               # 25 档修复配置第 3 次重复（误差棒）
+# gpu2 work list — Poisson-only (2026-09-20 起). "<lane script> <marker run>";
+# the marker is the lane's LAST run — its summary.json means the lane is finished.
+lane_pois_rep.sh pois200_foyer_r2          # 泊松主表 Foyer 行重复（误差棒）
+lane_pois_hicache.sh pois200_foyer_hc      # 泊松主表 + HiCache（机制②证据）
