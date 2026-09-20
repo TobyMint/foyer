@@ -29,7 +29,13 @@ for pair in "0:worklist_gpu0.txt" "1:worklist_gpu1.txt" "2:worklist_gpu2.txt" "3
     continue
   fi
   echo "[$(date '+%m-%d %H:%M')] watchdog: stream gpu$gpu not running — starting $list" >> "$N/watchdog.log"
+  # 9>&- is load-bearing: without it the child INHERITS the flock fd, keeps it open
+  # for its whole life (and passes it to every descendant — run_matrix, the server,
+  # the runner), and the lock is never released. The watchdog then fails `flock -n 9`
+  # on every subsequent invocation and exits silently: it can start each stream
+  # exactly once and is disabled from then on. Observed 2026-09-21 — the lock was
+  # held by a queue_stream.sh that had been started six hours earlier.
   setsid nohup bash "$BASE/scripts/queue_stream.sh" "$gpu" "$BASE/scripts/$list" \
-    >> "$N/watchdog.log" 2>&1 < /dev/null &
+    >> "$N/watchdog.log" 2>&1 < /dev/null 9>&- &
   sleep 2
 done
