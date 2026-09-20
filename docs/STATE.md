@@ -27,7 +27,9 @@
 
 **每个 run 目录**：`summary.json`（指标汇总）、`metadata.json`（溯源：池子/trace 哈希/代码哈希/argv）、`steps.jsonl`（每步）、`admissions.jsonl`（准入事件）、`controller.jsonl`（决策）、`metrics.csv`（引擎时间序列）、`runner.out`。
 
-**管线（四层）**：`queue_driver2.sh`（每卡一条 lane，等空闲→跑→重试）→ `wait_gpu_then_run.sh`（连续 6 次 5 分钟轮询低于 FREE_MIB=1000 才起跑）→ `lane_*.sh`（一条 lane 若干 arm，set -e）→ `run_matrix.py`（起服→校验池子→起 controller→跑 runner）。
+**管线（四层）**：`queue_driver*.sh`（每卡一条 lane，等空闲→跑→重试）→ `wait_gpu_then_run_fast.sh`（**2026-09-20 起**：每 30 秒轮询、连续 2 次低于 FREE_MIB=1000 即起跑；旧的 `wait_gpu_then_run.sh` 需连续 6 次 ×5 分钟 = 25 分钟，是池子守卫出现前的遗留保守设定）→ `lane_*.sh`（一条 lane 若干 arm，set -e）→ `run_matrix.py`（起服→校验池子→起 controller→跑 runner）。
+
+等待策略的依据：池子守卫会解算 mem_fraction_static 把池子拉回 101,432，可吸收约 1,150 MiB 的邻居残留；超出则**在记录任何产物之前**中止并重试。因此与即将起跑的邻居抢跑只损失一次尝试，不会污染数据。
 
 **关键机制**：
 
@@ -89,5 +91,6 @@
 **lab 环境风险**
 
 - 4 卡多用户、无调度器、先到先得；**外部击杀是常态**（已 6 次）。
+- **这台机器有周期性清进程（periodic process-reaper）**：2026-09-19 晚，两个队列驱动被清掉后整条队列静默停摆（lane 变成孤儿继续跑完当前 run 就再无后续）。`supervise.py` 的注释记录了该现象。缓解：驱动自带重试循环；若要长期无人值守，需要额外的看门狗。
 - 邻居的 CUDA 上下文会**静默改变我们的 KV 池**（254 MiB 残留 → 池子少约 4,034 token，约 16 token/MiB）。
 - **看 `nvidia-smi` 剩余显存会误判**：邻居占 4.3 GB 时表面还剩 20 GB，实际池子只有约 33,000（需 101,432）。

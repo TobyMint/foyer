@@ -20,7 +20,7 @@ for attempt in $(seq 1 24); do
     break
   fi
   log "gpu3: waiting for sustained-free GPU -> lane_pois_main.sh (attempt $attempt)"
-  bash scripts/wait_gpu_then_run.sh 3 scripts/lane_pois_main.sh \
+  bash scripts/wait_gpu_then_run_fast.sh 3 scripts/lane_pois_main.sh \
     >> "$N/lane_lane_pois_main_attempt${attempt}.log" 2>&1
   if [ -f "$N/pois200_cap1/summary.json" ]; then
     log "gpu3: lane_pois_main COMPLETE"
