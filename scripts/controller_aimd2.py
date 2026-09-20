@@ -120,6 +120,14 @@ def main():
     ap.add_argument("--max-cap", type=int, default=64)
     ap.add_argument("--interval", type=float, default=30.0)
     ap.add_argument("--max-minutes", type=float, default=300.0)
+    ap.add_argument("--resume", action="store_true",
+                    help="adopt the existing admissions.jsonl as OUR OWN history "
+                         "instead of ignoring it. The stale-log guard below cannot "
+                         "tell a previous attempt's log from this attempt's, so a "
+                         "controller that is killed mid-run and relaunched would "
+                         "otherwise rebuild an empty ledger and deadlock the runner "
+                         "it is supposed to be serving. Only pass this when the run "
+                         "is genuinely in progress.")
     args = ap.parse_args()
 
     # sessions: sid -> dict(arrived_ts, state in {waiting, active, paused, done})
@@ -136,9 +144,16 @@ def main():
     # sessions never re-enter the waiting set — the controller then sees an empty queue
     # while the runner has hundreds of sessions queued, and deadlocks (W pinned at 1,
     # engine idle). Ignore anything written before we started.
-    started_ts = time.time() - 5.0
+    #
+    # --resume inverts it: the log we find IS ours, so adopt all of it. Needed because
+    # this controller has no supervisor (unlike budget3): when the box's process-reaper
+    # kills it mid-run the runner keeps waiting for permits that will never be written,
+    # and a plain relaunch would rebuild an empty ledger and lock the run up for good.
+    started_ts = 0.0 if args.resume else time.time() - 5.0
 
-    with open(args.decision_log, "w") as log:
+    # Append when resuming — the decision history of the interrupted segment is the
+    # only record of why the run stalled, and "w" would truncate it.
+    with open(args.decision_log, "a" if args.resume else "w") as log:
         while time.time() < deadline:
             now = time.time()
             for ev in read_jsonl(args.admission_log):
@@ -177,8 +192,14 @@ def main():
 
             prev = window
             action = "hold"
-            if usage == 0.0:
-                action = "hold"   # engine idle: no information
+            # A zero reading means "no information" only if we believe something is
+            # running — then it is suspicious and must not drive the window. With an
+            # empty active set it means the engine is genuinely idle while sessions
+            # queue, which is the one situation where growing is unambiguously right.
+            # Treating both as "hold" deadlocks: window pinned at 1, ledger holding a
+            # stale active entry, nothing running, usage stuck at 0 forever.
+            if usage == 0.0 and active:
+                action = "hold"   # engine idle but sessions are supposedly live: no trust
             elif usage > args.u_high and hit_measured and hit < args.h_thresh:
                 window = max(math.ceil(window * args.beta), 1.0)
                 action = "cut"
