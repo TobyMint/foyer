@@ -104,6 +104,12 @@ def main():
             dx, dy, ha = (12, -14, "left")
         if label.startswith("静态 cap2"):
             dx, dy, ha = (-12, 8, "right")
+        # Once HiCache is on, three points crowd the top-right corner (foyer_hc,
+        # foyer, cap2) and the two left/right-anchored labels land on each other.
+        # Send the HiCache label out to the left instead: cap2 already owns the
+        # strip just left-above its dot, and foyer owns the strip to its right.
+        if label.startswith("Foyer + HiCache"):
+            dx, dy, ha = (-14, 2, "right")
         ax.annotate(f"{label}\n{d['hit']:.1f}% / {d['wall']:.0f}min",
                     (d["wall"], d["hit"]), textcoords="offset points",
                     xytext=(dx, dy), fontsize=9.5, color=colour, ha=ha)
