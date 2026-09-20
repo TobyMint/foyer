@@ -28,6 +28,9 @@ GREEN = "#2ca02c"
 ORANGE = "#ff7f0e"
 RED = "#d62728"
 GRAY = "#b0b0b0"
+# Foyer + HiCache gets its own hue: with the star marker gone, every point is a
+# plain dot and colour is the only thing telling the two Foyer variants apart.
+PURPLE = "#9467bd"
 
 
 def read_jsonl(path):
@@ -74,10 +77,10 @@ ROWS = [
     ("静态 cap2", "pois200_cap2", BLUE, None),
     ("静态 cap3", "pois200_cap3_r2", BLUE, None),
     ("静态 cap4", "pois200_cap4", BLUE, None),
-    ("静态 cap5", "pois200_cap5", BLUE, "排队中"),
-    ("Foyer（主表行）", "pois200_foyer", GREEN, None),
-    ("Foyer + HiCache", "pois200_foyer_hc", GREEN, "排队中"),
-    ("Concur（重调参数）", "pois200_aimd2", ORANGE, None),
+    ("静态 cap5", "pois200_cap5", BLUE, None),
+    ("Foyer", "pois200_foyer", GREEN, None),
+    ("Foyer + HiCache", "pois200_foyer_hc", PURPLE, None),
+    ("Concur", "pois200_aimd2", ORANGE, None),
 ]
 
 
@@ -95,24 +98,14 @@ def main():
         if label not in data:
             continue
         d = data[label]
-        star = "Foyer" in label
-        ax.scatter([d["wall"]], [d["hit"]], s=420 if star else 130,
-                   marker="*" if star else ("s" if label.startswith("Concur") else "o"),
+        ax.scatter([d["wall"]], [d["hit"]], s=150, marker="o",
                    color=colour, zorder=5)
-        dx, dy, ha = (14, -6, "left") if star else (10, 6, "left")
-        if label.startswith("静态 cap4"):
-            dx, dy, ha = (12, -14, "left")
+        # Name only — the numbers live in the table on the right.
+        dx, dy, ha = (11, 5, "left")
         if label.startswith("静态 cap2"):
-            dx, dy, ha = (-12, 8, "right")
-        # Once HiCache is on, three points crowd the top-right corner (foyer_hc,
-        # foyer, cap2) and the two left/right-anchored labels land on each other.
-        # Send the HiCache label out to the left instead: cap2 already owns the
-        # strip just left-above its dot, and foyer owns the strip to its right.
-        if label.startswith("Foyer + HiCache"):
-            dx, dy, ha = (-14, 2, "right")
-        ax.annotate(f"{label}\n{d['hit']:.1f}% / {d['wall']:.0f}min",
-                    (d["wall"], d["hit"]), textcoords="offset points",
-                    xytext=(dx, dy), fontsize=9.5, color=colour, ha=ha)
+            dx, dy, ha = (-11, 4, "right")
+        ax.annotate(label, (d["wall"], d["hit"]), textcoords="offset points",
+                    xytext=(dx, dy), fontsize=10, color=colour, ha=ha)
     pts = sorted([(d["wall"], d["hit"]) for d in data.values()])
     frontier = []
     for w, h in pts:
@@ -135,15 +128,15 @@ def main():
     # ---- right: status table -------------------------------------------------
     ax2 = fig.add_axes([0.50, 0.11, 0.47, 0.76])
     ax2.axis("off")
-    cols = ["策略", "墙钟(min)", "命中%", "SLO%", "TTFT p50(s)", "状态"]
+    cols = ["策略", "墙钟(min)", "命中%", "SLO%", "TTFT p50(s)"]
     body = []
     for label, run, colour, note in ROWS:
         if label in data:
             d = data[label]
             body.append([label, f"{d['wall']:.1f}", f"{d['hit']:.1f}",
-                         f"{d['slo']:.1f}", f"{d['ttft_p50']:.2f}", "已有"])
+                         f"{d['slo']:.1f}", f"{d['ttft_p50']:.2f}"])
         else:
-            body.append([label, "—", "—", "—", "—", f"待跑：{note or '排队中'}"])
+            body.append([label, "—", "—", "—", "—"])
     tbl = ax2.table(cellText=body, colLabels=cols, loc="center", cellLoc="center")
     tbl.auto_set_font_size(False)
     tbl.set_fontsize(10)
