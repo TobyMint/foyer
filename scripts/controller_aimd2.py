@@ -44,6 +44,42 @@ def read_jsonl(path):
     return out
 
 
+def apply_event(sess, ev, started_ts, now):
+    """Apply one admission event to the session ledger.
+
+    Returns True when the event was applied, False when it was skipped (no session id,
+    or written before this controller started — i.e. left over from a previous attempt
+    in the same run dir; see the stale-log guard in main()).
+
+    Ledger states: waiting / active / paused / done.
+      queued -> (re)enter the queue; admit -> active; pause -> paused; resume -> active;
+      release -> done (or stays paused, the permit state is classified by the caller).
+    The old version had no `admit` branch, so an admitted session kept its "waiting"
+    state, and `queued` never reset a "done" session back into the queue.
+    """
+    sid = ev.get("session_id")
+    if not sid:
+        return False
+    if (ev.get("ts") or 0) < started_ts:
+        return False
+    s = sess.setdefault(sid, dict(arrived_ts=None, state="waiting"))
+    etype = ev.get("event")
+    if etype == "queued":
+        if s["arrived_ts"] is None:
+            s["arrived_ts"] = ev.get("ts", now)
+        if s["state"] not in ("active", "paused"):
+            s["state"] = "waiting"
+    elif etype == "admit":
+        s["state"] = "active"
+    elif etype == "release":
+        s["state"] = "done" if s["state"] != "paused" else "paused"
+    elif etype == "pause":
+        s["state"] = "paused"
+    elif etype == "resume":
+        s["state"] = "active"
+    return True
+
+
 def get_metrics(url):
     import re, urllib.request
     vals = {}
@@ -92,26 +128,21 @@ def main():
     window = float(args.initial_cap)
     write_permit(args.permit_file, [], [])
     deadline = time.time() + args.max_minutes * 60
+    # Stale-log guard (defect B, 2026-09-20). The driver retries a whole lane, so a run
+    # dir can hold the admissions.jsonl of a PREVIOUS attempt while this controller
+    # starts (the controller comes up ~4 min before the runner). The trace replay reuses
+    # session ids, so those stale events would seed the state map with "done"/"active"
+    # entries; when the new runner later truncates the file and re-emits `queued`, the
+    # sessions never re-enter the waiting set — the controller then sees an empty queue
+    # while the runner has hundreds of sessions queued, and deadlocks (W pinned at 1,
+    # engine idle). Ignore anything written before we started.
+    started_ts = time.time() - 5.0
 
     with open(args.decision_log, "w") as log:
         while time.time() < deadline:
             now = time.time()
             for ev in read_jsonl(args.admission_log):
-                sid = ev.get("session_id")
-                if not sid:
-                    continue
-                s = sess.setdefault(sid, dict(arrived_ts=None, state="waiting"))
-                etype = ev.get("event")
-                if etype == "queued":
-                    if s["arrived_ts"] is None:
-                        s["arrived_ts"] = ev.get("ts", now)
-                elif etype == "release":
-                    # finished or externally paused; classify by permit state below
-                    s["state"] = "done" if s["state"] != "paused" else "paused"
-                elif etype == "pause":
-                    s["state"] = "paused"
-                elif etype == "resume":
-                    s["state"] = "active"
+                apply_event(sess, ev, started_ts, now)
 
             active = sorted((sid for sid, s in sess.items() if s["state"] == "active"),
                             key=lambda sid: sess[sid]["arrived_ts"] or now)
