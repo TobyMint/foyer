@@ -109,6 +109,7 @@ def code_version():
     # paths the dispatch chain below actually passes to Popen.
     files = [os.path.abspath(__file__),
              f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+             f"{BASE}/TraceLab/replay/scripts/controller_foyer.py",
              f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
              f"{BASE}/TraceLab/replay/scripts/controller_aimd.py",
              f"{BASE}/TraceLab/replay/target/release/session_runner"]
@@ -120,7 +121,8 @@ def code_version():
         except OSError:
             out[os.path.basename(p)] = "unknown"
     # Make the two-copy split visible instead of silently trusting one of them.
-    dupes = ["run_matrix.py", "controller_budget3.py", "controller_aimd2.py"]
+    dupes = ["run_matrix.py", "controller_budget3.py", "controller_foyer.py",
+             "controller_aimd2.py"]
     out["path_divergence"] = sorted(
         d for d in dupes
         if _digest(os.path.join(BASE, "scripts", d)) !=
@@ -151,7 +153,8 @@ def build_config():
 # starts an ungated runner. tests/test_run_matrix_routing.py asserts this set
 # against route_mode()'s reachable outputs, so adding a route without a branch
 # fails the test rather than wasting a multi-hour GPU run.
-HANDLED_ROUTES = {"static", "budget2_ablation", "budget3", "aimd2", "aimd_legacy"}
+HANDLED_ROUTES = {"static", "budget2_ablation", "budget3", "foyer", "aimd2",
+                  "aimd_legacy"}
 
 
 def route_mode(mode):
@@ -159,6 +162,8 @@ def route_mode(mode):
     function (not a copy of its logic) — GPT/Codex audit-2 requirement."""
     if mode == "budget3" or mode.startswith("budget3:"):
         return "budget3"
+    if mode == "foyer" or mode.startswith("foyer:"):
+        return "foyer"
     if mode == "aimd2" or mode.startswith("aimd2:"):
         return "aimd2"
     if mode.startswith("budget3_"):
@@ -170,6 +175,35 @@ def route_mode(mode):
     if mode == "aimd":
         return "aimd_legacy"
     return None  # unknown mode = refuse to run (never silently ungated)
+
+
+def foyer_param_args(mode):
+    """Parse 'foyer:k=v;k2=v2' into controller_foyer.py argv.
+
+    `target` is the red line and `gs` is the growth-reserve scale — the two knobs
+    that define the aggressiveness spectrum this controller exists to expose.
+    """
+    extra = []
+    if ":" in mode:
+        flagmap = {"target": "--target-util", "gs": "--growth-scale",
+                   "margin": "--margin", "horizon": "--horizon-rounds",
+                   "hw": "--highwater-decay", "hs": "--hard-stop-usage",
+                   "predictor": "--predictor", "pending": "--pending-timeout-s"}
+        for kv in mode.split(":", 1)[1].split(";"):
+            k, v = kv.split("=", 1)
+            if k == "sf" and v == "0":
+                extra.append("--disable-single-flight")
+            elif k == "shed" and v == "0":
+                extra.append("--disable-shedding")
+            elif k == "slo" and v == "0":
+                extra.append("--disable-slo-valve")
+            elif k == "sg" and v == "0":
+                extra.append("--disable-starve-guard")
+            elif k == "hw" and v == "0":
+                extra.append("--disable-highwater")
+            else:
+                extra += [flagmap[k], v]
+    return extra
 
 
 def budget3_param_args(mode):
@@ -524,6 +558,38 @@ def main():
                                          "horizon_rounds": 3, "highwater_decay": 0.995,
                                          "slo_ms": 10000,
                                          "tuned": (mode.split(":", 1)[1] if ":" in mode else "default")}
+        elif route_mode(mode) == "foyer":
+            # Foyer: the KV pool as a guardrail rather than the objective. The base
+            # of the accounting is the engine's measured token_usage, so prefix
+            # sharing counts in our favour instead of being discarded by a
+            # max(measured, logical_sum); --target-util is the red line.
+            permitfile = f"{BASE}/permit_{args.lane}.json"
+            with open(permitfile, "w") as f:
+                json.dump({"admit": [], "paused": []}, f)
+            ctrl_cmd = " ".join([
+                PY, f"{BASE}/TraceLab/replay/scripts/controller_foyer.py",
+                *foyer_param_args(mode),
+                "--trace", TRACE,
+                "--permit-file", permitfile,
+                "--step-log", f"{run_dir}/steps.jsonl",
+                "--admission-log", f"{run_dir}/admissions.jsonl",
+                "--decision-log", f"{run_dir}/controller.jsonl",
+                "--pool-tokens", str(pool_tokens),
+                "--metrics-port", str(args.port),
+                "--max-minutes", "600"])
+            supervisor = (
+                f'while [ ! -f {run_dir}/summary.json ]; do '
+                f'{ctrl_cmd} >> {run_dir}/ctrl.out 2>&1; '
+                f'echo "$(date +%H:%M:%S) controller exited, relaunching" >> {run_dir}/ctrl.out; '
+                f'sleep 20; done')
+            controller = subprocess.Popen(["bash", "-c", supervisor],
+                                          start_new_session=True)
+            cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
+            meta["controller_params"] = {
+                "target_util": 0.90, "growth_scale": 0.35, "margin": 1.0,
+                "horizon_rounds": 3, "highwater_decay": 0.98,
+                "hard_stop_usage": 0.93, "slo_ms": 10000,
+                "tuned": (mode.split(":", 1)[1] if ":" in mode else "default")}
         elif route_mode(mode) == "aimd2":
             # Faithful Concur: grow only below u_low, permit-based pause/resume.
             permitfile = f"{BASE}/permit_{args.lane}.json"

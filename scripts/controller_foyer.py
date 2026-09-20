@@ -1,0 +1,394 @@
+#!/usr/bin/env python3
+"""Foyer controller: capacity-accounted admission with the KV pool as a GUARDRAIL.
+
+Why this exists (measured, 2026-09-20, Poisson 200-session workload)
+-------------------------------------------------------------------
+v3 asked a FEASIBILITY question on every admission — "does the worst-case projected
+working set fit the budget?" — and it answered with three stacked pessimisms:
+
+    projection = max(engine_truth, sharing_blind_logical_sum)   # drops sharing gains
+               + growth reserve for EVERY resident session      # mean, over 3 rounds
+    admit if projection + newcomer * 1.15 <= target_util * pool
+
+Instrumenting that live showed the controller believed it sat at 92% of budget
+(p90: 157%) while the engine actually held 52% of the pool. Admission therefore
+almost never fired — 98% of decision cycles admitted nobody — and concurrency
+pinned near 2. A static cap-3/4, running ~3.5x the concurrency, finished the same
+workload ~15% faster (259min vs 299min). The cost of that pessimism was the
+primary metric.
+
+This version inverts the framing: memory is not the objective, it is a red line.
+  base          the engine's OWN sglang:token_usage (sharing-aware, measured, not
+                modelled) — this is what makes prefix sharing count in our favour
+  pending       sessions admitted but not yet visible in that number, so a burst of
+                admits cannot outrun the measurement
+  reserve       what the resident set will add before the next decision, scaled by
+                --growth-scale (0 disables it entirely)
+  red line      --target-util * pool_tokens, and this is THE knob: 0.75 reproduces
+                the old conservatism, 0.95 runs deliberately near the edge
+
+Everything else — named permits, hard usage valve, TTFT-SLO valve, shedding,
+rate-limited starve guard — is carried over from v3 unchanged. Those are the safety
+net this design deliberately leans on rather than a policy it hides behind.
+
+Reads NO trace file. Every quantity is observed at runtime.
+"""
+import argparse
+import json
+import os
+import time
+from collections import deque
+
+
+def write_permit(path, admitted, paused=()):
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"admit": sorted(admitted), "paused": sorted(paused)}, f)
+    os.replace(tmp, path)
+
+
+def read_jsonl(path):
+    out = []
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        out.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def build_growth_traj(trace_path):
+    """{session_id: {round_idx: prompt_len}} from the trace (oracle ablation arm only).
+
+    prompt_len is the whole context the engine must hold at that round
+    (prefix_len + input_len in the runner's step records), i.e. the C(r) the
+    admission accounting reasons about.
+    """
+    import csv as _csv
+    traj = {}
+    for row in _csv.DictReader(open(trace_path)):
+        traj.setdefault(row["session_id"], {})[int(row["round_idx"])] = \
+            int(row["prefix_len"]) + int(row["input_len"])
+    return traj
+
+
+def oracle_forecast(traj, sid, last_round, horizon_rounds):
+    """CLAIRVOYANT arm: G*(t) = max(0, C(t+h) - C(t)), t = last COMPLETED round.
+
+    Anchoring at the completed round is what makes this the exact answer to the
+    question the other arms estimate: ctx already covers round t, so
+    ctx + G* = C(t+h) for every arm. Not deployable (reads the trace's future).
+    """
+    rounds = traj.get(sid)
+    if not rounds:
+        return 0.0
+    keys = sorted(rounds)
+    a = last_round if last_round >= 0 else 0
+    a = max(k for k in keys if k <= a) if a >= keys[0] else keys[0]
+    ahead = [k for k in keys if a < k <= a + horizon_rounds]
+    if not ahead:
+        return 0.0
+    return float(max(0, rounds[ahead[-1]] - rounds[a]))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--permit-file", required=True)
+    ap.add_argument("--admission-log", required=True)
+    ap.add_argument("--step-log", required=True)
+    ap.add_argument("--decision-log", required=True)
+    ap.add_argument("--pool-tokens", type=int, required=True)
+    ap.add_argument("--metrics-port", type=int, default=30000)
+
+    # ---- the one knob -------------------------------------------------------
+    ap.add_argument("--target-util", type=float, default=0.90,
+                    help="RED LINE: stop admitting at this fraction of the KV pool. "
+                         "0.75 = the old v3 conservatism, 0.90 = default, 0.95+ = "
+                         "deliberately near the edge. This is the aggressiveness knob.")
+
+    # ---- how much of the pessimistic machinery to keep ----------------------
+    ap.add_argument("--growth-scale", type=float, default=0.35,
+                    help="multiplier on the growth reserve. The reserve is what v3 "
+                         "used to hold every resident session against its mean "
+                         "round-over-round growth for --horizon-rounds. 0 disables it.")
+    ap.add_argument("--margin", type=float, default=1.0,
+                    help="padding on the NEWCOMER's arrival context only (v3 used 1.15)")
+    ap.add_argument("--horizon-rounds", type=int, default=3)
+    ap.add_argument("--ema-alpha", type=float, default=0.4)
+    ap.add_argument("--young-blend", type=float, default=0.5)
+
+    # ---- safety net (unchanged from v3) -------------------------------------
+    ap.add_argument("--hard-stop-usage", type=float, default=0.93,
+                    help="valve: stop admitting outright above this measured usage")
+    ap.add_argument("--highwater-decay", type=float, default=0.98,
+                    help="fast decay (~70s half-life at a 2s cycle): guards against "
+                         "retraction dips faking slack, without holding a peak for "
+                         "minutes the way v3's 0.995 did (that cost 29%% of budget)")
+    ap.add_argument("--slo-ms", type=float, default=10000.0)
+    ap.add_argument("--slo-window", type=int, default=20)
+    ap.add_argument("--starve-seconds", type=float, default=240.0)
+    ap.add_argument("--starve-cooldown", type=float, default=300.0)
+    ap.add_argument("--pending-timeout-s", type=float, default=120.0,
+                    help="drop a pending admission this long after the permit, even if "
+                         "no step arrived (a session that never prefilled must not "
+                         "occupy the accounting forever)")
+    ap.add_argument("--interval", type=float, default=2.0)
+    ap.add_argument("--max-minutes", type=float, default=300.0)
+
+    ap.add_argument("--disable-highwater", action="store_true")
+    ap.add_argument("--disable-single-flight", action="store_true")
+    ap.add_argument("--disable-slo-valve", action="store_true")
+    ap.add_argument("--disable-starve-guard", action="store_true")
+    ap.add_argument("--disable-shedding", action="store_true")
+    ap.add_argument("--ttft-freshness-s", type=float, default=600.0)
+    ap.add_argument("--predictor", choices=["ema", "zero", "global", "oracle"],
+                    default="ema")
+    ap.add_argument("--trace", default=None)
+    args = ap.parse_args()
+
+    traj = {}
+    if args.predictor == "oracle":
+        if not args.trace:
+            ap.error("--predictor oracle requires --trace (ablation-only arm)")
+        traj = build_growth_traj(args.trace)
+
+    red_line = args.pool_tokens * args.target_util
+    sess = {}          # sid -> dict(arrived_ts, prompt0, active, finished, ctx, ema, n_obs)
+    pending = {}       # sid -> (admit_ts, tokens) admitted but not yet seen by the engine
+    highwater = 0.0
+    ttfts = deque(maxlen=args.slo_window)
+    glob_growth_sum = 0.0
+    glob_growth_n = 0
+    last_admitted_sid = None
+    last_admit_ts = 0.0
+    last_forced_ts = 0.0
+    deadline = time.time() + args.max_minutes * 60
+
+    def forecast(s):
+        """Forecast context growth over the next horizon rounds (tokens)."""
+        if args.predictor == "oracle":
+            return oracle_forecast(traj, s["sid"], s["last_round"], args.horizon_rounds)
+        if args.predictor == "zero":
+            return 0.0
+        if args.predictor == "global":
+            prior = glob_growth_sum / glob_growth_n if glob_growth_n else 0.0
+            return prior * args.horizon_rounds
+        if s["ema"] is not None:
+            est = s["ema"]
+            if s["n_obs"] < 3:
+                prior = glob_growth_sum / glob_growth_n if glob_growth_n else est
+                est = args.young_blend * est + (1 - args.young_blend) * prior
+            return est * args.horizon_rounds
+        prior = glob_growth_sum / glob_growth_n if glob_growth_n else 0.0
+        return prior * args.horizon_rounds
+
+    import re
+    import urllib.request
+    pat = re.compile(r"^(\S+?)(\{.*\})?\s+(\S+)$")
+
+    def engine_metrics(url):
+        vals = {}
+        try:
+            text = urllib.request.urlopen(url, timeout=5).read().decode()
+        except Exception:
+            return vals
+        for line in text.splitlines():
+            if line.startswith("#") or not line.strip():
+                continue
+            m = pat.match(line.strip())
+            if not m or "quantile" in (m.group(2) or ""):
+                continue
+            try:
+                vals[m.group(1)] = float(m.group(3))
+            except ValueError:
+                pass
+        return vals
+
+    metrics_url = f"http://127.0.0.1:{args.metrics_port}/metrics"
+    # append: a supervised restart must not truncate the decision history
+    with open(args.decision_log, "a") as log:
+        while time.time() < deadline:
+          try:
+            now = time.time()
+
+            # 1. arrivals / admission events
+            for ev in read_jsonl(args.admission_log):
+                sid = ev.get("session_id")
+                if not sid:
+                    continue
+                s = sess.setdefault(sid, dict(sid=sid, arrived_ts=None, prompt0=0,
+                                              active=False, finished=False, ctx=0,
+                                              last_round=-1, ema=None, n_obs=0))
+                etype = ev.get("event")
+                if etype == "queued":
+                    if s["arrived_ts"] is None:
+                        s["arrived_ts"] = ev.get("ts", now)
+                    s["prompt0"] = int(ev.get("prompt_tokens") or 0)
+                elif etype == "admit":
+                    s["active"] = True
+                    if ev.get("prompt_tokens"):
+                        s["prompt0"] = int(ev["prompt_tokens"])
+                    # the engine has not prefilled it yet, so token_usage cannot
+                    # see it — carry it explicitly until a step record proves it landed
+                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"])
+                    last_admitted_sid = sid
+                    last_admit_ts = ev.get("ts", now)
+                elif etype == "resume":
+                    s["active"] = True
+                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"])
+                elif etype == "pause":
+                    # a shed pause emits release+pause back-to-back; the release
+                    # handler marks finished — undo it, a paused session is NOT done
+                    s["active"] = False
+                    s["finished"] = False
+                    pending.pop(sid, None)
+                elif etype == "release":
+                    s["active"] = False
+                    s["finished"] = True
+                    pending.pop(sid, None)
+
+            # 2. completed rounds: ctx + observed growth + TTFTs
+            for rec in read_jsonl(args.step_log):
+                sid = rec.get("session_id")
+                if not sid or sid not in sess:
+                    continue
+                s = sess[sid]
+                pl = rec.get("prompt_len")
+                if pl:
+                    if s["ctx"] and pl > s["ctx"]:
+                        obs = float(pl - s["ctx"])
+                        s["ema"] = obs if s["ema"] is None else \
+                            args.ema_alpha * obs + (1 - args.ema_alpha) * s["ema"]
+                        s["n_obs"] += 1
+                        glob_growth_sum += obs
+                        glob_growth_n += 1
+                    s["ctx"] = max(s["ctx"], int(pl))
+                    # the engine has now actually materialised this session
+                    pending.pop(sid, None)
+                ri = rec.get("round_idx")
+                if ri is not None:
+                    s["last_round"] = max(s["last_round"], ri)
+                ft = rec.get("first_token_ms")
+                if ft is not None and rec.get("status") == "SUCCESS":
+                    ttfts.append((rec.get("complete_timestamp") or now, ft))
+            ttfts = deque([(t, v) for (t, v) in ttfts
+                           if t > now - args.ttft_freshness_s], maxlen=args.slo_window)
+
+            # 3. the base: engine truth, sharing-aware, dip-guarded
+            em = engine_metrics(metrics_url)
+            usage = em.get("sglang:token_usage", 0.0)
+            highwater = max(usage, highwater * args.highwater_decay)
+            floor = usage if args.disable_highwater else max(usage, highwater)
+            measured = floor * args.pool_tokens
+
+            # 4. what the engine cannot see yet, and what the residents will add
+            stale = [sid for sid, (ts, _) in pending.items()
+                     if now - ts > args.pending_timeout_s]
+            for sid in stale:
+                pending.pop(sid, None)
+            pending_tokens = sum(t for _, t in pending.values())
+
+            active = [sid for sid, s in sess.items() if s["active"]]
+            waiting = sorted(
+                (sid for sid, s in sess.items()
+                 if s["arrived_ts"] is not None and not s["active"] and not s["finished"]),
+                key=lambda sid: sess[sid]["arrived_ts"])
+            for sid in waiting:
+                sess[sid].setdefault("first_seen", now)
+            oldest_wait = max((now - sess[sid].get("first_seen", now) for sid in waiting),
+                              default=0.0)
+
+            growth_reserve = args.growth_scale * sum(forecast(sess[sid]) for sid in active)
+            committed = measured + pending_tokens + growth_reserve
+
+            # 5. admission decision
+            valve = usage >= args.hard_stop_usage
+            fresh_vals = sorted(v for _, v in ttfts)
+            if not args.disable_slo_valve and len(fresh_vals) >= max(5, args.slo_window // 2):
+                valve = valve or fresh_vals[len(fresh_vals) // 2] > args.slo_ms
+
+            # 5b. SHEDDING: on valve, pause the YOUNGEST active sessions until the
+            # oldest fit inside the red line; paused sessions re-enter via the
+            # normal FIFO path once the valve clears and there is room again.
+            shed = []
+            if valve and active and not args.disable_shedding:
+                keep, acc = [], 0.0
+                limit = red_line * 0.90
+                for sid in sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0):
+                    c = sess[sid]["ctx"] or sess[sid]["prompt0"]
+                    if not keep or acc + c <= limit:
+                        keep.append(sid)
+                        acc += c
+                shed = [sid for sid in active if sid not in set(keep)]
+                if shed:
+                    for sid in shed:
+                        sess[sid]["active"] = False
+
+            prev_started = (last_admitted_sid is None
+                            or sess.get(last_admitted_sid, {}).get("last_round", -1) >= 0
+                            or now - last_admit_ts > 60)
+            candidates = []
+            if waiting and not valve and (prev_started or args.disable_single_flight):
+                head = waiting if args.disable_single_flight else waiting[:1]
+                for sid in head:
+                    s = sess[sid]
+                    # a resumed/shed survivor is budgeted at its KNOWN current
+                    # context, not its original arrival size
+                    base = s["ctx"] or s["prompt0"]
+                    n = base * args.margin
+                    if committed + n <= red_line:
+                        candidates.append(sid)
+                        committed += n
+                        if not args.disable_single_flight:
+                            break
+
+            # 6. rate-limited starve guard — gated on the measured base, not the
+            # instantaneous value, so a retraction dip cannot force-admit
+            forced = False
+            if (waiting and not candidates and not args.disable_starve_guard
+                    and oldest_wait >= args.starve_seconds
+                    and floor < 0.5 and now - last_forced_ts >= args.starve_cooldown):
+                candidates = [waiting[0]]
+                forced = True
+                last_forced_ts = now
+
+            # 7. write the full desired permit state (full-state semantics)
+            active = [sid for sid in active if sid not in set(shed)]
+            admitted_now = set(active) | set(candidates)
+            write_permit(args.permit_file, admitted_now, shed)
+
+            log.write(json.dumps({
+                "ts": round(now, 3),
+                "active_n": len(active), "waiting_n": len(waiting),
+                "usage": round(usage, 3), "highwater": round(highwater, 3),
+                "measured": round(measured), "pending": round(pending_tokens),
+                "pending_n": len(pending), "growth_reserve": round(growth_reserve),
+                "committed": round(committed), "red_line": round(red_line),
+                "fill": round(committed / red_line, 3) if red_line else None,
+                "candidate": (candidates[0] if candidates else None),
+                "n_admitted": len(candidates), "forced": forced,
+                "valve": valve, "shed_n": len(shed),
+                "ttft_p50_ms": round(fresh_vals[len(fresh_vals) // 2]) if fresh_vals else None,
+                "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
+            }) + "\n")
+            log.flush()
+            time.sleep(args.interval)
+          except Exception as exc:  # a transient fault must skip ONE cycle, not kill
+            try:
+                log.write(json.dumps({
+                    "ts": round(time.time(), 3), "cycle_error": repr(exc),
+                }) + "\n")
+                log.flush()
+            except Exception:
+                pass
+            time.sleep(args.interval)
+
+
+if __name__ == "__main__":
+    main()

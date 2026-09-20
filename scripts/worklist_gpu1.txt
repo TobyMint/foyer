@@ -1,0 +1,3 @@
+# gpu1 work list — Foyer guardrail controller, aggressive arm.
+# See worklist_gpu0.txt for the marker semantics. Append-only while a stream runs.
+lane_pois_foyer_rl99.sh pois200_foyer_rl99

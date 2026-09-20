@@ -90,6 +90,7 @@ KNOWN_UNIMPLEMENTED = {"budget3_ablation"}
 _PROBE_MODES = [
     "budget3", "budget3:target=0.85", "budget3:target=0.80;margin=1.0;sf=0",
     "budget3_nohw", "budget3_anything",
+    "foyer", "foyer:target=0.95;gs=0", "foyer:target=0.88;gs=0.5;hw=0",
     "aimd2", "aimd2:alpha=4;interval=2", "aimd",
     "budget2", "budget2_nohw", "budget",
     "static=4", "default",
@@ -122,10 +123,14 @@ def test_budget3_ablation_actually_refuses():
 
 
 if __name__ == "__main__":
-    test_parse_runs_splits_on_comma_only()
-    test_parse_runs_plain_modes()
-    test_param_modes_route_to_their_controllers()
-    test_unknown_mode_is_rejected()
-    test_budget3_param_args_build()
-    test_aimd2_param_args_build()
-    print("ALL ROUTING TESTS PASS")
+    # Discover every test_* in this module rather than listing them by hand. The
+    # hand-written list had drifted: it silently omitted
+    # test_every_route_has_a_dispatch_branch — the one invariant that catches a
+    # routed-but-undispatched mode — so adding a route without a dispatch branch
+    # printed "ALL ROUTING TESTS PASS". A test that cannot fail is not a test.
+    _tests = sorted((n, f) for n, f in globals().items()
+                    if n.startswith("test_") and callable(f))
+    for _name, _fn in _tests:
+        _fn()
+        print("  ok   %s" % _name)
+    print("\nALL %d ROUTING TESTS PASS" % len(_tests))

@@ -1,0 +1,6 @@
+# gpu0 work list — Foyer guardrail controller, moderate arm.
+# "<lane script> <marker run>"; the marker is the lane's LAST run — its summary.json
+# means the lane is finished. queue_stream.sh reads this file line by line, so
+# APPENDING a line is safe; rewriting it mid-flight is not (the stream's fd sits at
+# the current offset and would resume reading from the middle of the new content).
+lane_pois_foyer_rl90.sh pois200_foyer_rl90
