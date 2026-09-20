@@ -92,7 +92,10 @@ cron(每5分钟) watchdog.sh
 - **完成信号 = `<标记 run>/summary.json` 存在**；标记必须是 lane 的**最后一个** run（历史教训：用第一个 run 当标记会让整条 lane 被跳过）。
 - `migrate_gpu3.sh`（每 5 分钟，一次性）：gpu3 的工作流内存里还缓存着旧清单，等 `pois200_cap1` 落地就杀掉它，让看门狗用新清单重启（否则会去跑已取消的齐射任务）。
 - `status_snapshot.sh`（lab 每小时）：写 `results/night/status_snapshots.log`，独立于任何 agent 的运行记录。
-- **WSL 侧**（`crontab -l` 可见）：`scripts/hourly_check.sh` 每小时用 `codex queue` 把巡检提示词注入本会话（agent 醒来做只读检查并汇报；45 分钟内去重）。**注意：cron 环境 PATH 最小，脚本里已用绝对路径解析 codex。**
+- **WSL 侧的会话定时唤醒已撤销**（2026-09-20，迁移到 Claude Code 前移除；crontab 现在为空）。
+  原实现是 `scripts/hourly_check.sh` + `codex queue` 注入巡检提示词，已随迁移删除。
+  **lab 侧的小时快照不受影响**，仍在 `results/night/status_snapshots.log` 独立记录队列状态。
+  若要在 Claude Code 里复刻"定时唤醒"，原理相同（系统 cron + 该 CLI 的消息注入原语），但原语名称需在那边确认。
 
 ---
 
