@@ -157,7 +157,7 @@ def fig_pareto():
                     xytext=(dx, 4), fontsize=10, color=BLUE, ha=ha)
     conc = load(CONCUR200)
     ax.scatter([conc["wall"]], [conc["hit"]], marker="s", s=130, color=ORANGE,
-               label="Concur 忠实复现", zorder=5)
+               label="Concur（重调参数）", zorder=5)
     ax.annotate(f"{conc['hit']:.1f}% / {conc['wall']:.0f}min\n被 cap3 支配",
                 (conc["wall"], conc["hit"]), textcoords="offset points",
                 xytext=(30, -22), fontsize=10, color=ORANGE, ha="left")

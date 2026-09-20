@@ -78,7 +78,7 @@ ROWS = [
     ("Foyer（主表行）", "pois200_foyer", GREEN, None),
     ("Foyer 重复 run", "pois200_foyer_r2", GREEN, "正在跑（误差棒）"),
     ("Foyer + HiCache", "pois200_foyer_hc", GREEN, "排队中"),
-    ("Concur 忠实复现", "pois200_aimd2", ORANGE, None),
+    ("Concur（重调参数）", "pois200_aimd2", ORANGE, None),
 ]
 
 

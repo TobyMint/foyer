@@ -19,7 +19,7 @@
 - 系统完整可用：容量核算准入 + 命名许可 + 状态保留挂起 + 池子守卫。`results/night/` 下 80 个受管 run（75 个已完成），全部表格由 `scripts/make_tables.py` 一键重建（`docs/tables.md`）。
 - 已确立的机制性发现：① 静态 cap 的甜点区极窄（25 档 cap3→cap5 命中率 64.9%→36.6%，cap7 归零）；② 压力驱逐–代价曲线是 **U 形**（零驱逐的 cap1 全表最慢，存在内部最优）；③ 我们**自己为安全加的**两个机制（高水位地板、单飞准入）曾吃掉 47% 的完成时间，回收即修复——"保护层会变成天花板"。
 - **诚实站位**：200 齐射档，最好的静态 cap2（301.7min / 67.0% 命中）与我们（311.4min / 64.8%）接近打平；泊松到达（299.3 vs 310.5min）与真实高峰小时（79.3 vs 131.9min）我们更快。"不需要逐负载调参"这一立论**还缺池子/负载漂移实验的直接证据**（未跑）。
-- 未完成：机制③"有界复活"只有设计；预测器的独立收益未证明（oracle 臂实现有缺陷、结论已撤回）；Concur 忠实复现 5 个 arm 完成 2 个；关键配置误差棒未做。
+- 未完成：机制③"有界复活"只有设计；预测器的独立收益未证明（oracle 臂实现有缺陷、结论已撤回）；Concur 的 5 个 arm 完成 2 个（控制律按原文实现；原参数在本设置下停滞）；关键配置误差棒未做。
 
 ## 文档地图
 
@@ -42,7 +42,7 @@
 | `scripts/controller_budget3.py` | **论文里的 Foyer**：容量核算准入 + 命名许可 + SLO 熔断 + 饥饿保护（`budget3` 是它在代码中的名字） |
 | `scripts/controller_budget2.py` | 开天眼预留版（不可部署的上界对照） |
 | `scripts/controller_budget.py` | 朴素前馈 v0.4（保留作失败分析：准入棘轮、假空闲泄漏） |
-| `scripts/controller_aimd2.py` | Concur 忠实复现（u_low/u_high/h_thresh + `--h-mode`） |
+| `scripts/controller_aimd2.py` | Concur 控制律复现（u_low/u_high/h_thresh + `--h-mode`）；原论文参数在本设置下停滞，见 `docs/STATE.md` |
 | `scripts/run_matrix.py` | 实验驱动器：池子守卫（不符则解算 memfrac 重试）+ 溯源 manifest |
 | `scripts/make_tables.py` | 从 run 产物一键重建论文全部表格（含池子/步骤数校验） |
 | `scripts/gen_registry.py` | 生成 `docs/runs_registry.md` |
