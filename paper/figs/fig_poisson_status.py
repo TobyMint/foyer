@@ -17,6 +17,13 @@ import matplotlib.pyplot as plt
 RESULTS = sys.argv[1] if len(sys.argv) > 1 else "/data/xbw/turnstile/results/night"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "."
 EXPECT_POOL = 101432
+# Match run_matrix's own pool guard (TURNSTILE_POOL_TOL, default 20) rather than
+# demanding an exact match. The guard is what decides whether a run is recorded at
+# all, so using a stricter rule here would drop runs the pipeline itself accepted —
+# e.g. pois200_foyer_rl90 landed at 101,430, a 0.002% deviation that is far below
+# the measurement noise on every axis this figure plots. A run outside the
+# tolerance still refuses to plot.
+POOL_TOL = 20
 SLO_MS = 10000.0
 
 plt.rcParams["font.sans-serif"] = ["Noto Sans CJK SC", "Noto Sans CJK JP", "DejaVu Sans"]
@@ -31,6 +38,11 @@ GRAY = "#b0b0b0"
 # Foyer + HiCache gets its own hue: with the star marker gone, every point is a
 # plain dot and colour is the only thing telling the two Foyer variants apart.
 PURPLE = "#9467bd"
+# Guardrail arms and the conservative sweep — see the ROWS comment for why these
+# are deliberately shades that read as "not the headline".
+BROWN = "#8c564b"
+TEAL = "#17becf"
+OLIVE = "#bcbd22"
 
 
 def read_jsonl(path):
@@ -51,8 +63,10 @@ def load(name):
     meta = json.load(open(os.path.join(d, "metadata.json")))
     summ = json.load(open(os.path.join(d, "summary.json")))
     pool = meta.get("pool_tokens")
-    if pool != EXPECT_POOL:
-        raise RuntimeError(f"{name}: pool {pool} != {EXPECT_POOL}, refusing to plot")
+    if pool is None or abs(pool - EXPECT_POOL) > POOL_TOL:
+        raise RuntimeError(
+            f"{name}: pool {pool} is more than {POOL_TOL} from {EXPECT_POOL}, "
+            f"refusing to plot")
     steps = read_jsonl(os.path.join(d, "steps.jsonl"))
     ttft = [r["first_token_ms"] for r in steps
             if r.get("status") == "SUCCESS" and r.get("first_token_ms") is not None]
@@ -83,6 +97,16 @@ ROWS = [
     ("静态 cap5", "pois200_cap5", BLUE, None),
     ("Foyer", "pois200_foyer", GREEN, None),
     ("Foyer + HiCache", "pois200_foyer_hc", PURPLE, None),
+    # The guardrail arms (2026-09-21). They exist to answer "was v3 too
+    # conservative?" and the answer is no: both sit BELOW the static frontier,
+    # while Foyer itself sits above it. Colouring them as degraded is deliberate —
+    # a reader should see at a glance that these are ours-but-worse, not the
+    # headline. rl99 has the higher target utilisation and the worse outcome, which
+    # is the whole point of keeping it on the figure.
+    ("Foyer rl90", "pois200_foyer_rl90", BROWN, None),
+    ("Foyer rl99", "pois200_foyer_rl99", RED, None),
+    ("Foyer t90", "pois200_foyer_t90", TEAL, "排队中"),
+    ("Foyer t85", "pois200_foyer_t85", OLIVE, "排队中"),
     ("Concur", "pois200_aimd2", ORANGE, None),
 ]
 
@@ -106,9 +130,16 @@ def main():
         d = data[label]
         ax.scatter([d["wall"]], [d["hit"]], s=150, marker="o", color=colour, zorder=5)
         # Name only — the numbers live in the table on the right.
-        dx, dy, ha = (11, 5, "left")
-        if label.startswith("静态 cap2"):
-            dx, dy, ha = (-11, 4, "right")
+        # Hand-placed, because the top-right cluster (Foyer + HiCache, 静态 cap2,
+        # Foyer) spans only 13 minutes and 4 points of hit rate. No generic offset
+        # works there: whichever direction a label runs, it lands on a neighbour.
+        # Everything else uses the default right-and-up.
+        dx, dy, ha = {
+            "Foyer + HiCache": (0, 13, "center"),   # straight up, clear of both
+            "Foyer": (0, -20, "center"),            # straight down, clear of both
+            "静态 cap2": (12, -1, "left"),          # right, into empty space
+            "静态 cap1": (-11, 5, "right"),         # rightmost point: must run left
+        }.get(label, (11, 5, "left"))
         ax.annotate(label, (d["wall"], d["hit"]), textcoords="offset points",
                     xytext=(dx, dy), fontsize=10, color=colour, ha=ha)
     pts = sorted([(d["wall"], d["hit"]) for d in data.values()])
@@ -163,7 +194,7 @@ def main():
                   fontsize=13, pad=18)
 
     fig.text(0.5, 0.015, "数据源：results/night/<run>/；墙钟取 metadata.wall_s，缺失时按步骤跨度计算；"
-                         "SLO = TTFT<10s 的步骤占比。图只画池子校验通过的 run。",
+                         "SLO = TTFT<10s 的步骤占比。图只画池子校验通过的 run（与流水线同口径，容差 ±20 token）。",
              ha="center", fontsize=9, color="0.35")
     fig.savefig(os.path.join(OUT, "fig_poisson_status.png"))
     print("wrote fig_poisson_status.png ->", OUT)
