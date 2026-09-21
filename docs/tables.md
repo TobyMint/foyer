@@ -85,10 +85,10 @@
 | Foyer + HiCache | `budget3:hw=0;target=0.95` | 297.6 | 0 | 69.7 | 2228 | 89.8 | 2.11 |
 | Foyer rl90 ⚠ pool=101430 | `foyer:target=0.90;gs=0.35` | 300.2 | 1 | 57.7 | 4033 | 77.8 | 2.84 |
 | Foyer rl99 | `foyer:target=0.99;gs=0.05;hs=0.98` | 362.0 | 1 | 46.3 | 6350 | 61.4 | 3.30 |
-| Foyer t90 | `pois200_foyer_t90` | — | — | — | — | — | — |
-| Foyer t85 | `pois200_foyer_t85` | — | — | — | — | — | — |
+| Foyer t90 | `budget3:hw=0;target=0.90` | 321.8 | 1 | 65.5 | 2320 | 87.7 | 2.04 |
+| Foyer t85 | `budget3:hw=0;target=0.85` | 339.9 | 0 | 67.3 | 2294 | 89.9 | 1.90 |
 
-> ⚠ issues: pois200_foyer_rl90: pool=101430; pois200_foyer_t90: no result yet; pois200_foyer_t85: no result yet
+> ⚠ issues: pois200_foyer_rl90: pool=101430
 
 ### arrival shape — real measured peak hour (117 sessions)
 
