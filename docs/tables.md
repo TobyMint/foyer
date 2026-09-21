@@ -73,10 +73,22 @@
 
 | strategy | policy | wall(min) | fails | hit% | TTFT p50(ms) | SLO% | avg conc |
 |---|---|---|---|---|---|---|---|
+| no control | `default` | 294.8 | 1 | 1.6 | 1773955 | 3.0 | 94.84 |
+| cap1 | `static=1` | 533.6 | 0 | 69.9 | 1642 | 94.8 | 1.00 |
 | cap2 | `static=2` | 310.5 | 0 | 67.7 | 2183 | 89.5 | 1.99 |
 | cap3 | `static=3` | 259.2 | 0 | 49.8 | 5088 | 62.2 | 3.56 |
 | cap4 | `static=4` | 257.6 | 0 | 45.9 | 7215 | 55.7 | 3.94 |
-| Foyer fixed cfg | `budget3:hw=0;target=0.95` | 299.3 | 0 | 65.6 | 2369 | 88.6 | 2.12 |
+| cap5 | `static=5` | 267.0 | 0 | 27.5 | 24414 | 27.1 | 4.89 |
+| Concur (paper params) | `aimd2:u_low=0.2;u_high=0.5;h_thresh=0.2` | 364.3 | 0 | 60.5 | 3251 | 81.4 | 2.24 |
+| Concur (retuned) | `aimd2` | 264.6 | 0 | 40.1 | 8549 | 52.8 | 4.52 |
+| Foyer | `budget3:hw=0;target=0.95` | 299.3 | 0 | 65.6 | 2369 | 88.6 | 2.12 |
+| Foyer + HiCache | `budget3:hw=0;target=0.95` | 297.6 | 0 | 69.7 | 2228 | 89.8 | 2.11 |
+| Foyer rl90 ⚠ pool=101430 | `foyer:target=0.90;gs=0.35` | 300.2 | 1 | 57.7 | 4033 | 77.8 | 2.84 |
+| Foyer rl99 | `foyer:target=0.99;gs=0.05;hs=0.98` | 362.0 | 1 | 46.3 | 6350 | 61.4 | 3.30 |
+| Foyer t90 | `pois200_foyer_t90` | — | — | — | — | — | — |
+| Foyer t85 | `pois200_foyer_t85` | — | — | — | — | — | — |
+
+> ⚠ issues: pois200_foyer_rl90: pool=101430; pois200_foyer_t90: no result yet; pois200_foyer_t85: no result yet
 
 ### arrival shape — real measured peak hour (117 sessions)
 
