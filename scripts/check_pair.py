@@ -16,7 +16,7 @@ and the thing the design was built to cancel would be back in the result. Silent
 So this checks the assumption first and refuses to report a difference it cannot
 attribute. Then it prints the per-wave differences and the mean of the two waves.
 
-    check_pair.py [--dir DIR] [--pair NAME_A:NAME_B]... [--max-skew-min MIN]
+    check_pair.py [--dir DIR] [--pair NAME_A:NAME_B]... [--min-overlap FRAC]
 """
 import argparse
 import json
@@ -66,10 +66,12 @@ def load(root, name):
             return None
         wall_s = max(ts) - min(ts)
 
+    started = meta.get("started")
     return {
         "name": name,
         "gpu": meta.get("gpu"),
-        "started": meta.get("started"),
+        "started": started,
+        "end": (started + wall_s) if started else None,
         "wall_min": wall_s / 60.0,
         "hit": 100.0 * (rep.get("server_prefix_hit_rate") or 0.0),
         "failed": rep.get("failed_steps"),
@@ -77,14 +79,34 @@ def load(root, name):
     }
 
 
+def overlap_frac(a, b):
+    """Fraction of the SHORTER arm's life during which both were running.
+
+    This, not the start-time gap, is the quantity that matters. The two arms reach
+    their lanes from separate queues that drain at different rates, so a skew of tens
+    of minutes is normal and harmless if the arms overlap for most of their lives.
+    An earlier version of this script gated on the start gap alone with a 15-minute
+    fence, which would have rejected tonight's experiment for a 30-minute queue
+    misalignment across two five-hour runs — i.e. 90% overlap, which is fine.
+    """
+    # Explicit None checks, NOT truthiness. `if not a["started"]` treats a start of 0
+    # as missing, which is the classic falsy-zero trap; real timestamps are Unix
+    # epochs and never hit it, but a test fixture that used 0 hit it immediately.
+    for k in ("started", "end"):
+        if a[k] is None or b[k] is None:
+            return None
+    inter = min(a["end"], b["end"]) - max(a["started"], b["started"])
+    shorter = min(a["end"] - a["started"], b["end"] - b["started"])
+    return max(0.0, inter / shorter) if shorter > 0 else None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=DEFAULT_DIR)
     ap.add_argument("--pair", action="append", default=None,
                     help="A:B run names; repeatable")
-    ap.add_argument("--max-skew-min", type=float, default=15.0,
-                    help="how far apart the two arms' starts may be and still count "
-                         "as concurrent")
+    ap.add_argument("--min-overlap", type=float, default=0.80,
+                    help="required overlap fraction of the shorter arm")
     args = ap.parse_args()
     pairs = args.pair or DEFAULT_PAIRS
 
@@ -97,24 +119,26 @@ def main():
             print("⚠ %s：%s 还没有可用的结果，本组跳过" % (spec, missing))
             usable = False
             continue
-        skew = abs((a["started"] or 0) - (b["started"] or 0)) / 60.0
-        rows.append((spec, a, b, skew))
+        rows.append((spec, a, b))
 
     if not rows:
         print("两组都还没有落地。")
         return 1
 
     print("=== 配对有效性检查 ===")
-    print("%-46s %-8s %-8s %s" % ("组", "并发差(分)", "栅栏", "判定"))
-    for spec, a, b, skew in rows:
-        ok = skew <= args.max_skew_min
-        print("%-46s %8.1f %8.1f %s" % (
-            spec, skew, args.max_skew_min,
-            "✅ 并发" if ok else "❌ 未并发 —— 这不是配对，差值不可归因"))
+    print("%-46s %10s %8s %8s %s" % ("组", "重叠", "起始差(分)", "门槛", "判定"))
+    for spec, a, b in rows:
+        ov = overlap_frac(a, b)
+        skew = abs((a["started"] or 0) - (b["started"] or 0)) / 60.0
+        ok = ov is not None and ov >= args.min_overlap
+        print("%-46s %9s %8.1f %8.0f%% %s" % (
+            spec, "%.0f%%" % (100 * ov) if ov is not None else "?",
+            skew, 100 * args.min_overlap,
+            "✅ 并发" if ok else "❌ 重叠不足 —— 差值不可归因"))
         if not ok:
             usable = False
     print()
-    for spec, a, b, skew in rows:
+    for spec, a, b in rows:
         print("  %s" % spec)
         for r in (a, b):
             print("    gpu%s  %-24s wall=%.1f min  hit=%.1f%%  失败=%s  墙钟来源=%s"
@@ -123,7 +147,7 @@ def main():
 
     print("\n=== 每组的配对差（A 减 B）===")
     dw, dh = [], []
-    for spec, a, b, skew in rows:
+    for spec, a, b in rows:
         d_wall = a["wall_min"] - b["wall_min"]
         d_hit = a["hit"] - b["hit"]
         dw.append(d_wall)
