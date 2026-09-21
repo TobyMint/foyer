@@ -2,3 +2,5 @@
 # pair run on gpu2 (disjoint lists, so two streams can never race on the same run).
 lane_pois_main.sh pois200_cap1            # 泊松主表补全（default / cap5 / cap1）——当前 lane
 lane_pois_t90.sh pois200_foyer_t90        # 预算 rho=0.90：补回对 cap2 的质量差距
+lane_foyer_rl90fix.sh pois200_foyer_rl90fix
+lane_foyer_rl99fix.sh pois200_foyer_rl99fix
