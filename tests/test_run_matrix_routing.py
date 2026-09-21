@@ -131,9 +131,9 @@ def test_solve_memfrac_survives_a_none_probe():
     died inside its own recovery, aborting the lane with a traceback instead of a
     verdict. Every probe shape it can now be handed must return a float.
     """
-    for probe in ({}, {None: 79212}, {0.85: 79212},
-                  {None: 79212, 0.90: 100000},
-                  {0.85: 79212, 0.90: 100000}):
+    for probe in ([], [(None, 79212)], [(0.85, 79212)],
+                  [(None, 79212), (0.90, 100000)],
+                  [(0.85, 79212), (0.90, 100000)]):
         got = rm.solve_memfrac(probe, 101432)
         assert isinstance(got, float), (probe, got)
 
@@ -142,8 +142,53 @@ def test_solve_memfrac_steps_up_from_a_lone_point():
     """One point gives no slope, so the answer must be strictly higher than the
     dial that produced it — otherwise the retry re-probes the same memfrac and the
     lane burns all MAX_POOL_ATTEMPTS without ever moving."""
-    assert rm.solve_memfrac({0.85: 79212}, 101432) > 0.85
-    assert rm.solve_memfrac({None: 79212}, 101432) > float(rm.MEMFRAC)
+    assert rm.solve_memfrac([(0.85, 79212)], 101432) > 0.85
+    assert rm.solve_memfrac([(None, 79212)], 101432) > float(rm.MEMFRAC)
+
+
+def test_solve_memfrac_ignores_a_stale_probe():
+    """The invariant that makes the solver survive a drifting neighbour.
+
+    On 2026-09-21 gpu3 fed the solver 0.85->90248, 0.86->94471, 0.876484->112964:
+    the first pair implies one slope and the second contradicts it, because the
+    neighbour's footprint moved between probes. Solving from the EXTREMES anchored
+    the fit on the stalest point and overshot twice, and the lane aborted.
+
+    So: prepending an old, contradictory probe must not change the answer. If this
+    fails, someone has gone back to fitting pts[0] against pts[-1].
+    """
+    fresh = [(0.86, 94471), (0.876484, 112964)]
+    base = rm.solve_memfrac(fresh, 101432)
+    assert rm.solve_memfrac([(0.70, 30000)] + fresh, 101432) == base, \
+        "a stale probe moved the answer: the fit is anchored on old data again"
+    assert rm.solve_memfrac([(0.99, 30000)] + fresh, 101432) == base
+
+
+def test_solve_memfrac_clamps_a_wild_step():
+    """A near-flat pair implies a near-infinite slope and therefore an enormous
+    step. Unclamped, that lands somewhere the line was never valid and costs a
+    full server start to discover."""
+    got = rm.solve_memfrac([(0.85, 90248), (0.851, 90249)], 101432)
+    assert abs(got - 0.851) <= rm.MAX_MEMFRAC_STEP + 1e-9, \
+        "step not clamped: %s is more than %s from the last probe" % (
+            got, rm.MAX_MEMFRAC_STEP)
+
+
+def test_solve_memfrac_survives_the_gpu3_sequence():
+    """The exact probe sequence that aborted a lane, replayed. It must stay in
+    range at every step, and it must be allowed enough attempts to converge."""
+    probes = []
+    for m, p in [(0.85, 90248), (0.86, 94471), (0.876484, 112964), (0.863039, 107110)]:
+        probes.append((m, p))
+        got = rm.solve_memfrac(list(probes), 101432)
+        # Bound by MAX_MEMFRAC and by sanity, NOT by the module's MEMFRAC: that
+        # default is 0.88 here but the lab runs with TURNSTILE_MEMFRAC=0.85, so the
+        # real probe values sit below the local default. (This assertion started as
+        # `float(rm.MEMFRAC) <= got` and failed for exactly that reason — the test
+        # encoding a lab setting the test does not control.)
+        assert isinstance(got, float) and 0.5 <= got <= rm.MAX_MEMFRAC, (probes, got)
+    assert rm.MAX_POOL_ATTEMPTS >= 6, \
+        "four probes could not place this lane; six is the floor that was earned"
 
 
 def test_expected_pool_is_reachable_under_the_memfrac_ceiling():
