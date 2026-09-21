@@ -439,6 +439,49 @@ def main():
             admitted_now = set(active) | set(candidates)
             write_permit(args.permit_file, admitted_now, shed)
 
+            # 8. Q1: the resource decomposition, sampled at THIS instant.
+            #
+            # Why here and not in monitor.py. The question the paper turns on is
+            # whether a session-level logical account and the engine's physical
+            # occupancy are the same quantity. Answering it needs five things read
+            # at ONE instant over ONE session set: the logical sum, the engine's
+            # locked tokens, what is reclaimable, what sits in the host tier, and
+            # what is promised but not yet materialised. monitor.py scrapes on its
+            # own 5s clock and cannot see the session set at all; the controller
+            # already holds both halves and already fetches this endpoint every
+            # cycle. `em` carries EVERY gauge the engine exposes -- until now only
+            # token_usage was read out of it and the rest were discarded.
+            #
+            # `ctx_sum` is the sharing-blind logical sum: each resident session
+            # charged its own full context, with no credit for shared prefixes.
+            # That is deliberately the naive quantity -- it is what a session
+            # ledger would compute, and the gap between it and the engine's number
+            # is the thing under investigation, not an error to be corrected here.
+            # A session that has been admitted but has not run yet has ctx 0, so
+            # fall back to its arrival size, matching the admission path.
+            #
+            # These gauges go STALE WHEN THE ENGINE IS IDLE -- full_token_usage in
+            # particular stops updating rather than falling to zero (measured
+            # 2026-09-21, ledger section 8). The controller samples continuously,
+            # including under load, which is exactly when the readings are valid,
+            # so this log is a better source for them than the monitor's.
+            resident = [s for s in sess.values() if s["active"]]
+            ctx_sum = sum((s["ctx"] or s["prompt0"]) for s in resident)
+            res = {
+                # fractions of the pool, as the endpoint reports them; multiply by
+                # pool_tokens to compare against `measured`, which is already tokens
+                "full": em.get("sglang:full_token_usage"),
+                "swa": em.get("sglang:swa_token_usage"),
+                "pp": em.get("sglang:pending_prealloc_token_usage"),
+                "hh": em.get("sglang:hicache_host_used_tokens"),
+                "ht": em.get("sglang:hicache_host_total_tokens"),
+                "run": em.get("sglang:num_running_reqs"),
+                "q": em.get("sglang:num_queue_reqs"),
+                "paused": em.get("sglang:num_paused_reqs"),
+                "retr": em.get("sglang:num_retracted_reqs"),
+                "evict": em.get("sglang:evicted_tokens_total"),
+            }
+
             log.write(json.dumps({
                 "ts": round(now, 3),
                 "active_n": len(active), "waiting_n": len(waiting),
@@ -453,6 +496,11 @@ def main():
                 "valve": valve, "shed_n": len(shed),
                 "ttft_p50_ms": round(fresh_vals[len(fresh_vals) // 2]) if fresh_vals else None,
                 "glob_growth_prior": round(glob_growth_sum / glob_growth_n, 1) if glob_growth_n else None,
+                # Q1 (see step 8). ctx_sum is the logical account, measured is the
+                # engine's, and `res` is everything else the engine will admit to.
+                "ctx_sum": ctx_sum, "resident_n": len(resident),
+                "res": {k: (round(v, 6) if isinstance(v, float) else v)
+                        for k, v in res.items()},
             }) + "\n")
             log.flush()
             time.sleep(args.interval)
