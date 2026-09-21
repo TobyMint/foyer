@@ -168,7 +168,22 @@ pub(crate) struct AdmissionGate {
 }
 
 impl AdmissionGate {
-    /// Legacy count-cap mode: first session to observe active < cap grabs the slot.
+    /// Legacy count-cap mode: claim a slot atomically.
+    ///
+    /// This used to be `load` then `store(active + 1)` — a read-modify-write that is
+    /// not atomic. Two sessions woken by the same 200 ms poll could both read
+    /// `active == cap - 1` and both write `cap`, so the cap was exceeded AND one
+    /// increment was lost. The lost increment is the worse half: the counter then sat
+    /// permanently BELOW the number of sessions actually in flight, which raised the
+    /// effective cap for the rest of the run.
+    ///
+    /// Measured on pois200_cap3_r2 (2026-09-21) from its admissions.jsonl: the `cap`
+    /// field reads 3 on all 200 events, but 195 of the 200 admissions happened while
+    /// `active` was already 3, so 4 were in flight — the run labelled cap3 measured
+    /// cap4 and its wall clock (259.2 min) agrees with clean cap4's (257.6) to 0.6%.
+    /// cap4 and cap5 were unaffected. None of it is visible in the event log, because
+    /// the `active` field the log records is the counter's own view; reconstructing
+    /// the count from `active + 1` at each admit is what exposes it.
     async fn acquire(
         state: &Arc<AppState>,
         session_id: &str,
@@ -178,15 +193,31 @@ impl AdmissionGate {
         let waited_since = Instant::now();
         loop {
             let cap = state.current_cap();
-            let active = state.active_sessions.load(Ordering::Relaxed);
-            if active < cap {
-                state.active_sessions.store(active + 1, Ordering::Relaxed);
+            // Compare-and-swap, so the "is there room" check and the claim cannot be
+            // interleaved by another waiter.
+            let mut cur = state.active_sessions.load(Ordering::Acquire);
+            let mut claimed = false;
+            while cur < cap {
+                match state.active_sessions.compare_exchange_weak(
+                    cur,
+                    cur + 1,
+                    Ordering::AcqRel,
+                    Ordering::Acquire,
+                ) {
+                    Ok(_) => {
+                        claimed = true;
+                        break;
+                    }
+                    Err(actual) => cur = actual,
+                }
+            }
+            if claimed {
                 state.log_admission(
                     "admit",
                     session_id,
                     session_ordinal,
                     cap,
-                    active + 1,
+                    cur + 1,
                     waited_since,
                     prompt_tokens,
                 );
@@ -249,7 +280,22 @@ impl AdmissionGate {
 
 impl Drop for AdmissionGate {
     fn drop(&mut self) {
-        let active = self.state.active_sessions.fetch_sub(1, Ordering::Relaxed) - 1;
+        // fetch_sub returns the PREVIOUS value, so the count once we have left is
+        // prev - 1. Guard the zero case: an unsigned wrap here sets the counter to
+        // u64::MAX, which makes every later `active < cap` check false and silently
+        // stops all further admissions for the rest of the run. That is exactly how
+        // pois200_cap3_r2 ended (2026-09-21) — the counter had already drifted low
+        // from lost updates, then went below zero.
+        let prev = self.state.active_sessions.fetch_sub(1, Ordering::AcqRel);
+        if prev == 0 {
+            self.state.active_sessions.fetch_add(1, Ordering::AcqRel);
+            eprintln!(
+                "AdmissionGate for {} dropped holding no slot (active_sessions was 0); \
+                 counter restored to avoid wrapping",
+                self.session_id
+            );
+        }
+        let active = prev.saturating_sub(1);
         let cap = self.state.current_cap();
         self.state.log_admission(
             "release",
