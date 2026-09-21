@@ -21,6 +21,19 @@ COUNTERS = [
     "sglang:cached_tokens_total",
     "sglang:evicted_tokens_total",
     "sglang:prompt_tokens_total",
+    # Added 2026-09-21 after finding them exposed but uncollected. All three are
+    # relevant to the resource-accounting question (docs/claim_ledger Q1):
+    #   hicache_host_used_tokens  -- the host tier. Measured at 201,420 tokens
+    #       against a 101,432 GPU pool, i.e. the host tier holds about twice the
+    #       GPU pool and was 99.3% full. It is not a side buffer.
+    #   pending_prealloc_token_usage -- capacity committed but not yet materialised,
+    #       which is what the controller's own `pending` term is trying to model.
+    #   swa_token_usage -- the sliding-window split of attention. Reads 0.0 on this
+    #       model, so it is recorded for completeness rather than because it moves.
+    "sglang:hicache_host_used_tokens",
+    "sglang:hicache_host_total_tokens",
+    "sglang:pending_prealloc_token_usage",
+    "sglang:swa_token_usage",
 ]
 HISTOGRAMS = {
     "ttft": "sglang:time_to_first_token_seconds",
