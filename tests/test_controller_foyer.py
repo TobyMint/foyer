@@ -210,6 +210,82 @@ def main():
     check(d["n_admitted"] == 0, "a 3x margin on the newcomer blocks it",
           "n=%s" % d["n_admitted"])
 
+    # 7. The four fixes from the external audit (2026-09-21). Each one needs a test
+    #    that FAILS on the old behaviour, or the fix is indistinguishable from a
+    #    rewrite that happens to compile.
+    print("pending_releases_on_prefill_not_on_round_completion")
+    adm = session_events("s1") + [admit_event("s1", 20000)]
+    # A short estimated prefill releases the charge; the old code held it until the
+    # session's first round COMPLETED, i.e. prefill plus a whole decode.
+    d = run_case("pending_short", 0.10, adm, [],
+                 extra_args=["--pending-floor-s", "0.05", "--prefill-tok-s", "1e9"])
+    check(d["pending_n"] == 0,
+          "pending is released once the estimated prefill has elapsed",
+          "pending_n=%s (still charged => release is still tied to round completion)"
+          % d["pending_n"])
+    d = run_case("pending_long", 0.10, adm, [],
+                 extra_args=["--pending-floor-s", "600"])
+    check(d["pending_n"] == 1,
+          "a long estimate keeps the charge (the control)",
+          "pending_n=%s" % d["pending_n"])
+
+    print("prev_started_means_the_engine_took_it")
+    # Two sessions queued. With the old test (wait for a COMPLETED round) the second
+    # could not be admitted until the first finished a whole round. With the fix it
+    # goes in as soon as the first is no longer pending.
+    # Timestamps must lie in the PAST relative to the controller's own clock: the
+    # pending release fires on `now >= admit_ts + hold`, so an admit stamped after
+    # the controller starts is never released during a sub-second test run.
+    two = (session_events("a", 20000, ts=T0 - 10)
+           + session_events("b", 20000, ts=T0 - 9)
+           + [admit_event("a", 20000, ts=T0 - 5)])
+    d = run_case("prev_started", 0.10, two, [],
+                 extra_args=["--pending-floor-s", "0.05", "--prefill-tok-s", "1e9",
+                             "--candidate-window", "4"])
+    # Assert on `candidate`, not `active_n`: the log records active_n BEFORE this
+    # cycle's admissions, and with no runner in the loop nothing ever writes the
+    # `admit` event that would promote a session into `active`. Under the old
+    # `last_round >= 0` test b stayed blocked for a full round (and 60 s past that);
+    # under the fix it goes in as soon as a is out of `pending`.
+    check(d["candidate"] == "b" and d["n_admitted"] == 1,
+          "a second session is admitted without waiting for the first's round",
+          "candidate=%s n=%s (b never admitted => still waiting on a completed round)"
+          % (d["candidate"], d["n_admitted"]))
+
+    print("head_of_line_blocking")
+    # Head is 50k and cannot fit under a 55k red line with 50k already measured;
+    # a 4k session queued behind it can. Window 1 must refuse both, window >1 must
+    # take the small one.
+    blk = (session_events("big", 50000, ts=T0)
+           + session_events("small", 4000, ts=T0 + 1))
+    d = run_case("hol1", 0.50, blk, [],
+                 extra_args=["--target-util", "0.55", "--growth-scale", "0",
+                             "--candidate-window", "1", "--disable-starve-guard"])
+    check(d["n_admitted"] == 0,
+          "window=1 blocks behind a head that does not fit (the old behaviour)",
+          "n=%s" % d["n_admitted"])
+    d = run_case("hol8", 0.50, blk, [],
+                 extra_args=["--target-util", "0.55", "--growth-scale", "0",
+                             "--candidate-window", "8", "--disable-starve-guard"])
+    check(d["n_admitted"] == 1 and d["candidate"] == "small",
+          "a wider window skips the head and admits the session that fits",
+          "n=%s candidate=%s" % (d["n_admitted"], d["candidate"]))
+
+    print("shed_capacity_is_charged_until_acknowledged")
+    # The runner finishes the current round before honouring a pause, so the memory
+    # is not free when we ask. The old code dropped it from `active` immediately and
+    # then admitted a replacement against memory that was still occupied.
+    sw = (session_events("s1", 50000, ts=T0) + session_events("s2", 50000, ts=T0 + 1)
+          + [admit_event("s1", 50000, ts=T0 + 2), admit_event("s2", 50000, ts=T0 + 3)])
+    d = run_case("pausing", 0.99, sw,
+                 [step_record("s1", 50000, 0), step_record("s2", 50000, 0)],
+                 extra_args=["--hard-stop-usage", "0.93", "--target-util", "0.90"])
+    check(d["shed_n"] >= 1, "a shed happened (precondition)",
+          "shed_n=%s" % d["shed_n"])
+    check(d["pausing"] > 0,
+          "the shed session's capacity is still charged (no pause ack yet)",
+          "pausing=%s (0 => released before the runner acted)" % d["pausing"])
+
     print()
     if _failures:
         print("%d FAILED: %s" % (len(_failures), ", ".join(_failures)))

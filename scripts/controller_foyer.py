@@ -134,10 +134,23 @@ def main():
     ap.add_argument("--slo-window", type=int, default=20)
     ap.add_argument("--starve-seconds", type=float, default=240.0)
     ap.add_argument("--starve-cooldown", type=float, default=300.0)
-    ap.add_argument("--pending-timeout-s", type=float, default=120.0,
-                    help="drop a pending admission this long after the permit, even if "
-                         "no step arrived (a session that never prefilled must not "
-                         "occupy the accounting forever)")
+    ap.add_argument("--prefill-tok-s", type=float, default=1500.0,
+                    help="measured prefill rate, used to decide when a permitted session "
+                         "has actually landed in the engine (see the pending note). "
+                         "pois200 measurements: ~2500 tok/s up to 20k, degrading to "
+                         "~1700 tok/s at 30k, ~924 tok/s fitted overall.")
+    ap.add_argument("--pending-floor-s", type=float, default=6.0,
+                    help="never release a pending charge sooner than this")
+    ap.add_argument("--pending-ceiling-s", type=float, default=120.0,
+                    help="release a pending charge after this even if the estimate said "
+                         "longer — a session that never prefilled must not occupy the "
+                         "accounting forever")
+    ap.add_argument("--pause-confirm-s", type=float, default=90.0,
+                    help="keep charging a shed session's capacity until the runner "
+                         "ACKNOWLEDGES the pause (it finishes its current round first)")
+    ap.add_argument("--candidate-window", type=int, default=8,
+                    help="how many waiting sessions to consider for admission, oldest "
+                         "first. 1 reproduces the old head-of-line-blocking behaviour.")
     ap.add_argument("--interval", type=float, default=2.0)
     ap.add_argument("--max-minutes", type=float, default=300.0)
 
@@ -160,7 +173,8 @@ def main():
 
     red_line = args.pool_tokens * args.target_util
     sess = {}          # sid -> dict(arrived_ts, prompt0, active, finished, ctx, ema, n_obs)
-    pending = {}       # sid -> (admit_ts, tokens) admitted but not yet seen by the engine
+    pending = {}       # sid -> (admit_ts, tokens, clear_at) permitted, not yet in the engine
+    pausing = {}       # sid -> (shed_ts, tokens) shed, runner has not acknowledged yet
     highwater = 0.0
     ttfts = deque(maxlen=args.slo_window)
     glob_growth_sum = 0.0
@@ -234,20 +248,36 @@ def main():
                     s["active"] = True
                     if ev.get("prompt_tokens"):
                         s["prompt0"] = int(ev["prompt_tokens"])
-                    # the engine has not prefilled it yet, so token_usage cannot
-                    # see it — carry it explicitly until a step record proves it landed
-                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"])
+                    # The engine has not prefilled it yet, so token_usage cannot see
+                    # it — carry it explicitly. But only until the engine actually
+                    # takes it: prefill starts ~prompt0/prefill_rate seconds after the
+                    # permit, at which point the KV is allocated and token_usage
+                    # counts it. The previous version held the charge until the first
+                    # round COMPLETED, which is prefill PLUS a full decode — so the
+                    # session was counted twice for the length of its first round.
+                    # That is what pinned rl90's ledger at 100% while the engine sat
+                    # at 64%, and it is why the extra concurrency bought nothing.
+                    hold = min(max((s["ctx"] or s["prompt0"]) / max(1.0, args.prefill_tok_s),
+                                   args.pending_floor_s),
+                               args.pending_ceiling_s)
+                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"],
+                                    ev.get("ts", now) + hold)
                     last_admitted_sid = sid
                     last_admit_ts = ev.get("ts", now)
                 elif etype == "resume":
                     s["active"] = True
-                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"])
+                    hold = min(max((s["ctx"] or s["prompt0"]) / max(1.0, args.prefill_tok_s),
+                                   args.pending_floor_s),
+                               args.pending_ceiling_s)
+                    pending[sid] = (ev.get("ts", now), s["ctx"] or s["prompt0"],
+                                    ev.get("ts", now) + hold)
                 elif etype == "pause":
                     # a shed pause emits release+pause back-to-back; the release
                     # handler marks finished — undo it, a paused session is NOT done
                     s["active"] = False
                     s["finished"] = False
                     pending.pop(sid, None)
+                    pausing.pop(sid, None)   # the runner has now acted on the shed
                 elif etype == "release":
                     s["active"] = False
                     s["finished"] = True
@@ -288,11 +318,17 @@ def main():
             measured = floor * args.pool_tokens
 
             # 4. what the engine cannot see yet, and what the residents will add
-            stale = [sid for sid, (ts, _) in pending.items()
-                     if now - ts > args.pending_timeout_s]
-            for sid in stale:
+            for sid in [s for s, v in pending.items() if now >= v[2]]:
                 pending.pop(sid, None)
-            pending_tokens = sum(t for _, t in pending.values())
+            pending_tokens = sum(v[1] for v in pending.values())
+            # A shed session keeps occupying capacity until the runner ACKNOWLEDGES:
+            # it runs its current round to completion first. Removing it from `active`
+            # the moment we ask lets the controller admit a replacement against memory
+            # that is not free yet — planned state and executed state diverge.
+            for sid in [s for s, v in pausing.items()
+                        if now - v[0] > args.pause_confirm_s]:
+                pausing.pop(sid, None)
+            pausing_tokens = sum(v[1] for v in pausing.values())
 
             active = [sid for sid, s in sess.items() if s["active"]]
             waiting = sorted(
@@ -305,7 +341,7 @@ def main():
                               default=0.0)
 
             growth_reserve = args.growth_scale * sum(forecast(sess[sid]) for sid in active)
-            committed = measured + pending_tokens + growth_reserve
+            committed = measured + pending_tokens + pausing_tokens + growth_reserve
 
             # 5. admission decision
             valve = usage >= args.hard_stop_usage
@@ -329,13 +365,26 @@ def main():
                 if shed:
                     for sid in shed:
                         sess[sid]["active"] = False
+                        # keep charging until the pause event comes back
+                        pausing[sid] = (now, sess[sid]["ctx"] or sess[sid]["prompt0"])
 
+            # "started" means the ENGINE HAS TAKEN IT, i.e. it is no longer pending.
+            # The old test was `last_round >= 0` — a COMPLETED first round, which is
+            # prefill plus a full decode, so a fresh admission blocked the next one for
+            # tens of seconds while the budget had room. The name was the only thing
+            # that said "started".
             prev_started = (last_admitted_sid is None
-                            or sess.get(last_admitted_sid, {}).get("last_round", -1) >= 0
-                            or now - last_admit_ts > 60)
+                            or last_admitted_sid not in pending
+                            or now - last_admit_ts > args.pending_ceiling_s)
             candidates = []
+            bypassed = 0   # initialised here, not in the branch: the log line below
+                           # reads it unconditionally, and scoping it inside the
+                           # `if waiting` block made every idle cycle raise
+                           # UnboundLocalError, which the per-cycle handler swallowed
+                           # into a cycle_error row (caught by the smoke test)
             if waiting and not valve and (prev_started or args.disable_single_flight):
-                head = waiting if args.disable_single_flight else waiting[:1]
+                head = (waiting if args.disable_single_flight
+                        else waiting[:max(1, args.candidate_window)])
                 for sid in head:
                     s = sess[sid]
                     # a resumed/shed survivor is budgeted at its KNOWN current
@@ -343,10 +392,18 @@ def main():
                     base = s["ctx"] or s["prompt0"]
                     n = base * args.margin
                     if committed + n <= red_line:
+                        if candidates:
+                            bypassed += 1
                         candidates.append(sid)
                         committed += n
                         if not args.disable_single_flight:
                             break
+                    else:
+                        # Contexts here run from ~19k to ~89k, so a large head that
+                        # does not fit used to block every smaller session behind it.
+                        # Skipping is bounded by --candidate-window and the rate-limited
+                        # starve guard still forces the oldest in eventually.
+                        bypassed += 1
 
             # 6. rate-limited starve guard — gated on the measured base, not the
             # instantaneous value, so a retraction dip cannot force-admit
@@ -372,6 +429,7 @@ def main():
                 "committed": round(committed), "red_line": round(red_line),
                 "fill": round(committed / red_line, 3) if red_line else None,
                 "candidate": (candidates[0] if candidates else None),
+                "bypassed": bypassed, "pausing": round(pausing_tokens),
                 "n_admitted": len(candidates), "forced": forced,
                 "valve": valve, "shed_n": len(shed),
                 "ttft_p50_ms": round(fresh_vals[len(fresh_vals) // 2]) if fresh_vals else None,
