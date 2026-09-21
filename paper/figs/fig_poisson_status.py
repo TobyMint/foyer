@@ -90,9 +90,13 @@ ROWS = [
     # and its 1.6% hit rate sits an order of magnitude below every policy here, so
     # it would force either a broken axis or a squashed cluster. It stays in the
     # numbers wherever the prose needs it.
-    ("静态 cap1", "pois200_cap1", BLUE, "排队中"),
+    ("静态 cap1", "pois200_cap1", BLUE, None),
     ("静态 cap2", "pois200_cap2", BLUE, None),
-    ("静态 cap3", "pois200_cap3_r2", BLUE, None),
+    # NOT a cap3 point: the runner's cap race let 195/200 admissions land at
+    # active=3, so this ran at 4 in flight. Kept on the figure because its numbers
+    # are real and it agrees with clean cap4 to 0.6% (see docs/three_paths), but the
+    # label says what it is. cap3_fixed will supply the actual cap=3 point.
+    ("cap3_r2 (实为 cap4)", "pois200_cap3_r2", BLUE, None),
     ("静态 cap4", "pois200_cap4", BLUE, None),
     ("静态 cap5", "pois200_cap5", BLUE, None),
     ("Foyer", "pois200_foyer", GREEN, None),
@@ -105,9 +109,12 @@ ROWS = [
     # is the whole point of keeping it on the figure.
     ("Foyer rl90", "pois200_foyer_rl90", BROWN, None),
     ("Foyer rl99", "pois200_foyer_rl99", RED, None),
-    ("Foyer t90", "pois200_foyer_t90", TEAL, "排队中"),
-    ("Foyer t85", "pois200_foyer_t85", OLIVE, "排队中"),
-    ("Concur", "pois200_aimd2", ORANGE, None),
+    ("Foyer t90", "pois200_foyer_t90", TEAL, None),
+    ("Foyer t85", "pois200_foyer_t85", OLIVE, None),
+    ("Concur（重调）", "pois200_aimd2", ORANGE, None),
+    # The paper-parameter arm. Its 370.7 is the defensible Concur number (the
+    # earlier 364.3 came from a process-reaper kill with unfinished metadata).
+    ("Concur（原参数）", "pois200_aimd2_paper", GRAY, None),
 ]
 
 
