@@ -3,3 +3,5 @@
 lane_pois_hicache.sh pois200_foyer_hc      # 泊松主表 + HiCache（机制②证据）
 lane_pois_aimd2_paper.sh pois200_aimd2_paper  # Concur 原论文参数（缺陷 B 修复后的公平重测）
 lane_pois_t85.sh pois200_foyer_t85            # 预算 rho=0.85：更保守的一档，用于质量/吞吐权衡
+lane_cap4_hc.sh pois200_cap4_hc
+lane_cap3_fixed.sh pois200_cap3_fixed

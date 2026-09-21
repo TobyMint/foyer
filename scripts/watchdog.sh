@@ -11,15 +11,19 @@ LOCK=$N/.watchdog.lock
 exec 9>"$LOCK" || exit 1
 flock -n 9 || exit 0
 cd "$BASE" || exit 1
-# gpu0/gpu1 joined on 2026-09-21 for the Foyer guardrail arms: they had been idle
-# (15-18 MiB, no compute processes) for over an hour, and the box's other tenants
-# only ever touch cards 2 and 3. A stream is only started when one is NOT already
-# running, so listing a card here costs nothing while it is busy.
-for pair in "0:worklist_gpu0.txt" "1:worklist_gpu1.txt" "2:worklist_gpu2.txt" "3:worklist_gpu3.txt"; do
+# CARDS 0 AND 1 ARE DELIBERATELY ABSENT. The user's standing instruction (2026-09-21)
+# is that they may only be used when the user says so for that occasion — e.g. when
+# they are known to be idle overnight. They were briefly added here on 2026-09-21
+# morning and the user stopped it mid-run; do not re-add them without a fresh
+# instruction for that specific occasion. Two cards (2 and 3) is the normal budget,
+# because saturating all four gets our long-running processes reaped by other
+# tenants on this shared box.
+for pair in "2:worklist_gpu2.txt" "3:worklist_gpu3.txt"; do
   gpu=${pair%%:*}
   list=${pair#*:}
   marker="$N/.drained.$list"
-  if [ -f "$marker" ] && [ "$(cat "$marker" 2>/dev/null)" = "$(wc -l < "$BASE/scripts/$list" 2>/dev/null)" ]; then
+  if [ -f "$marker" ] && \
+     [ "$(cat "$marker" 2>/dev/null)" = "$(md5sum "$BASE/scripts/$list" 2>/dev/null | cut -d' ' -f1)" ]; then
     continue
   fi
   # ANCHOR the pattern, and match BOTH spellings (relative and absolute path). An unanchored `pgrep -f "queue_stream.sh $gpu "` also
