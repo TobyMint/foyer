@@ -122,6 +122,38 @@ def test_budget3_ablation_actually_refuses():
         "routed-but-undispatched mode can start an ungated runner again")
 
 
+def test_solve_memfrac_survives_a_none_probe():
+    """The pool guard's recovery path crashed on 2026-09-21.
+
+    lane_memfrac starts as MEMFRAC_HINT (None) and start_server then runs at
+    MEMFRAC, so the FIRST bad probe was recorded under the key None and the solver
+    did `None + 0.01`. The guard had detected a shrunken pool correctly and then
+    died inside its own recovery, aborting the lane with a traceback instead of a
+    verdict. Every probe shape it can now be handed must return a float.
+    """
+    for probe in ({}, {None: 79212}, {0.85: 79212},
+                  {None: 79212, 0.90: 100000},
+                  {0.85: 79212, 0.90: 100000}):
+        got = rm.solve_memfrac(probe, 101432)
+        assert isinstance(got, float), (probe, got)
+
+
+def test_solve_memfrac_steps_up_from_a_lone_point():
+    """One point gives no slope, so the answer must be strictly higher than the
+    dial that produced it — otherwise the retry re-probes the same memfrac and the
+    lane burns all MAX_POOL_ATTEMPTS without ever moving."""
+    assert rm.solve_memfrac({0.85: 79212}, 101432) > 0.85
+    assert rm.solve_memfrac({None: 79212}, 101432) > float(rm.MEMFRAC)
+
+
+def test_expected_pool_is_reachable_under_the_memfrac_ceiling():
+    """A shrunken pool is compensated by RAISING memfrac, bounded by MAX_MEMFRAC.
+    If a resolve needs more than the ceiling the lane is meant to abort cleanly —
+    but the ceiling must at least be above the start, or the first retry is a
+    no-op that re-probes the same dial."""
+    assert rm.MAX_MEMFRAC > float(rm.MEMFRAC), (rm.MAX_MEMFRAC, rm.MEMFRAC)
+
+
 if __name__ == "__main__":
     # Discover every test_* in this module rather than listing them by hand. The
     # hand-written list had drifted: it silently omitted

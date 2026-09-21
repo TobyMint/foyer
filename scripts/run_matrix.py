@@ -250,12 +250,22 @@ def solve_memfrac(probe, target):
     so there is no coarse quantisation to fight). Two probes therefore determine the
     line and we can solve for the target directly.
     """
-    pts = sorted(probe.items())
+    # Drop a None key rather than crashing on it. `lane_memfrac` starts as
+    # MEMFRAC_HINT (None), and start_server then runs at MEMFRAC — so the caller
+    # records that probe under the real memfrac (see the retry block in main). A
+    # None key here would reach `None + 0.01` and die, which is what happened on
+    # 2026-09-21: the pool guard fired correctly, then crashed inside its own
+    # recovery path and the lane aborted with a traceback instead of a verdict.
+    pts = sorted((m, p) for m, p in probe.items() if m is not None)
     if len(pts) >= 2:
         (m0, p0), (m1, p1) = pts[0], pts[-1]
         if m1 != m0 and p1 != p0:
             cur_m, cur_p = pts[-1]
             return round(cur_m + (target - cur_p) * (m1 - m0) / (p1 - p0), 6)
+    if not pts:
+        # Nothing usable probed: step up from the module default, which is where
+        # start_server actually put the dial.
+        return round(float(MEMFRAC) + 0.01, 6)
     # one point is not enough to know the slope: step up by the measured 0.01 and
     # let the next call solve properly
     return round(pts[-1][0] + 0.01, 6)
@@ -446,7 +456,12 @@ def main():
             # A neighbour's residue shrinks the pool; raise memfrac to compensate
             # instead of aborting. The pool stays the invariant, memfrac is only the
             # dial that reaches it, so the experiment is unchanged.
-            probe[lane_memfrac] = pool_tokens
+            # Record the dial the server ACTUALLY ran at. On the first probe
+            # lane_memfrac is still MEMFRAC_HINT (None) and start_server falls back
+            # to MEMFRAC, so keying on the None would both lose the slope the solver
+            # needs and hand solve_memfrac a None to do arithmetic on. float() is
+            # load-bearing: MEMFRAC comes from os.environ and is a STRING.
+            probe[lane_memfrac if lane_memfrac is not None else float(MEMFRAC)] = pool_tokens
             lane_memfrac = min(solve_memfrac(probe, EXPECT_POOL), MAX_MEMFRAC)
             log(f"  -> retrying at memfrac={lane_memfrac}")
             attempt += 1
