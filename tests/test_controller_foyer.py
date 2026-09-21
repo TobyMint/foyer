@@ -283,8 +283,17 @@ def main():
     check(d["shed_n"] >= 1, "a shed happened (precondition)",
           "shed_n=%s" % d["shed_n"])
     check(d["pausing"] > 0,
-          "the shed session's capacity is still charged (no pause ack yet)",
-          "pausing=%s (0 => released before the runner acted)" % d["pausing"])
+          "the shed session is still TRACKED as pausing (logged, no ack yet)",
+          "pausing=%s" % d["pausing"])
+    # ...but it must NOT be charged again on top of telemetry. Measured live on
+    # rl90fix: measured 97,180 + pausing 15,700 = 112,880 against a 101,432 pool,
+    # which is impossible, so the charge was double-counting. committed may still
+    # exceed the red line (the high-water floor and the growth reserve legitimately
+    # push it up), but it must not carry the pausing term as well.
+    check(d["committed"] <= d["measured"] + d["pending"] + d["growth_reserve"] + 1,
+          "pausing is NOT added to committed (it is already inside measured)",
+          "committed=%s vs measured+pending+growth=%s"
+          % (d["committed"], d["measured"] + d["pending"] + d["growth_reserve"]))
 
     print()
     if _failures:

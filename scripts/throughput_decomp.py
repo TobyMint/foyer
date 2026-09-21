@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Aggregate decode throughput per run, decomposed into idling vs batching.
+"""Aggregate decode throughput per run, decomposed into idling vs busy-time rate.
 
-Why this exists. The paper's central claim is that wall clock versus concurrency is
-a STEP, not a curve. That claim was originally read off wall-clock numbers alone,
-which is a single measurement of a single quantity. This script re-derives it from
-a different quantity computed from different raw data — `generation_tokens_total`
-out of metrics.csv — so that the step either shows up twice, independently, or it
-does not.
+⚠ Its original purpose is RETRACTED. This script was written to verify "wall clock
+versus concurrency is a STEP", by re-deriving the claim from aggregate throughput.
+That claim has since been withdrawn (see docs/claim_ledger_20260921.md, R2-R4): the
+per-request measurement in decode_rate.py shows per-request rate does not rise with
+concurrency, so the aggregate gain is parallelism rather than batching, and the wall
+clock is expected to be smooth. **The decomposition below is still computed and still
+useful descriptively, but do not cite it as evidence for a step, and do not cite the
+"busy-tok/s" half as batching** -- that half came from the same faulty counter
+differencing as the retracted curve (ledger R8).
 
 The decomposition matters too. A throughput gain at high concurrency can come from
 two very different places:
@@ -31,24 +34,49 @@ DEFAULT_DIR = "/data/xbw/turnstile/results/night"
 
 
 def read_metrics(path):
-    """Return (span_minutes, total_generation_tokens, busy_fraction, mean_running)."""
-    ts, gen, running = [], [], []
+    """Return (span_minutes, total_generation_tokens, busy_fraction, mean_running).
+
+    Two bugs fixed here on 2026-09-21, both flagged by an external review and both
+    mine:
+
+    1. The samples were collected by appending ts, gen and running to three separate
+       lists inside ONE try block. A row missing any single column therefore left the
+       first lists one element longer than the last, and every later `zip` paired a
+       timestamp with the wrong scrape -- silently, with no error. (I hit this exact
+       failure in a throwaway script earlier the same day, fixed it there by
+       collecting tuples, and did not notice the durable script still had it.)
+       Now a row is parsed into a tuple and appended only if ALL fields parse.
+
+    2. The counter total used max(gen), reasoning that generation_tokens_total returns
+       to 0 on restart. max is wrong for that: it returns the largest SINGLE epoch, so
+       a run with two restart epochs is undercounted by everything before the last
+       reset. It is now summed per monotonic epoch.
+    """
+    rec = []
     with open(path) as fh:
         for row in csv.DictReader(fh):
             try:
-                ts.append(float(row["ts"]))
-                gen.append(float(row["sglang:generation_tokens_total"]))
-                running.append(float(row["sglang:num_running_reqs"]))
+                rec.append((float(row["ts"]),
+                            float(row["sglang:generation_tokens_total"]),
+                            float(row["sglang:num_running_reqs"])))
             except (ValueError, TypeError, KeyError):
                 # A scrape that straddles a server restart can drop columns; the
                 # gauges are advisory anyway, so skip the sample rather than the run.
                 pass
-    if not ts:
+    if not rec:
         return None
-    span = (ts[-1] - ts[0]) / 60.0
-    # generation_tokens_total is a counter and returns to 0 on a server restart,
-    # so the total processed is the MAX, not last-minus-first.
-    return span, max(gen), sum(1 for v in running if v > 0) / len(running), \
+    span = (rec[-1][0] - rec[0][0]) / 60.0
+    # Sum each monotonic epoch: the counter resets to 0 on a server restart, so a
+    # drop means "new epoch began", not "tokens were un-generated".
+    total, prev = 0.0, rec[0][1]
+    for _, g, _ in rec[1:]:
+        if g >= prev:
+            total += g - prev
+        else:
+            total += g          # new epoch: everything since the reset
+        prev = g
+    running = [r for _, _, r in rec]
+    return span, total, sum(1 for v in running if v > 0) / len(running), \
         sum(running) / len(running)
 
 

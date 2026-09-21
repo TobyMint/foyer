@@ -328,6 +328,25 @@ def main():
             for sid in [s for s, v in pausing.items()
                         if now - v[0] > args.pause_confirm_s]:
                 pausing.pop(sid, None)
+            # Charged for LOGGING only -- deliberately NOT added to `committed`.
+            #
+            # Measured on pois200_foyer_rl90fix (2026-09-21), while it was running:
+            # measured 97,180 + pausing 15,700 = 112,880 against a pool of 101,432.
+            # The engine cannot be holding more non-reclaimable KV than the pool
+            # exists, so `measured` -- which is the engine's own token_usage -- already
+            # contains the session we asked to pause. It is still running its current
+            # round; the runner pauses it only when that round completes. Adding its
+            # capacity again charges the same memory twice, and the effect was not
+            # subtle: committed sat at 120-132k against a 91,289 red line, so the
+            # controller could not admit anything for most cycles.
+            #
+            # The mechanism this was meant to fix is real -- an earlier version dropped
+            # a shed session from `active` immediately and then admitted against memory
+            # that was still occupied. But the fix for that is not a second charge on
+            # top of telemetry; telemetry already tells the truth here. What must not
+            # happen is the opposite: removing it from the GROWTH RESERVE, which is
+            # still correct (we should not forecast growth for a session on its way
+            # out), and that is handled by `active` excluding it.
             pausing_tokens = sum(v[1] for v in pausing.values())
 
             active = [sid for sid, s in sess.items() if s["active"]]
@@ -341,7 +360,7 @@ def main():
                               default=0.0)
 
             growth_reserve = args.growth_scale * sum(forecast(sess[sid]) for sid in active)
-            committed = measured + pending_tokens + pausing_tokens + growth_reserve
+            committed = measured + pending_tokens + growth_reserve
 
             # 5. admission decision
             valve = usage >= args.hard_stop_usage
