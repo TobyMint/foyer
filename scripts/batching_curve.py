@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
-"""Instantaneous decode rate as a function of instantaneous concurrency, WITHIN a run.
+"""⛔ SUPERSEDED AND KNOWN WRONG — use decode_rate.py instead.
+
+    This script's method has a bug that manufactured its headline result. It
+    differences generation_tokens_total between fixed 5-second scrapes, but the
+    engine's counters update in ~10-second batches, so a burst lands in whichever
+    scrape caught it and the scrapes between read zero. At low concurrency that
+    understates the rate by ~25%, and the result was a curve that appeared to show
+    decode rate doubling from concurrency 1 to 2.
+
+    Per-request timing from steps.jsonl (see decode_rate.py) shows the opposite:
+    per-request decode rate is flat to DECLINING with concurrency (36.4 -> 34.6 ->
+    33.4 tok/s, i.e. 1->2 is 0.95x). The paper's section 5.11 documents the retraction
+    and keeps this failure as a methodological lesson.
+
+    Kept only so the wrong method is inspectable. Do not cite its output.
+
+--- original docstring follows ---
+
+Instantaneous decode rate as a function of instantaneous concurrency, WITHIN a run.
 
 Why this is the strong version of the argument. The between-run comparison in
 throughput_decomp.py splits 14 policies into two groups by mean engine concurrency
