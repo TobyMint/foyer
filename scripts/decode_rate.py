@@ -40,6 +40,7 @@ import os
 import sys
 
 DEFAULT_DIR = "/data/xbw/turnstile/results/night"
+SESS_PAIRS = []
 DEFAULT_RUNS = ["pois200_cap2", "pois200_foyer", "pois200_foyer_t85",
                 "pois200_cap4", "pois200_foyer_rl90", "pois200_foyer_rl99"]
 MIN_OUTPUT = 32        # below this, finish_reason=length truncates and rate is noise
@@ -88,6 +89,7 @@ def steps_of(path):
             if decode_ms <= 0:
                 continue
             out.append({
+                "session_id": r.get("session_id"),
                 "rate": (n_out - 1) / (decode_ms / 1000.0),
                 "t0": t0, "t1": t1,
                 "hit": r.get("server_prefix_hit_rate"),
@@ -97,10 +99,79 @@ def steps_of(path):
     return out
 
 
+def figure(bucket, path):
+    """Per-request rate vs concurrency, with the session-internal control beside it.
+
+    Two panels because the left one is the result and the right one is the reason to
+    believe it: the cross-sectional means are what a reader wants, and the
+    session-internal ratios are what rules out the selection effect that the
+    cross-sectional view invites (higher-concurrency buckets show higher hit rates
+    and smaller contexts, which is backwards and suspicious).
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    plt.rcParams["font.sans-serif"] = ["Noto Sans CJK SC", "DejaVu Sans"]
+    plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams["figure.dpi"] = 140
+    fig, (a, b) = plt.subplots(1, 2, figsize=(11.6, 4.4))
+
+    ks = sorted(bucket)
+    for name, col in (("rate", "#1f77b4"),):
+        pass
+    xs = ks
+    ys = [sum(x[0] for x in bucket[k]) / len(bucket[k]) for k in ks]
+    ns = [len(bucket[k]) for k in ks]
+    a.plot(xs, ys, "o-", color="#1f77b4", lw=2, ms=8)
+    for x, y, nn in zip(xs, ys, ns):
+        a.annotate("%.1f\n(%d run)" % (y, nn), (x, y), textcoords="offset points",
+                   xytext=(0, 11), ha="center", fontsize=8.5, color="#1f77b4")
+    a.set_xlabel("引擎并发  mean(num_running_reqs)")
+    a.set_ylabel("逐请求解码速率 (tok/s)")
+    a.set_title("每请求速率不随并发上升", fontsize=11.5)
+    a.set_ylim(min(ys) - 4, max(ys) + 5)
+    a.grid(True, color="#e8e6e0", lw=0.7)
+    a.set_axisbelow(True)
+    for sp in ("top", "right"):
+        a.spines[sp].set_visible(False)
+
+    # Right panel: the session-internal control.
+    if SESS_PAIRS:
+        ratios = [c2 / c1 for c1, c2 in SESS_PAIRS if c1 > 0]
+        ratios.sort()
+        med = ratios[len(ratios) // 2]
+        lo = ratios[len(ratios) // 4]
+        hi = ratios[3 * len(ratios) // 4]
+        b.axhline(1.0, color="#999", lw=1, ls="--")
+        b.boxplot([ratios], vert=True, widths=0.35, showfliers=False,
+                  patch_artist=True,
+                  boxprops=dict(facecolor="#cde2fb", edgecolor="#2a78d6"),
+                  medianprops=dict(color="#d62728", lw=2),
+                  whiskerprops=dict(color="#2a78d6"),
+                  capprops=dict(color="#2a78d6"))
+        b.set_xticks([1]); b.set_xticklabels(["%d 对会话内配对" % len(ratios)])
+        b.set_ylabel("并发 2 / 并发 1 的速率比")
+        b.set_title("会话内配对：同一会话自己比自己\n"
+                    "中位 %.3f（四分位 %.3f–%.3f）｜均值 %.3f 不稳定"
+                    % (med, lo, hi, sum(ratios) / len(ratios)), fontsize=10.4)
+        b.grid(True, axis="y", color="#e8e6e0", lw=0.7)
+        b.set_axisbelow(True)
+        for sp in ("top", "right"):
+            b.spines[sp].set_visible(False)
+
+    fig.suptitle("并发买到的是并行度，不是效率——且结论经得起会话内配对的控制",
+                 fontsize=12.2, y=0.99)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    fig.savefig(path)
+    print("\nwrote %s" % path)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=DEFAULT_DIR)
     ap.add_argument("--runs", default=",".join(DEFAULT_RUNS))
+    ap.add_argument("--out", default="")
     args = ap.parse_args()
 
     print("逐请求解码速率 = (output_len-1) / (total_duration - TTFT)   "
@@ -109,6 +180,8 @@ def main():
           ("run", "conc", "n", "tok/s", "命中率", "未缓存prompt", "上下文"))
 
     bucket = collections.defaultdict(list)
+    global SESS_PAIRS
+    SESS_PAIRS = []
     for name in args.runs.split(","):
         d = os.path.join(args.dir, name)
         mp, sp = os.path.join(d, "metrics.csv"), os.path.join(d, "steps.jsonl")
@@ -116,12 +189,18 @@ def main():
             print("skip %s (缺文件)" % name)
             continue
         ts, running = load_conc(mp)
+        bysess = collections.defaultdict(lambda: collections.defaultdict(list))
         by = collections.defaultdict(list)
-        for s in steps_of(sp):
+        for r0 in steps_of(sp):
+            s = r0
             c = mean_conc(ts, running, s["t0"], s["t1"])
             if c is None:
                 continue
             by[int(round(c))].append(s)
+            bysess[r0["session_id"]][int(round(c))].append(s["rate"])
+        for sid, sb in bysess.items():
+            if 1 in sb and 2 in sb and len(sb[1]) >= 2 and len(sb[2]) >= 2:
+                SESS_PAIRS.append((sum(sb[1]) / len(sb[1]), sum(sb[2]) / len(sb[2])))
         for k in (1, 2, 3, 4):
             v = by.get(k) or []
             if len(v) < MIN_STEPS:
@@ -157,6 +236,18 @@ def main():
                  (sum(x[2] for x in bucket[1]) / len(bucket[1])),
                  100 * (sum(x[1] for x in bucket[2]) / len(bucket[2]) -
                         sum(x[1] for x in bucket[1]) / len(bucket[1]))))
+    if SESS_PAIRS:
+        r = sorted(c2 / c1 for c1, c2 in SESS_PAIRS if c1 > 0)
+        # MEDIAN is the headline, not the mean. The per-session ratios have a long
+        # right tail, and the mean moved from 0.976 (4 runs) to 1.017 (6 runs) while
+        # the median stayed at 0.95-0.97. Quoting the mean would make the finding
+        # flip direction depending on which runs happen to be included.
+        print("\n会话内配对：%d 对" % len(r))
+        print("  中位 %.3f（四分位 %.3f–%.3f）  <- 以此为准"
+              % (r[len(r)//2], r[len(r)//4], r[3*len(r)//4]))
+        print("  均值 %.3f  <- 不稳定，勿单独引用（长右尾）" % (sum(r)/len(r)))
+    if args.out:
+        figure(bucket, args.out)
     return 0
 
 
