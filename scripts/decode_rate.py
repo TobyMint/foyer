@@ -85,7 +85,26 @@ def steps_of(path):
                 continue
             if n_out < MIN_OUTPUT:
                 continue
-            decode_ms = dur - ttft
+            # Decode window, computed from ONE origin.
+            #
+            # `total_duration_ms` is `elapsed_ms(start)` where `start` is taken BEFORE
+            # the payload is built; `first_token_ms` is `elapsed_ms(send_instant)` where
+            # send_instant is taken AFTER. Subtracting them therefore folds the payload
+            # construction time into the decode window -- and that time scales with
+            # prompt length, so the bias is not uniform across requests. (Both are also
+            # SystemTime rather than Instant, so an NTP step mid-run makes them wrong;
+            # `unwrap_or_default()` turns a negative into 0.)
+            #
+            # submit/post/complete_timestamp are absolute readings of the same wall
+            # clock, so post->complete minus TTFT is a window with consistent ends:
+            # post_timestamp is taken just before send_instant. The residual is the
+            # sub-millisecond gap between those two, which is below anything this
+            # measurement can resolve.
+            if r.get("post_timestamp") and r.get("complete_timestamp"):
+                span_ms = (r["complete_timestamp"] - r["post_timestamp"]) * 1000.0
+            else:
+                span_ms = dur
+            decode_ms = span_ms - ttft
             if decode_ms <= 0:
                 continue
             out.append({
