@@ -439,10 +439,28 @@ def main():
                 f"(±{POOL_TOLERANCE}) at memfrac={lane_memfrac} (attempt {attempt})")
             wait_port_dead(server, args.port)
             if attempt >= MAX_POOL_ATTEMPTS:
+                # State what was measured, not what it is assumed to mean.
+                # On 2026-09-21 this said "another job is holding VRAM on gpu 3"
+                # while nvidia-smi showed 1,453 of 24,576 MiB in use. The cause was
+                # never checked and the sentence asserted it anyway. The pool
+                # shortfall is the fact; who caused it is a hypothesis, and a
+                # message that ships a hypothesis reads as a diagnosis.
+                used = "gpu state unknown"
+                try:
+                    q = subprocess.run(
+                        ["nvidia-smi", "--query-gpu=index,memory.used,memory.total",
+                         "--format=csv,noheader,nounits"],
+                        capture_output=True, text=True, timeout=15)
+                    for ln in q.stdout.strip().splitlines():
+                        f = [x.strip() for x in ln.split(",")]
+                        if len(f) >= 3 and f[0] == str(args.gpu):
+                            used = "gpu %s holds %s of %s MiB" % (f[0], f[1], f[2])
+                except Exception:
+                    pass
                 raise SystemExit(
                     f"pool size {pool_tokens} != expected {EXPECT_POOL} after "
-                    f"{attempt} attempts (another job is holding VRAM on gpu "
-                    f"{args.gpu}) — aborting lane instead of recording a bad run")
+                    f"{attempt} attempts; {used} — aborting lane instead of "
+                    f"recording a bad run")
             # A neighbour's residue shrinks the pool; raise memfrac to compensate
             # instead of aborting. The pool stays the invariant, memfrac is only the
             # dial that reaches it, so the experiment is unchanged.
