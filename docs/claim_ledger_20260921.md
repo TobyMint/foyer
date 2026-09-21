@@ -70,7 +70,35 @@
 
 | # | 断言 | 缺什么 |
 |---|---|---|
-| Q1 | "逻辑上下文之和比物理驻留 KV 高估 ~1.8×" | **从未在同一时刻、同一会话集合上量过**。SGLang v0.5.10 的定义是 `token_usage = (pool − available − evictable)/pool`，**它扣除了可回收缓存**，不是"全部实际驻留 KV"。两个完全不共享前缀的会话（一个在跑、一个工具等待且 KV 可回收）也能给出两倍差距。**归因未成立** |
+| Q1 | "逻辑上下文之和比物理驻留 KV 高估 ~1.8×" | **从未在同一时刻、同一会话集合上量过。归因未成立。两条候选解释都已被源码否掉**，见下方 Q1 专节 |
+
+### Q1 专节：两个候选解释都被否掉了（2026-09-21 晚，读 lab 上安装的 SGLang 源码）
+
+**候选一（GPT 提出）：`token_usage = (pool − available − evictable)/pool`，即扣除了可回收缓存。**
+那个式子确实存在，但在 `srt/managers/scheduler_runtime_checker_mixin.py` 的
+`_get_token_info()` 里——**一个供内部检查用的辅助函数，不是 Prometheus 指标的来源**。
+指标的来源是 `srt/observability/scheduler_metrics_mixin.py`，另有定义。**该引用张冠李戴。**
+
+**候选二（我提出）：`full_token_usage − token_usage` 就是可回收部分。**
+看起来很有说服力：差值恒 ≥0；随并发**反向**变化（cap1 有 24.8% 的采样不等、cap4 只有 0.10%）；
+幅度中位 21.6pp、最大 74.2pp；而且**持续存在**——cap1 里最长连续 54 拍 = 270 秒，
+**不是抓取竞态**（竞态只会产生单拍毛刺）。行为完全像可回收缓存。
+
+但两个 gauge 自己的说明文字是：
+
+```
+sglang:token_usage       "The token usage."
+sglang:full_token_usage  "The token usage for full attention layers."
+```
+
+**`full_token_usage` 是混合注意力模型里"全注意力层"的用量，不是"含可回收的全部驻留 KV"。**
+而且 `is_hybrid_swa` 是**按架构白名单**判定的（Llama4 / GptOss / MiMoV2 / Step3p5），
+`Qwen2ForCausalLM` 不在其中；源码里该模型走的那条路径下两者被赋成**同一个值**。
+**源码与实际观测矛盾，机制未查明。**
+
+**结论：这两列给不出"锁定 vs 可回收"的分解，Q1 必须实测，不能从盘上已有的列反推。**
+**值得记的是：候选二当时看起来同样自洽、同样"有数据支持"——
+它没变成今天第四条被撤回的断言，唯一原因是先查了源码。**
 | Q2 | 驱逐地板 ~982K token/run 与策略无关 | 需确认数据来源与"无关"的验证范围 |
 | Q3 | 高水流地板的代价、HiCache 的代价边界等 §5.7/§5.4 数字 | 需绑定配置版本（控制器改过多次） |
 | Q4 | Concur 复现的墙钟（364.0 / 264.6） | **两条 arm 的 `wall_s` 都是 None**（被 process-reaper 杀掉、metadata 未收尾），现用步骤跨度估计。需注明 |
