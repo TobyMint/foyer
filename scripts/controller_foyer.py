@@ -47,6 +47,49 @@ def write_permit(path, admitted, paused=()):
     os.replace(tmp, path)
 
 
+def replay_admissions(path):
+    """Rebuild (active, finished, arrived) for every session from scratch.
+
+    This is the controller's own rule set applied to the whole log, with no
+    incremental state carried in. It exists to be COMPARED against the live dict.
+
+    Why it is needed: on 2026-09-21 a run stalled for 29 minutes at 894/999 with
+    the controller reporting waiting_n=0 while this function, over the same file,
+    returned 21 waiting sessions. Restarting the controller resumed the run
+    immediately, and the mechanism was never found -- because there was nothing to
+    find it with. read_jsonl re-reads the whole file each cycle and applying an
+    event is a plain assignment, so by construction the two cannot disagree. They
+    did. Without a periodic comparison the next occurrence is equally invisible.
+    """
+    st = {}
+    for ev in read_jsonl(path):
+        sid = ev.get("session_id")
+        if not sid:
+            continue
+        s = st.setdefault(sid, [None, False, False])   # arrived, active, finished
+        e = ev.get("event")
+        if e == "queued":
+            if s[0] is None:
+                s[0] = ev.get("ts")
+        elif e == "admit":
+            s[1] = True
+        elif e == "resume":
+            # The live handler sets active=True here, so the replay must too.
+            # Leaving this out was my bug, not the controller's: the first run of
+            # the self-check reported mismatches for exactly the sessions that had
+            # been resumed. An earlier ad-hoc replay used to diagnose the 29-minute
+            # stall had the same omission, so that diagnosis is not trustworthy
+            # either and is being redone against the same log.
+            s[1] = True
+        elif e == "pause":
+            s[1] = False
+            s[2] = False
+        elif e == "release":
+            s[1] = False
+            s[2] = True
+    return st
+
+
 def read_jsonl(path):
     out = []
     try:
@@ -151,6 +194,9 @@ def main():
     ap.add_argument("--candidate-window", type=int, default=8,
                     help="how many waiting sessions to consider for admission, oldest "
                          "first. 1 reproduces the old head-of-line-blocking behaviour.")
+    ap.add_argument("--selfcheck-every", type=int, default=300,
+                    help="replay the admission log from zero every N cycles and "
+                         "compare against the live state; 0 disables")
     ap.add_argument("--interval", type=float, default=2.0)
     ap.add_argument("--max-minutes", type=float, default=300.0)
 
@@ -227,8 +273,10 @@ def main():
     metrics_url = f"http://127.0.0.1:{args.metrics_port}/metrics"
     # append: a supervised restart must not truncate the decision history
     with open(args.decision_log, "a") as log:
+        cycle = 0
         while time.time() < deadline:
           try:
+            cycle += 1
             now = time.time()
 
             # 1. arrivals / admission events
@@ -481,6 +529,34 @@ def main():
                 "retr": em.get("sglang:num_retracted_reqs"),
                 "evict": em.get("sglang:evicted_tokens_total"),
             }
+
+            # Self-check: every N cycles, rebuild the state from the log alone and
+            # compare. A mismatch is a real bug and must be visible -- the one on
+            # 2026-09-21 was found only because a run happened to stall where a
+            # human noticed. Logged, never corrected: silently repairing it would
+            # destroy the evidence of how it drifted.
+            mismatch = None
+            if args.selfcheck_every and cycle % args.selfcheck_every == 0:
+                fresh = replay_admissions(args.admission_log)
+                bad = []
+                for sid, (arr, act, fin) in fresh.items():
+                    s_ = sess.get(sid)
+                    if s_ is None:
+                        bad.append((sid, "absent-from-live"))
+                    elif bool(s_["active"]) != act or bool(s_["finished"]) != fin:
+                        bad.append((sid, "live a=%s f=%s / replay a=%s f=%s"
+                                    % (s_["active"], s_["finished"], act, fin)))
+                for sid, s_ in sess.items():
+                    if sid not in fresh:
+                        bad.append((sid, "absent-from-replay"))
+                if bad:
+                    mismatch = {"n": len(bad), "sample": bad[:5],
+                                "live_waiting": len(waiting),
+                                "replay_waiting": sum(
+                                    1 for a, ac, f in fresh.values()
+                                    if a is not None and not ac and not f)}
+                    log.write(json.dumps({"ts": round(now, 3),
+                                          "selfcheck_mismatch": mismatch}) + "\n")
 
             log.write(json.dumps({
                 "ts": round(now, 3),
