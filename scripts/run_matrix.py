@@ -44,16 +44,7 @@ POOL_TOLERANCE = int(os.environ.get("TURNSTILE_POOL_TOL", "20"))
 # GB of headroom on a 24 GB card, so the solve can compensate for a neighbour's
 # residue without the server being at risk of an allocation failure.
 MAX_MEMFRAC = float(os.environ.get("TURNSTILE_MAX_MEMFRAC", "0.90"))
-# Six, not four. On 2026-09-21 gpu3 burned all four probes without converging (a
-# neighbour's footprint was moving between attempts) and aborted a lane that a
-# couple more probes would likely have placed. Each probe costs ~100 s, so buying
-# two more is cheap next to losing a 5-hour slot, and the pool guard still refuses
-# to record anything that is not on target.
-MAX_POOL_ATTEMPTS = 6
-# Ceiling on a single solve step, as a fraction of the whole die. See solve_memfrac:
-# with a slope measured against a drifting neighbour, an unclamped secant step can
-# jump somewhere the line was never valid, and every wasted probe is a server start.
-MAX_MEMFRAC_STEP = float(os.environ.get("TURNSTILE_MAX_MEMFRAC_STEP", "0.03"))
+MAX_POOL_ATTEMPTS = 4
 # Learned by the first solve in a lane and reused: the free-VRAM state that pushed
 # the pool off target is a property of the card, not of the arm being run.
 MEMFRAC_HINT = None
@@ -252,50 +243,21 @@ def aimd2_param_args(mode):
 
 
 def solve_memfrac(probe, target):
-    """Pick the next mem_fraction_static to try, given [(memfrac, pool)] IN TIME ORDER.
+    """Pick the next mem_fraction_static to try, given {memfrac: pool} so far.
 
-    The pool is nominally linear in mem_fraction_static: 0.001 * 24,576 MiB /
-    57,344 B per token is 431 tokens per 0.001, and 0.85 -> 0.86 measured 4223 over
-    0.01, i.e. 422 per 0.001. Close enough to a line at low memfrac.
-
-    But it is NOT a stable line, and on 2026-09-21 that broke the recovery outright.
-    The sequence on gpu3, all against a neighbour holding VRAM:
-
-        0.85      ->  90248
-        0.86      ->  94471     (+4223 over 0.01)
-        0.876484  -> 112964     (+18493 over 0.0165)   <- line is gone
-        0.863039  -> 107110
-
-    The first pair implies a slope; the second contradicts it. Two causes, and the
-    fix has to handle both: (a) the neighbour's footprint MOVES between probes, so
-    the pool at a given memfrac changes under us, and (b) the relation may genuinely
-    curve at high memfrac. Either way, solving from the two EXTREME probes — which is
-    what this function used to do — anchors the fit on the stalest observation
-    available. A secant step on the two MOST RECENT probes is the standard answer to
-    a drifting target: it re-estimates the slope every attempt from the freshest data.
-
-    The step is also clamped. With a bad slope an unclamped solve can jump far
-    outside the range where the line was ever valid, and each wasted probe costs a
-    full server start. Clamping trades a little convergence speed for never taking a
-    wild step; MAX_POOL_ATTEMPTS is raised to match.
-
-    Safety does not depend on any of this. The caller re-probes after every server
-    start and refuses to record a run whose pool is off target, so a bad guess costs
-    an attempt, never a bad measurement.
+    The pool is linear in mem_fraction_static (measured: 431 tokens per 0.001 on a
+    3090 / 7B / 96K setup, which is exactly 0.001 * 24,576 MiB / 57,344 B per token,
+    so there is no coarse quantisation to fight). Two probes therefore determine the
+    line and we can solve for the target directly.
     """
-    pts = [(m, p) for m, p in probe if m is not None]
+    pts = sorted(probe.items())
     if len(pts) >= 2:
-        (m0, p0), (m1, p1) = pts[-2], pts[-1]      # freshest pair, NOT the extremes
+        (m0, p0), (m1, p1) = pts[0], pts[-1]
         if m1 != m0 and p1 != p0:
-            step = (target - p1) * (m1 - m0) / (p1 - p0)
-            lim = MAX_MEMFRAC_STEP
-            step = max(-lim, min(lim, step))
-            return round(m1 + step, 6)
-    if not pts:
-        # Nothing usable probed: step up from the module default, which is where
-        # start_server actually put the dial.
-        return round(float(MEMFRAC) + 0.01, 6)
-    # one point is not enough to know the slope: step up and let the next call solve
+            cur_m, cur_p = pts[-1]
+            return round(cur_m + (target - cur_p) * (m1 - m0) / (p1 - p0), 6)
+    # one point is not enough to know the slope: step up by the measured 0.01 and
+    # let the next call solve properly
     return round(pts[-1][0] + 0.01, 6)
 
 
@@ -457,7 +419,7 @@ def main():
         # faked a quality regression; 84,528 on another). Restart until the pool is
         # right; abort the lane rather than record a run we cannot compare.
         attempt, pool_tokens = 1, None
-        probe = []          # [(memfrac, pool)] in TIME order — see solve_memfrac
+        probe = {}
         lane_memfrac = MEMFRAC_HINT
         while True:
             server = start_server(args.gpu, args.port, name, lane_memfrac)
@@ -484,16 +446,8 @@ def main():
             # A neighbour's residue shrinks the pool; raise memfrac to compensate
             # instead of aborting. The pool stays the invariant, memfrac is only the
             # dial that reaches it, so the experiment is unchanged.
-            # Record the dial the server ACTUALLY ran at, appended in TIME order (the
-            # solver fits the freshest pair). On the first probe lane_memfrac is
-            # still MEMFRAC_HINT (None) and start_server falls back to MEMFRAC, so
-            # recording the None would both lose the slope and hand solve_memfrac a
-            # None to do arithmetic on. float() is load-bearing: MEMFRAC comes from
-            # os.environ and is a STRING.
-            probe.append((lane_memfrac if lane_memfrac is not None else float(MEMFRAC),
-                          pool_tokens))
-            lane_memfrac = max(float(MEMFRAC), min(solve_memfrac(probe, EXPECT_POOL),
-                                                   MAX_MEMFRAC))
+            probe[lane_memfrac] = pool_tokens
+            lane_memfrac = min(solve_memfrac(probe, EXPECT_POOL), MAX_MEMFRAC)
             log(f"  -> retrying at memfrac={lane_memfrac}")
             attempt += 1
             time.sleep(30)
@@ -513,7 +467,16 @@ def main():
         monitor = subprocess.Popen(
             [PY, f"{BASE}/TraceLab/replay/scripts/monitor.py",
              "--url", f"http://127.0.0.1:{args.port}/metrics",
-             "--out", f"{run_dir}/metrics.csv", "--interval", "5"])
+             "--out", f"{run_dir}/metrics.csv", "--interval", "5",
+             # The normal path terminates this monitor at the end of the run, but
+             # nothing covers the abnormal one. A process-reaper kill or any
+             # SIGKILL leaves the child orphaned, and a monitor that has written
+             # its header keeps appending all-empty rows forever after -- sixteen
+             # were found alive on 2026-09-21, thirteen of them 8-13 days old. Any
+             # duration taken as last-row-minus-first-row then reads an arbitrary
+             # number: a run that started 10:22 and died at 10:31 measured 227
+             # minutes. getppid is the check that survives SIGKILL.
+             "--exit-with-parent"])
 
         cap_args = []
         controller = None

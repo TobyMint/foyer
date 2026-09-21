@@ -2,6 +2,7 @@
 """Sample SGLang /metrics every N seconds into a CSV. Runs alongside a replay."""
 import argparse
 import csv
+import os
 import time
 import urllib.request
 
@@ -83,7 +84,26 @@ def main():
     ap.add_argument("--url", default="http://127.0.0.1:30000/metrics")
     ap.add_argument("--out", required=True)
     ap.add_argument("--interval", type=float, default=5.0)
+    ap.add_argument("--exit-with-parent", action="store_true",
+                    help="exit once the launching process is gone (repoll getppid)")
     args = ap.parse_args()
+
+    # A monitor outliving its run is not harmless, and the harm is specific.
+    #
+    # run_matrix does terminate its monitor on the normal path, but nothing
+    # handles the abnormal one: a process-reaper kill, or any SIGKILL, leaves the
+    # child orphaned. Sixteen were found running on 2026-09-21 against two live
+    # runs; thirteen had been up 8-13 days. The ones whose target server still
+    # existed at least once wrote a header, and from then on appended a row of
+    # entirely EMPTY fields every interval forever. Any analysis that takes a
+    # duration as last-row-minus-first-row then reads an arbitrary number -- a run
+    # that started 10:22 and died at 10:31 measured 227 minutes.
+    #
+    # Watching getppid is what covers SIGKILL, which no handler can catch: when
+    # the parent dies the monitor is reparented and its ppid changes. Opt-in,
+    # because a monitor started by hand from a shell that then exits would
+    # otherwise kill itself immediately.
+    parent = os.getppid() if args.exit_with_parent else None
 
     fields = ["ts"] + GAUGES + COUNTERS
     for tag in HISTOGRAMS:
@@ -92,6 +112,8 @@ def main():
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         while True:
+            if parent is not None and os.getppid() != parent:
+                return
             row = {"ts": round(time.time(), 3)}
             m = fetch(args.url)
             for name in GAUGES + COUNTERS:
