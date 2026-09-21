@@ -92,6 +92,27 @@ def read_jsonl(path):
     return out
 
 
+def run_trace(name):
+    """Trace basename for a run, or None.
+
+    The heading of each table is DERIVED from its runs rather than trusted as
+    written. Two 200-tier tables sit in this file -- one over the flash-crowd
+    generation (budget200c_*) and one over the Poisson generation (pois200_*) --
+    and on 2026-09-21 the headings alone were enough for me to take the wrong one
+    for the paper's main table, then conclude the draft's numbers could not be
+    reproduced and strike out a correct ledger entry. They reproduce fine.
+
+    A heading is a claim like any other, so it gets computed.
+    """
+    p = os.path.join(NIGHT, name, "metadata.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        return os.path.basename(json.load(open(p)).get("trace") or "") or None
+    except (ValueError, OSError):
+        return None
+
+
 def run_metrics(name):
     d = os.path.join(NIGHT, name)
     m, p, meta_missing = {}, None, False
@@ -158,6 +179,19 @@ def fmt(v, nd=1, suffix=""):
 
 
 for title, runs in TABLES.items():
+    # Which trace generation this table is actually over. Mixed generations in one
+    # comparison table are not comparable, so say so loudly rather than silently.
+    _t = {}
+    for _lbl, _name in runs:
+        _tr = run_trace(_name)
+        if _tr:
+            _t[_tr] = _t.get(_tr, 0) + 1
+    _span = ""
+    if _t:
+        _span = "  [trace: " + " + ".join(f"{k} ×{v}" for k, v in sorted(_t.items())) + "]"
+        if len(_t) > 1:
+            _span += "  ⚠ MIXED GENERATIONS — not comparable"
+    title = title + _span
     print(f"\n### {title}\n")
     print("| strategy | policy | wall(min) | fails | hit% | TTFT p50(ms) | SLO% | avg conc |")
     print("|---|---|---|---|---|---|---|---|")
