@@ -1804,3 +1804,86 @@ lab   TraceLab/replay/scripts/run_matrix.py        90958758c26b
 `InferCept` / `AgentServeSim`（连 arXiv ID 都未确证）、SGLang 各 PR 号、HiCache 参数名（我们跑的是 v0.5.10，与当前 docs 可能有差异）。
 
 **@memo 里的引用红线继续有效**：arXiv 2608.30830 的 head-to-head 结论**禁引**。
+
+---
+
+## 三十四、MARS 逐条 diff（全文读完，2026-09-22 13:40）：**机制活下来，定位措辞必须改**
+
+来源：arXiv:2604.26963 v2 **HTML 全文逐节读完**；参考实现 `github.com/Afterglow231/MARS_preview`
+的 `run_experiment.py`（外部控制器参考实现）逐行读过；openEuler muyuan 插件
+`online_controller.py`（766 行）逐行读过。**下面每条都有原文出处，不是推测。**
+
+### ❌ 被吞掉的（必须从贡献列表删掉）
+
+| 我们曾想写的 | 判定 | 出处 |
+|---|---|---|
+| "把准入放到引擎外、与执行解耦" | **被吞** | MARS abstract 原话 "an external control plane ... **decouples admission from execution**" |
+| "自适应准入窗口 + AIMD + 滞后，由 KV 遥测驱动" | **吞得最彻底** | MARS Algorithm 1 第 11–26 行；muyuan 插件类名就叫 **`KvOnlyAdmissionGate`**，docstring："AIMD active window driven only by live GPU-KV pressure" |
+| "按 KV block 预算做准入" | **被吞** | Alg 1 第 23/26 行 `slots ← limit − T.active_sessions`；`budget_blocks = max(0, num_free_blocks − reserve_blocks)` |
+| "会话级粒度" | **被吞** | MARS 也是会话级（`job_id` / round） |
+| "在线、非先知" | **被吞** | MARS §4.1 自证不预测 phase duration |
+
+### ✅ 活下来的
+
+**1. Prefix-cache externality 作为准入信号——完整存活，而且是 MARS 亲口留下的空白。**
+
+MARS §4.2 原文：*"annotates each queued session with a lightweight estimate of its required KV blocks,
+**derived from prefill length**"* —— **KV 估算不看缓存命中，没有任何折扣。**
+代码侧确认：`num_cached_tokens` 只进 trace 和日志，**不进控制回路**。
+
+MARS §7 原文：*"shared prefix topologies ... extends beyond MARS's **current linear priority model** ...
+**We leave this exploration to future work.**"*
+
+> **我们的第二条贡献，就站在这两句话之间的空隙里。**
+
+**2. dissociation 的定量证据——完整存活。** MARS 的机制**假设池是约束**（§4.2 "KV pressure is translated into a
+soft cap"），它不可能报告"池只用了 66% 而瓶颈在 cache"。**我们的双边定量证据它没有。**
+
+**3. 零引擎修改——存活，但要【降级为实现属性，不是贡献】。**
+MARS 需要改 vLLM（§5："5,300 lines of Python ... lightweight hooks into the backend inference engine"，
+是 vLLM 的一个 fork）；muyuan 虽 out-of-tree，但自述*"依赖 vLLM Scheduler 与 KVConnector 的**非公开接口**"*，
+且钉死在 vLLM 0.18.x。**我们是真的零改动、不依赖私有 ABI。**
+
+**4. 24GB 单卡 / 7B / 96K 的资源点——存活。** MARS 全篇在 **H200 144GiB / H100 96GiB + 30B/120B**，
+prompt 125K–263K。"前缀缓存成为绑定资源"很可能是**小卡特有的现象**——这反而是我们故事的一部分。
+
+### ⚠️ 一条要**升级**的（比"零引擎修改"更有技术含量）
+
+> MARS 用 `EstimateBlocks(prefill_len)`——**保守高估**，它天然把共享前缀当成要占新地方。
+> 我们用 `measured = sglang:token_usage`——**引擎真实占用**，**天然把共享前缀算成便宜**。
+
+**这不是实现细节，这是机制差异。** 它应该从"我们没有的东西"升格成主动贡献的一部分。
+
+### ⚠️ 术语：两条直接冲突，一条最危险
+
+| 术语 | 谁占 | 怎么办 |
+|---|---|---|
+| **external control plane** | MARS abstract 原话 | **不能用作贡献名** |
+| **"admission" / External Admission Controller** | MARS §4.2 模块名 | 冲突 |
+| **"KV-only external gating" / `KvOnlyAdmissionGate`** | muyuan 插件 | **最危险**——它恰好占了"只按 KV 占用做外部门控"这个位置 |
+
+**措辞改写（这条是本次 diff 最可操作的产出）：**
+
+```
+❌ 不能再写：external admission control / 外部准入控制平面
+              → 会被 MARS 直接击穿
+
+✅ 改写为：prefix-cache externality-aware admission / 缓存外部性准入
+              → "引擎外 + 零改动" 降级为【一句话的实现属性】
+```
+
+### 📗 一条与我们互相印证的消融
+
+MARS §6 消融原文：
+
+> "External Control Plane. Ablating the admission controller yields a **1.5×–3×** slowdown under high contention."
+> "Priority-Aware Coordinator. Disabling this component inflicts the most severe degradation,
+> inflating mean latency by **2×–5×**."
+
+**准入不是最大杠杆，排序才是。** 这与我们"在静态 cap-N 最优点上，准入信号的边际收益已经耗尽"**方向一致**——
+但 MARS 从未做这个归因。**我们的 dissocation 是独立的。**
+
+### 裁决
+
+**我们的"下一步机制（prefix-cache externality 准入）"经受住了检验，是干净的空白。**
+**但支撑它的那句定位——"外部准入控制"——已经被 MARS 和 muyuan 双重占位，必须改写。**
