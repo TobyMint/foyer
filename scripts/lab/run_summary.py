@@ -84,7 +84,12 @@ def summary(nm):
     return dict(
         policy=m.get("policy"), hc=bool(b.get("hicache_enabled")),
         steps=len(st), done=os.path.exists(D + "/summary.json"),
-        wall=(st[-1]["complete_timestamp"] - st[0]["submit_timestamp"]) / 60.0,
+        # 墙钟 = 最后一个完成 − 最早一个提交。
+        # 不能用 st[0]["submit_timestamp"]：st 是按【完成时间】排的，
+        # 最早完成的请求未必是最早提交的（GPT 审查 2026-09-22 指出，
+        # 实测在本 trace 上差 0.1%，但口径本身是错的）。
+        wall=(max(r["complete_timestamp"] for r in st)
+              - min(r["submit_timestamp"] for r in st if r.get("submit_timestamp"))) / 60.0,
         conc=tw_conc(D),
         slo=100 * sum(1 for t in tt if t < 10000) / len(tt),
         ttft=statistics.median(tt),
