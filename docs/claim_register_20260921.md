@@ -1171,3 +1171,85 @@ V4 整个建立在 V3 上（"cap3_r2 vs cap4 是同条件"这个前提），也�
 
 **一条断言的状态，只有在"表头"和"正文"两处都改了才算改了。**
 改完必须搜一遍这条断言的旧编号，确认没有别处还在引用它。
+
+---
+
+## 二十四、Foyer 慢在哪：**三个遗留节流，而且我差点又读错了源码**（2026-09-22 09:55）
+
+### 起因
+
+用户看了平均墙钟后说："我们采用了很多策略之后，最后还是比不过简单的 cap 方案。"
+这是对的，而且比表面更严重——所以去量了**平均并发**：
+
+```
+run                 墙钟    平均并发   峰值    HiCache
+cap4 + HiCache      219.0     3.93      4      ✓
+cap4                257.6     3.94      4
+cap3_fixed          264.8     2.89      3
+Foyer + HiCache     297.6     2.06      4      ✓
+Foyer               299.3     2.08      4
+cap2                310.5     1.99      2
+```
+
+**`Foyer + HiCache` 的平均并发 2.06 ≈ `cap2` 的 1.99。它不是"控制得不好"，是根本没让自己跑起来。**
+而池子在它脚下空着一半：有人等、却没放人的那些周期里，
+`headroom = budget − measured` **中位 43,818 token（池子的 43%）**，`headroom < 0` 只占 1.2%。
+**87.0% 的控制周期是"卡住"状态**（waiting>0、无准入、阀未触发），总准入 206 次 / 297.6 分钟 = **86 秒才放一个人**。
+
+### 我读错了哪份源码（今天的第 N 次同类错，形状是新的）
+
+我先读了 `scripts/controller_foyer.py`，在里面找到了正确的闸门逻辑、还引用了它的注释。
+**但 `pois200_foyer_hc` 跑的根本不是它**：
+
+```
+pois200_foyer_hc 的策略串   budget3:hw=0;target=0.95
+metadata.code.controller_foyer.py = None        ← 因为它没用这个控制器
+metadata.code.controller_budget3.py = 2b573829083c
+```
+
+**run 名字里有 "foyer"，控制器却是 budget3。** 而 `pois200_foyer`（无 HC 那条）
+策略串**完全相同**——两条是同一个控制器配置，墙钟只差 1.7 分钟（0.6%），
+这也正好解释了"HiCache 在并发 2 时一文不值"。
+
+**教训：策略前缀才是控制器身份，run 名字不是。** 核源码前先核 `metadata.code`。
+
+### 三个遗留节流（全部在 `controller_budget3.py`，行号已核）
+
+```
+319:  if waiting and not valve and (prev_started or args.disable_single_flight):
+320:      head = waiting if args.disable_single_flight else waiting[:1]   ← ①只看队首一个
+331:      if not args.disable_single_flight: break                        ← ②单飞
+336:  if (waiting and not candidates and ... and oldest_wait >= 240
+338:          and floor < 0.5 and now - last_forced_ts >= 300):           ← ③地板卡 0.5
+```
+
+- **① 队首阻塞。** `controller_foyer.py` 这里是 `waiting[:max(1, args.candidate_window)]`（默认 8），
+  注释写着"上下文从 ~19k 到 ~89k，队首太大时会把后面所有小的都堵死"。
+  **这个修复只做在了 foyer 控制器里，budget3 从来没拿到。**
+  实测：卡住的周期里，**39.1%** 的 `measured + growth_sum` 已 ≥ 0.9 × 红线——队首阻塞解释得了。
+- **② 单飞。** 但放人间隔中位 46.9 s、p90 213.6 s、max 438.5 s——**不是一个固定上限**，所以单飞是叠加项不是主因。
+- **③ 饥饿保护的地板门。** `floor` 实测**中位 0.492**，就卡在 0.5 阈值上；`floor < 0.5` 的周期占 51.0%。
+  51 次 forced。**逃生通道一半时间是关着的，而它恰恰是为"正常路径被堵死"设计的。**
+
+另：`committed = measured + pending + growth_reserve`（`controller_budget3.py:411`），
+增长预留让判据比 `measured` 更紧。
+
+**残余未解释：36.7% 的卡住周期 `measured + growth_sum < 0.7 × 红线`。** 三个节流加起来也覆盖不了全部，
+**所以还有第四个原因没找到**——不许把上面三条当成完整解释。
+
+### 决定：先跑"上限测试"
+
+用户的目标是墙钟，且已明确"墙钟降不下来这篇就发不出去"。所以：
+**先测天花板，再二分。** 如果连"修复版控制器 + 三个节流全关 + HiCache + 高目标"都追不上
+`cap4_hc` 的 219.0，那这条路就是死的，口径必须改；追得上，再逐个二分。
+
+2026-09-22 09:55 已发两条（`wait_gpu_then_run_fast.sh` 包装，卡 2 / 卡 3）：
+
+| run | 配置 | 为什么 |
+|---|---|---|
+| `pois200_foyfix_hc` | `foyer:target=0.95;hw=0;sf=0;sg=0` + HiCache | 上限：带修复的控制器，三个节流全关 |
+| `pois200_cap3_hc` | `static=3` + HiCache | **缺的基线点**：cap3_fixed 已经比所有 Foyer 快，若 HiCache 再给它 +15%，Foyer 就没有墙钟故事了 |
+
+**验收判据（先写下来，不许事后改）**：看**达成的平均并发**，不是看墙钟。
+到 3.8–4.0 且峰值 ≤ 5 = 成功；仍停在 ~2 = 控制器调节本身有问题；
+峰值冲高再回落（像 `foyer_rl90` 的峰值 7）= 振荡，另一种失败。
