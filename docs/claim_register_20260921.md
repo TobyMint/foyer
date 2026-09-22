@@ -3088,3 +3088,114 @@ cap4_hc        212.8     3.93    63.4     9.4     5473
 
 **固定端口 + stale 守卫 + 显存日志三样都在起作用**（开跑前 15MiB = 前一条清干净了）。
 `foy_r2` 预计 ~18:30 落地，届时跑 `check_short_trace.py` 判短 trace 成不成立。
+
+---
+
+## 四十七、换策略第一步：**热会话按"实测边际代价"计费，而不是按整轮 ctx**（2026-09-22 17:15）
+
+### 起因
+
+用户指出：**这周一直在调参，而 §四十六 证明调参没出路；该做的是换策略。**
+这个批评是准的——我下午做的基本都是严谨性工作（查实结论、修口径、修基础设施），
+**那些是"别再自欺"，不是"往前推"。**
+
+而 §三十五 写好的那个策略方向（缓存外部性准入），**代码写了却从没部署、也没排队。**
+
+### 找到的具体抓手
+
+准入块里的这一行：
+
+```
+base = s["ctx"] or s["prompt0"]
+n = (base + forecast(s)) * args.margin
+```
+
+`ctx` 是**这一轮的整轮 prompt 长度**（约 20k 量级）。但一个**热会话**（跑过至少一轮）
+的前缀**已经在引擎里**，而 `projection` 的 `resident` 项**已经算了它**：
+
+```
+projection = max(resident, ctx_sum) + growth_sum
+                    ↑ 引擎实测占用，已含热会话的驻留前缀
+```
+
+**再按 `ctx` 收一次 = 同一批 token 计费两次。** 实测差距：
+
+```
+round 0   未命中中位 15,720 token   ← 真的要从头 prefill
+round 1+  未命中中位  1,933 token   ← 前缀基本都在
+tool_wait 中位 0.1 秒                ← 所以前缀几乎必然还在
+```
+
+**超收 3–10 倍。这就是控制器停在 2.06、而硬件能撑到 2.9 的最可能原因。**
+
+### 改动（`controller_budget3.py`，加一个开关，默认保持旧行为）
+
+```python
+ap.add_argument("--charge-mode", choices=["full", "delta"], default="full")
+
+# 记录引擎自己量的边际代价
+unc = rec.get("server_uncached_prompt_tokens")
+if unc is not None:
+    s["uncached"] = float(unc)
+
+# 准入计费
+base = s["ctx"] or s["prompt0"]
+if (args.charge_mode == "delta" and s["last_round"] >= 0
+        and s.get("uncached") is not None):
+    base = s["uncached"]        # 引擎实测的边际代价，不是模型估的
+n = (base + forecast(s)) * args.margin
+```
+
+**为什么用 `server_uncached_prompt_tokens`**：它是引擎对"这条会话这一轮实际要重算多少"
+的**直接测量**，不是我的模型。而且它已经在 `steps.jsonl` 里，控制器每拍都在读。
+
+### 实验设计：**单变量**
+
+```
+对照  budget3:hw=0;target=0.95                     ← 就是正在跑的 foy_r2
+处理  budget3:hw=0;target=0.95;charge=delta        ← 只多这一个参数
+                ↑ 同一条 trace（r2）、同一张卡、同一个端口
+```
+
+### 部署安全（这一步值得记下来）
+
+`foy_r2` 有一个**控制器重启循环**：控制器一退出就从磁盘重新拉起
+（`while [ ! -f summary.json ]; do python controller_budget3.py ...; sleep 20; done`）。
+**所以改这个文件有中途换控制器的风险**（§二十八 记过这个坑）。
+
+**这次的安全边界是"默认值保持旧行为"**：
+- 运行中的进程**不会重读源文件**，本来就受影响不到
+- 万一真的重启，新进程拿到 `charge` 默认值 `full`，**与旧版逐字相同**
+- 只有显式传 `charge=delta` 才走新逻辑
+
+**规则**：给运行中的控制器加参数时，**新参数默认值必须等于旧行为**。
+
+### 参数名映射（写错会静默跑成别的配置——但这里不会）
+
+`run_matrix.budget3_param_args` 的 `flagmap` 里没有的键会**抛 KeyError**，
+不是取默认值。已加 `"charge": "--charge-mode"`，并实测：
+
+```
+budget3:hw=0;target=0.95;charge=delta
+  -> --highwater-decay 0 --target-util 0.95 --charge-mode delta    ✓
+budget3:charge-mode=delta          （故意写错键名）
+  -> KeyError: 'charge-mode'        ✓ 立刻炸，不会静默
+```
+
+### 队列
+
+```
+gpu2  foy_r2(跑着) → v4_r2 → foyer_x2 → cap3_r3 → foyer_hc_r4 → foyer_c50 → foyer_zero
+gpu3  cap2_hc(跑着) → cap2_r2 → cap2_x2 → cap2_x05 → foyer_x05 → cap2_c50
+```
+
+**判据（先写死）**：
+
+```
+若 v4_r2 并发明显高于 foy_r2（2.06 → 2.6+）且 SLO 不明显更差
+    → 找到了那 0.8 个并发，改写 v4 全量跑
+若并发没动
+    → ctx 重复计费不是瓶颈，回 §三十五 的第二步（加逐出速率）
+若并发涨了但 SLO 崩了
+    → 那 0.8 个并发本来就不该拿，§四十三 的结论成立
+```
