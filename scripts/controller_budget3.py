@@ -330,6 +330,11 @@ def main():
             fresh_vals = sorted(v for _, v in ttfts)
             if not args.disable_slo_valve and len(fresh_vals) >= max(5, args.slo_window // 2):
                 valve = valve or fresh_vals[len(fresh_vals) // 2] > args.slo_ms
+            # The engine's own running count. Read here, before both the shedding block
+            # and the admission block, because the round gate has to constrain BOTH:
+            # pausing alone is useless if the admission path immediately re-admits the
+            # session it just paused (that is churn, not a throttle).
+            running_n = em.get("sglang:num_running_reqs", 0) or 0
 
             # 5b. SHEDDING: unlike v0.5 (whose cap could only grow — over-admitted
             # sessions stayed forever and the SLO valve was toothless), named permits
@@ -363,7 +368,6 @@ def main():
             # independent live measurement 1.99 vs 2.10, not the running one 1.38), so
             # gating on it would just be another session cap. The engine's counter is the
             # quantity that actually governs TTFT.
-            running_n = em.get("sglang:num_running_reqs", 0) or 0
             if (args.round_gate and running_n >= args.round_gate
                     and len(active) > args.round_gate):
                 extra = sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0)[args.round_gate:]
@@ -376,7 +380,14 @@ def main():
             candidates = []   # named sessions this cycle authorizes (explicit set —
                               # GPT audit 2: a scalar candidate dropped batch admits)
             need = 0.0
-            if waiting and not valve and (prev_started or args.disable_single_flight):
+            # Round gate, admission side. Without this the gate does nothing: a session
+            # paused in 5c is marked inactive, lands in `waiting`, and the very next
+            # cycle admits it again because the admission test only looks at memory.
+            # The result is churn, not a throttle. Holding admissions while the engine is
+            # already running `round_gate` requests is what actually pins the running
+            # count -- paused sessions stay parked until a running one finishes.
+            gate_full = bool(args.round_gate) and running_n >= args.round_gate
+            if waiting and not valve and not gate_full and (prev_started or args.disable_single_flight):
                 head = waiting if args.disable_single_flight else waiting[:1]
                 for sid in head:
                     s = sess[sid]
@@ -418,7 +429,7 @@ def main():
                 "usage": round(usage, 3), "highwater": round(highwater, 3),
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
                 "base_mode": args.base_mode, "base": round(base),
-                "round_gate": args.round_gate,
+                "round_gate": args.round_gate, "running_n": running_n, "gate_full": gate_full,
                 "growth_sum": round(growth_sum), "budget": round(budget),
                 "candidate": (candidates[0] if candidates else None),
                 "n_admitted": len(candidates), "need": round(need), "forced": forced,
