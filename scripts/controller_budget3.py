@@ -111,6 +111,17 @@ def main():
                          "ALREADY inside `resident`; charging its full ctx again counts the "
                          "same tokens twice. Measured gap on this trace: round 0 needs "
                          "15,720 uncached tokens, round 1+ needs 1,933.")
+    ap.add_argument("--round-gate", type=int, default=0,
+                    help="cap on how many sessions may be RUNNING at once, applied at round "
+                         "boundaries via the pause mechanism (default 0 = off, old behaviour). "
+                         "This is deliberately NOT a session cap: a session cap limits how many "
+                         "sessions are LIVE, but a live session is parked (tool_wait) roughly half "
+                         "the time, so a cap of N leaves the engine idle whenever all N happen to "
+                         "be parked. Measured on foyer_hc: 2.10 sessions live but only 1.38 actually "
+                         "running. Gating the RUNNING count instead lets extra sessions hold permits "
+                         "and take over the instant one parks, so the engine stays busy while TTFT "
+                         "stays bounded by the gate. A static cap cannot express this -- it has no "
+                         "way to separate 'holds a slot' from 'is running'.")
     ap.add_argument("--base-mode", choices=["max", "resident"], default="max",
                     help="what the projection is built on. max = the larger of the "
                          "engine's measured floor and the session-side ctx ledger "
@@ -338,6 +349,20 @@ def main():
                 if shed:
                     for sid in shed:
                         sess[sid]["active"] = False
+
+            # 5c. ROUND GATE — cap the RUNNING count, not the live count.
+            # The paused sessions block at their next round boundary (session.rs:412,
+            # AdmissionGate::wait_unpaused), so at most `round_gate` sessions can be in a
+            # round at a time. The rest stay live, keep their permit and their KV, and
+            # re-enter through the normal FIFO path the moment a running session parks or
+            # finishes. That is the whole point: a session cap of N goes idle whenever all
+            # N live sessions happen to be parked (measured: 2.10 live, 1.38 running),
+            # whereas this keeps the running count pinned at the gate.
+            if args.round_gate and len(active) > args.round_gate:
+                extra = sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0)[args.round_gate:]
+                shed = list(dict.fromkeys(list(shed) + extra))
+                for sid in extra:
+                    sess[sid]["active"] = False
             prev_started = (last_admitted_sid is None
                             or sess.get(last_admitted_sid, {}).get("last_round", -1) >= 0
                             or now - last_admit_ts > 60)
@@ -386,6 +411,7 @@ def main():
                 "usage": round(usage, 3), "highwater": round(highwater, 3),
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
                 "base_mode": args.base_mode, "base": round(base),
+                "round_gate": args.round_gate,
                 "growth_sum": round(growth_sum), "budget": round(budget),
                 "candidate": (candidates[0] if candidates else None),
                 "n_admitted": len(candidates), "need": round(need), "forced": forced,

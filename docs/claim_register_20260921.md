@@ -3844,3 +3844,92 @@ pois200_ cap4_hc_pf64  引擎侧对照    max-prefill-tokens 16384->65536，断�
 2. 动作空间（文献指向、我们不占）：pause/resume 的显式挂起（MORI/Continuum/ThunderAgent 已占）
 3. 换轴：多租户 + 抢占 + 异构 SLO（文献里自适应赢得最稳定的一维）
 ```
+
+---
+
+## 五十五、**主押注：round-gate——把「放几个进来」换成「同时在跑几个」**（2026-09-23 01:20）
+
+### 一、这个想法从哪来
+
+把两组实测摆在一起，缺口自己就露出来了：
+
+```
+foyer_hc（291.3 min，SLO 89.8）  每 30 秒采样 200 次：
+   同时【存活】会话（持有许可）   中位 2.0   均值 2.10
+   同时【在跑】请求（引擎里）     中位 1.0   均值 1.38
+   停放比                       均值 1.52
+
+静态 cap 的定义就是：限制【存活】会话数 = N
+```
+
+> **一个存活会话有一半时间在停放（tool_wait 均值 16.85 秒，§五十三）。**
+> **所以 cap=N 在「这 N 个恰好都在停放」的时候，引擎是空转的。**
+> **而 cap 对此无能为力——它根本分不清「占着位置」和「在干活」。**
+
+### 二、执行器已经存在，不用改 runner
+
+`session.rs:412-426`：
+
+```rust
+// Concur-style step-boundary pause: a paused session finishes its current round,
+// then blocks until re-admitted
+if state.permit_file.is_some() && state.session_paused(&session_id) {
+    ... "pause" ...
+    AdmissionGate::wait_unpaused(&state, &session_id).await;
+}
+```
+
+**被 `paused` 的会话跑完当前轮，就在【下一轮开始前阻塞】，直到重新准入。**
+控制器本来就有这条路（`shed` 在用），只是从来没拿它做限流。
+
+### 三、改动：`--round-gate N`（`controller_budget3.py`，默认 0 = 旧行为）
+
+```python
+# 5c. ROUND GATE — cap the RUNNING count, not the live count.
+if args.round_gate and len(active) > args.round_gate:
+    extra = sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0)[args.round_gate:]
+    shed = list(dict.fromkeys(list(shed) + extra))
+    for sid in extra:
+        sess[sid]["active"] = False
+```
+
+被闸掉的会话**保持存活、保留许可、保留 KV**，等有人停放或跑完就从正常 FIFO 路径顶上。
+决策日志新增 `round_gate` 字段，可事后核对参数生效。
+
+### 四、扫描点与预测（结果落地前写）
+
+```
+run                   策略                                                          预测
+------------------------------------------------------------------------------------------------
+pois200_foyer_rg2     budget3:hw=0;target=0.95;horizon=0;base=resident;rgate=2        在跑<=2，保守
+pois200_foyer_rg3     同上;rgate=3                                                    在跑<=3，预测最优
+pois200_foyer_rg4     同上;rgate=4                                                    在跑<=4，激进
+pois200_foyer_nogate  同上但【不加闸】                                               单变量对照
+```
+
+**单变量**：四条只差 `rgate`。记账底座（`base=resident`）和增长预留（`horizon=0`）四条完全相同。
+
+**预测（用实测的 wall ∝ conc^−0.59 与 foyer_hc 的 conc 2.06 / wall 291.3）**：
+
+```
+rg3  在跑钉在 ~3.0  -> 墙钟 ≈ 291.3 × (2.06/3.0)^0.59 ≈ 229 min
+     前沿在 229 min 处 = 75.5   -> 需 SLO > 76.5
+     若 SLO 接近 cap3_hc 的 81.1  -> 高出约 +4.5pp  【赢】
+rg4  在跑钉在 ~4.0  -> 墙钟 ≈ 191 min（< 213，低于全部静态点）-> 平凡获胜
+     但若 SLO 掉到 cap4_hc 的 63.4 那一档，就要看具体数值
+nogate 应先复现 bres/foyer_hc 那一档（并发 ~2，墙钟 ~290）
+```
+
+### 五、必须事先写清楚的三个风险
+
+1. **控制量有滞后**：被标 `paused` 的会话要跑完当前轮才真正停下，所以**实际在跑数会瞬时超过闸值**。
+   闸值越小，这个瞬时穿透占比越大。
+2. **可能振荡**：放行/闸掉的判定每个控制周期（2 秒）做一次，如果闸值附近的会话数反复跨越阈值，
+   会出现 pause/unpause 抖动。**看 `shed_n` 的方差**。
+3. **可能只是"另一个 cap"**：如果 `rg3` 最终落在 (236, 81) 附近——也就是 **cap3_hc 那个点上**——
+   那就说明「限在跑」和「限存活」在这个负载上等价，`nogate` 也会证明这点。**这条假说就死了。**
+
+### 六、判决
+
+用 `scripts/frontier.py`（同代码代、同 trace、999 步）：
+只有落在静态前沿【上方】才算赢。前沿锚点 `cap4_hc (213.0, 63.4) → cap3_hc (236.4, 81.1) → cap2_hc (295.0, 91.6)`。
