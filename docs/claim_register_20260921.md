@@ -1887,3 +1887,36 @@ MARS §6 消融原文：
 
 **我们的"下一步机制（prefix-cache externality 准入）"经受住了检验，是干净的空白。**
 **但支撑它的那句定位——"外部准入控制"——已经被 MARS 和 muyuan 双重占位，必须改写。**
+
+### 补记（13:50）：§三十 那句"TTFT 就是 prefill"**说过头了**，修正
+
+§三十 写的是「TTFT 的量级 = 要重算的 token 数 × **1.08 ms/token**」。**这是拿带负载的回归系数当纯 prefill 用了。**
+
+服务器启动日志给出的**孤立 prefill 吞吐**（`server_30032_pois200_foyfix_hc.log`）：
+
+```
+Prefill batch, #new-token: 2048, #cached-token: 0, input throughput (token/s): 4842.64
+```
+
+```
+1.08 ms/token  →  925 token/s     ← 账本 R9 的"重算"值：带负载的端到端回归，含排队
+0.21 ms/token  →  4,800 token/s   ← 服务器实测的孤立 prefill
+                                      差 5 倍
+```
+
+**两个数都真，但测的不是一件事。** 于是 TTFT 应该拆成两段：
+
+```
+21k prompt 的纯 prefill       ≈ 4.4 秒   （21,480 / 4,800）
+实测 TTFT 中位                 6.6 秒
+熔断时 TTFT 中位              16.8 秒
+                                →  排队占大头，尤其熔断期间
+```
+
+**这不削弱策略，反而加强它**：热会话不只在 prefill 上便宜（1,933 vs 15,720 token），
+**它们在队里占的时间也短**。所以"熔断期间只放热会话"的理由比 §三十二 写的更足。
+
+**判据**：**同一个物理量在"孤立"和"带负载"下是两个数，别混用。**
+另外这条也说明：**服务器的启动日志里有生效配置和吞吐，读它是免费的**——
+`chunked_prefill_size=2048`（24GB 卡的自动值，文献报告猜的那个数，实测确认）、
+`schedule_policy='fcfs'`、`radix_eviction_policy='lru'`、`hicache_ratio=2.0`。
