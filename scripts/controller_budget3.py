@@ -101,6 +101,16 @@ def main():
                     help="sessions with <3 observations blend their EMA with the global prior")
     ap.add_argument("--hard-stop-usage", type=float, default=0.85)
     ap.add_argument("--highwater-decay", type=float, default=0.995)
+    ap.add_argument("--charge-mode", choices=["full", "delta"], default="full",
+                    help="returning sessions: how much capacity to charge for admitting "
+                         "them. full = the session's whole known context (v3 behaviour, "
+                         "and the default). delta = only what that session actually had to "
+                         "recompute last round, as the engine measured it "
+                         "(server_uncached_prompt_tokens). Rationale for delta: a returning "
+                         "session's prefix is usually still in the radix tree, so it is "
+                         "ALREADY inside `resident`; charging its full ctx again counts the "
+                         "same tokens twice. Measured gap on this trace: round 0 needs "
+                         "15,720 uncached tokens, round 1+ needs 1,933.")
     ap.add_argument("--slo-ms", type=float, default=10000.0)
     ap.add_argument("--slo-window", type=int, default=20)
     ap.add_argument("--starve-seconds", type=float, default=240.0)
@@ -212,7 +222,8 @@ def main():
                     continue
                 s = sess.setdefault(sid, dict(sid=sid, arrived_ts=None, prompt0=0,
                                               active=False, finished=False, ctx=0,
-                                              last_round=-1, ema=None, n_obs=0))
+                                              last_round=-1, ema=None, n_obs=0,
+                                              uncached=None))
                 etype = ev.get("event")
                 if etype == "queued":
                     if s["arrived_ts"] is None:
@@ -253,6 +264,9 @@ def main():
                         glob_growth_sum += obs
                         glob_growth_n += 1
                     s["ctx"] = max(s["ctx"], int(pl))
+                unc = rec.get("server_uncached_prompt_tokens")
+                if unc is not None:
+                    s["uncached"] = float(unc)
                 if ri is not None:
                     s["last_round"] = max(s["last_round"], ri)
                 ft = rec.get("first_token_ms")
@@ -324,6 +338,13 @@ def main():
                     # context, not their original arrival size (GPT audit 2: the
                     # prompt0-based need under-counted paused sessions massively)
                     base = s["ctx"] or s["prompt0"]
+                    # charge=delta: a session that has already run a round has its prefix
+                    # resident (that is what `resident` counts), so only the marginal
+                    # recompute is charged. Engine-measured, not modelled.
+                    if (args.charge_mode == "delta"
+                            and s["last_round"] >= 0
+                            and s.get("uncached") is not None):
+                        base = s["uncached"]
                     n = (base + forecast(s)) * args.margin
                     if projection + n <= budget:
                         candidates.append(sid)
