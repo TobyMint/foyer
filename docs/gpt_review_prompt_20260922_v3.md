@@ -11,22 +11,29 @@
 
 ```
 1. docs/STATUS_20260922.md
-   https://raw.githubusercontent.com/TobyMint/foyer/main/docs/STATUS_20260922.md
+   https://raw.githubusercontent.com/TobyMint/foyer/2e4d61d17c5c67aa12a854ab6fcb4b216a395864/docs/STATUS_20260922.md
    —— 169 行的当前状态快照。★ 从这里开始
 
 2. docs/claim_register_20260921.md
-   https://raw.githubusercontent.com/TobyMint/foyer/main/docs/claim_register_20260921.md
+   https://raw.githubusercontent.com/TobyMint/foyer/2e4d61d17c5c67aa12a854ab6fcb4b216a395864/docs/claim_register_20260921.md
    —— 3201 行、47 节的主产物，**唯一的真相来源**。太长可先读 §二十七 与 §三十七–§四十七
       （用文件内搜索定位；§二十七 在全文约 45% 处，§三十七 之后是今天新增的）
 
 3. scripts/controller_budget3.py
-   https://raw.githubusercontent.com/TobyMint/foyer/main/scripts/controller_budget3.py
-   —— 374 行的准入控制器。今天刚改过（见下）
+   https://raw.githubusercontent.com/TobyMint/foyer/2e4d61d17c5c67aa12a854ab6fcb4b216a395864/scripts/controller_budget3.py
+   —— 395 行的准入控制器。今天刚改过（见下）
 
 4. paper/draft-v1.zh.md
-   https://raw.githubusercontent.com/TobyMint/foyer/main/paper/draft-v1.zh.md
+   https://raw.githubusercontent.com/TobyMint/foyer/2e4d61d17c5c67aa12a854ab6fcb4b216a395864/paper/draft-v1.zh.md
    —— 936 行的论文草稿
 ```
+
+
+> **URL 用的是提交号（`2e4d61d17c5c`）而不是 `main` 分支。** 两个原因：
+> ① `raw.githubusercontent.com` 的 `main` 分支 URL 有 CDN 缓存，实测推送后十几分钟
+> 仍返回旧内容——用它会导致你读到的是改动【之前】的代码；
+> ② 审查本来就该针对一个固定快照。
+> 想确认自己读到的是最新的，比对文件行数即可（见每个文件后面标注的行数）。
 
 需要别的文件（`runner/src/*.rs`、`docs/three_paths_20260921.md`、
 `docs/literature_notes_20260921.md`、其他 `controller_*.py`）**请直接说要哪一个**，
