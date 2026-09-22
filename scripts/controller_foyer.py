@@ -203,6 +203,15 @@ def main():
     ap.add_argument("--disable-highwater", action="store_true")
     ap.add_argument("--disable-single-flight", action="store_true")
     ap.add_argument("--disable-slo-valve", action="store_true")
+    # DEFAULT ON, so no run_matrix routing change is needed: run_matrix.py on the
+    # lab is AHEAD of the copy in this repo (90958758c26b vs 4af0bb3309c2), so
+    # editing it locally and deploying would REGRESS the lab. The policy string
+    # stays byte-identical to pois200_foyfix_hc and the behaviour difference is
+    # captured by the controller's code hash in metadata, which is the record
+    # that actually matters.
+    ap.add_argument("--disable-valve-warm", action="store_true",
+                    help="under valve, revert to admitting nobody at all (the behaviour "
+                         "before 2026-09-22); by default warm sessions are still admitted")
     ap.add_argument("--disable-starve-guard", action="store_true")
     ap.add_argument("--disable-shedding", action="store_true")
     ap.add_argument("--ttft-freshness-s", type=float, default=600.0)
@@ -449,11 +458,32 @@ def main():
                            # `if waiting` block made every idle cycle raise
                            # UnboundLocalError, which the per-cycle handler swallowed
                            # into a cycle_error row (caught by the smoke test)
-            if waiting and not valve and (prev_started or args.disable_single_flight):
+            # 5c. WARM-ONLY ADMISSION UNDER VALVE.
+            #
+            # The valve's action has always been "admit nobody". Measured on
+            # pois200_foyfix_hc: it is on for 49% of cycles (time-weighted) while
+            # the request-weighted SLO is 89.8% -- both true at once, because
+            # almost nothing completes while it is on. In those cycles the pool
+            # sits at 0.345, so capacity is idle. What the controller cannot
+            # afford is specifically a COLD prefill. Marginal prefill by round,
+            # same run:
+            #     round 0 (full context)   median 15,720 tok  ->  17.0 s
+            #     round 1+ (growth only)   median  1,933 tok  ->   2.1 s
+            # An 8x difference the valve does not distinguish. So under valve,
+            # keep admitting sessions whose next turn is mostly cached and hold
+            # the fresh ones. This needs no clairvoyance: how many rounds a
+            # session has completed is state the middleware already observes.
+            warm_only = valve and not args.disable_valve_warm
+            if waiting and (not valve or warm_only) and (prev_started or args.disable_single_flight):
                 head = (waiting if args.disable_single_flight
                         else waiting[:max(1, args.candidate_window)])
                 for sid in head:
                     s = sess[sid]
+                    # last_round is -1 until a round completes, then max(round_idx).
+                    # Written as < 0, not `or -1`: round 0 is a legitimate warm value.
+                    if warm_only and s["last_round"] < 0:
+                        bypassed += 1
+                        continue
                     # a resumed/shed survivor is budgeted at its KNOWN current
                     # context, not its original arrival size
                     base = s["ctx"] or s["prompt0"]
