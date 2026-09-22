@@ -186,7 +186,7 @@ def main():
               (name, time.strftime("%m-%d %H:%M", time.localtime(t0)),
                wall, 100 * frac, note))
     print("\n(overlap is a fraction of wall clock, NOT a correction -- the effect"
-          " size is unmeasured; see docs/claim_ledger_20260921.md section 11)")
+          " size is unmeasured; see docs/claim_register_20260921.md section 11)")
     return 0
 
 

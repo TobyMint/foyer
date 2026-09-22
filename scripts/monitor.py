@@ -23,7 +23,7 @@ COUNTERS = [
     "sglang:evicted_tokens_total",
     "sglang:prompt_tokens_total",
     # Added 2026-09-21 after finding them exposed but uncollected. All three are
-    # relevant to the resource-accounting question (docs/claim_ledger Q1):
+    # relevant to the resource-accounting question (docs/claim_register Q1):
     #   hicache_host_used_tokens  -- the host tier. Measured at 201,420 tokens
     #       against a 101,432 GPU pool, i.e. the host tier holds about twice the
     #       GPU pool and was 99.3% full. It is not a side buffer.

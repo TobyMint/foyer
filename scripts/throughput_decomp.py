@@ -3,7 +3,7 @@
 
 ⚠ Its original purpose is RETRACTED. This script was written to verify "wall clock
 versus concurrency is a STEP", by re-deriving the claim from aggregate throughput.
-That claim has since been withdrawn (see docs/claim_ledger_20260921.md, R2-R4): the
+That claim has since been withdrawn (see docs/claim_register_20260921.md, R2-R4): the
 per-request measurement in decode_rate.py shows per-request rate does not rise with
 concurrency, so the aggregate gain is parallelism rather than batching, and the wall
 clock is expected to be smooth. **The decomposition below is still computed and still
