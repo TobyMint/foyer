@@ -111,6 +111,19 @@ def main():
                          "ALREADY inside `resident`; charging its full ctx again counts the "
                          "same tokens twice. Measured gap on this trace: round 0 needs "
                          "15,720 uncached tokens, round 1+ needs 1,933.")
+    ap.add_argument("--base-mode", choices=["max", "resident"], default="max",
+                    help="what the projection is built on. max = the larger of the "
+                         "engine's measured floor and the session-side ctx ledger "
+                         "(v3 behaviour, and the default). resident = engine telemetry "
+                         "only. Rationale for resident: the paper's own thesis is that "
+                         "the control variable must be measured physical occupancy, not "
+                         "a session-side ledger -- yet `max` hands 57% of control cycles "
+                         "to ctx_sum (8784 cycles measured: ctx_sum 4973, resident 3811). "
+                         "Under `resident` the controller finally obeys its own rule. "
+                         "NOTE: this is NOT obviously a bug fix -- ctx_sum is also a "
+                         "proxy for 'what these sessions will need back', and the engine's "
+                         "token_usage excludes evictable blocks, so the two disagree in "
+                         "both directions. This flag measures which one is right.")
     ap.add_argument("--slo-ms", type=float, default=10000.0)
     ap.add_argument("--slo-window", type=int, default=20)
     ap.add_argument("--starve-seconds", type=float, default=240.0)
@@ -298,7 +311,8 @@ def main():
             resident = floor * args.pool_tokens
             ctx_sum = sum(sess[sid]["ctx"] or sess[sid]["prompt0"] for sid in active)
             growth_sum = sum(forecast(sess[sid]) for sid in active)
-            projection = max(resident, ctx_sum) + growth_sum
+            base = resident if args.base_mode == "resident" else max(resident, ctx_sum)
+            projection = base + growth_sum
 
             # 5. admission decision (single-flight by default: one named permit per cycle)
             valve = usage >= args.hard_stop_usage
@@ -371,6 +385,7 @@ def main():
                 "active_n": len(active), "waiting_n": len(waiting),
                 "usage": round(usage, 3), "highwater": round(highwater, 3),
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
+                "base_mode": args.base_mode, "base": round(base),
                 "growth_sum": round(growth_sum), "budget": round(budget),
                 "candidate": (candidates[0] if candidates else None),
                 "n_admitted": len(candidates), "need": round(need), "forced": forced,
