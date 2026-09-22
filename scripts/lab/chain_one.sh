@@ -3,9 +3,11 @@
 # 单条 lane 的看门链：等空卡 → 二次确认 → stale 守卫 → 跑 → 失败重试（最多 6 次）。
 # 与 chain_gpu{2,3}.sh 同一套门控，只是把 gpu/run 参数化，好在 gpu0/1/2 上各起一条。
 #
-# 门控是硬门：memory.used < 2000 MiB 且 90 秒后仍然 < 2000，才允许起 server。
-# 不"算一下空间够不够"——别人的租户占一点就会让 KV 池算成 6 万而不是 10 万，
-# 那种 run 会被池子守卫拒绝，白跑。
+# 门控是硬门：memory.used < 200 MiB 且 90 秒后仍然 < 200，才允许起 server。
+#
+# 阈值原先是 2000，2026-09-23 改成 200，因为 2000 有洞：邻居进程占 660 MiB 也会通过。
+# 那就等于"算一下剩下的空间够不够"——用户明确禁止这么做（"有别人占用卡的话，就别想跑了，
+# 这时候要做的就是 wait"）。空卡实测 15-18 MiB，所以 200 就等于"完全没人用"。
 set -u
 step=$1; gpu=$2; run=$3
 R=/data/xbw/turnstile/results/night
@@ -13,13 +15,13 @@ L=/data/xbw/turnstile/scripts/chain_gpu${gpu}.log
 for attempt in 1 2 3 4 5 6; do
   while :; do
     pre=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
-    [ "$pre" -lt 2000 ] && break
+    [ "$pre" -lt 200 ] && break
     echo "$(date '+%m-%d %H:%M')   gpu${gpu} 被占 ${pre}MiB，等空卡" >> $L
     sleep 120
   done
   sleep 90
   pre2=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
-  if [ "$pre2" -ge 2000 ]; then
+  if [ "$pre2" -ge 200 ]; then
     echo "$(date '+%m-%d %H:%M')   gpu${gpu} 又被占（${pre2}MiB），继续等" >> $L; continue
   fi
   # stale 守卫：同名旧目录没有 summary.json 就先挪走。
