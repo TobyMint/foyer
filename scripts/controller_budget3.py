@@ -358,7 +358,14 @@ def main():
             # finishes. That is the whole point: a session cap of N goes idle whenever all
             # N live sessions happen to be parked (measured: 2.10 live, 1.38 running),
             # whereas this keeps the running count pinned at the gate.
-            if args.round_gate and len(active) > args.round_gate:
+            # Triggered on the ENGINE's own num_running_reqs, not on len(active):
+            # len(active) is the LIVE count (it includes parked sessions and matched the
+            # independent live measurement 1.99 vs 2.10, not the running one 1.38), so
+            # gating on it would just be another session cap. The engine's counter is the
+            # quantity that actually governs TTFT.
+            running_n = em.get("sglang:num_running_reqs", 0) or 0
+            if (args.round_gate and running_n >= args.round_gate
+                    and len(active) > args.round_gate):
                 extra = sorted(active, key=lambda s: sess[s]["arrived_ts"] or 0)[args.round_gate:]
                 shed = list(dict.fromkeys(list(shed) + extra))
                 for sid in extra:
