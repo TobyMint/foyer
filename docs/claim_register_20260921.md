@@ -1732,3 +1732,75 @@ lab   TraceLab/replay/scripts/run_matrix.py        90958758c26b
 行为差异由 metadata 里的**控制器代码哈希**记录——那才是真正管用的凭据。
 
 **判据**：**改动之前先比两面 md5。** 仓库里的副本不一定是 lab 上正在跑的那份。
+
+---
+
+## 三十三、文献调研（2026-09-22，外部 agent 检索）：**一条大威胁 + 一条干净的缝**
+
+### 🔴 最大的威胁：MARS + muyuan 插件
+
+`MARS`（arXiv:2604.26963，Duke；**二手**）+ openEuler 的 **muyuan offloading plugin**（**代码，非论文**）：
+**外部控制面 + KV-only 准入闸门 + AIMD 自适应窗口 + out-of-tree 不改引擎源码 + 双压力遥测（CPU + KV）**。
+
+**这已经是"会话级 + 引擎外 + KV 准入 + 零引擎改动"的完整工程形态。**
+差别只在：它是多资源（CPU+KV）、面向 vLLM/Ascend、**判据是 KV 占用而非前缀缓存外部性**。
+
+> **行动：列为下一篇必读，逐条 diff。** 在没读完之前，不能在任何地方声称"我们是第一个引擎外做会话准入的"。
+
+### 🟢 看起来还干净的缝
+
+1. **准入的输入是"这条到达请求对前缀缓存的【外部性】"**——它会不会共享已有前缀、会不会把别人在等的块挤掉。
+   - `PEEK`（arXiv:2607.02525，**直查 abs**）从"排队需求"侧接近（保护祖先块 + 簇首先放），但它是**引擎内、多卡**，且目的是批内复用，不是评估"放它进来会不会挤掉别人"。
+   - `PrefixShield`（arXiv:2608.01657，**二手**）从"块责任"侧接近（admission debt）。
+   - **没有论文把"预测的单请求前缀外部性"当准入判据，更没有在会话粒度上做。**
+2. **非先知 + 缓存感知的交叉。** 理论线（GSA 2601.22996、regime-aware 2607.09248、WAIT 2504.11320）**明确假设 kill-and-restart、无前缀缓存**，甚至假设同 prompt、离线同时到达。系统线是缓存感知但没有非先知界。**这条缝是干净的。**
+3. **"在墙钟最优点上，绑定资源是前缀缓存而非 KV 池"这个解离现象**——没找到任何论文报过。
+   我们的实测（池 66% 占用 / 逐出 +64% / 命中 −22pp / N=4→5 悬崖）是这条缝里**唯一的实测锚点**。
+4. **会话 wall-clock 与每用户 SLO 的双目标前沿显式刻画 + 在此之上选准入工作点。**
+   现有文献要么说指标本身错了（arXiv:2410.14257），要么说延迟优先调度在 agentic 下错了（PipeSwift 2609.16491、Astraea 2512.14142），**没人画这条前沿并给出选点规则**。
+
+### 📗 支持我们机制叙事的可引证据
+
+- **Metronome**（arXiv:2607.02640，**直查 abs**）：单卡上"无界 per-session 状态会按 per-request 延迟看不见的时钟耗光 KV 池"，
+  导致硬崩溃；并明说**没有 per-session 窗口时，同一个控制器会 over-admit 撞墙**。
+  **这条直接支撑"熔断在保护缓存、判据却看池子"那个机制叙事。**
+- **Sarathi-Serve**（OSDI '24，**二手**）：prefill 优先调度造成 generation stall 可达数秒。chunked prefill 把迭代延迟与 prompt 长度解耦。
+- **Nexus**（arXiv:2507.06608，**二手**）：**量化了干扰幅度**——prefill 的 KV 从 2K 增到 10K，decode 延迟 **+36%**。
+- **SGLang `chunked_prefill_size` 按显存自动配置**（**二手 docs**）：**<20GB 和 20–35GB 都是 2048**。
+  **我们的 3090（24GB）落在 2048 档 → 21K 的 prompt 至少要 11 个迭代、96K 要 48 个。**
+  这直接解释了 TTFT 的量级，值得在实验机上 `--help` 核实。
+- **DistServe**（OSDI '24）自己的 limitations 明说：资源受限（少卡/单卡）场景下 PD 分离**可能不如共置**（**二手**）。
+
+### ⚠️ 术语撞车清单（写论文时必须处理）
+
+| 术语 | 被谁占了 | 怎么办 |
+|---|---|---|
+| **admission** | HotPrefix / PrefixShield / UniCache 里指**块进缓存**，不是请求进服务 | 每次都要写成 `request/session admission` 并说明区别 |
+| **TraceLab** | **UW 的 arXiv:2606.30560 与我们自己的管线同名** | **投稿前必须处理命名冲突**，否则像在自引 |
+| **safety valve** | llm-d 的 `latency-slo-admitter` 自称 | 英文稿改用 SLO gate / tripwire |
+| **middle-phase thrashing** | Concur | 避开 |
+| **idleness is relative / relative idleness** | MORI | 避开 |
+| **queue-informed** | PEEK | 避开 |
+| **delay hit / deferral** | Strata（OSDI '26） | 避开 |
+| **admission debt / admission responsibility** | PrefixShield | 避开（memo 已记） |
+| **agent-level admission control** | Concur | 改说 session-level |
+| **makespan** | 本领域几乎不用 | 改用 session completion time / JCT |
+
+### ⚠️ 一条反向证据，必须正面处理
+
+检索到一个复现仓库（`github.com/gauravapiscean/agentic-kv-cache`，**非论文**）：
+68k 请求 / 393 个 Claude Code 会话，**TTL-300s 策略与 LRU 逐字节相同**，主导 miss 源是**容量**不是存活性预测。
+
+它把两个 regime 分清了：**TTL-bound**（idle gap 撞上 provider TTL）vs **capacity-bound**（LRU 已近最优）。
+
+**我们的测量（池 66% 占用、逐出 +64%）属于 capacity-bound 一侧——这一点必须在论文里写死。**
+否则"会话 idle gap 有多大"这类论证会被这份复现直接打掉。
+
+> 补：我们本来就不在讲 idle gap（实测 `tool_wait` 中位 0.1 秒，§三十 已撤回那个说法）。**这条正好是佐证，不是威胁。**
+
+### 未能核实（引用前必须自己开原文）
+
+`Agentic Coding in the Wild`（2608.00101，全部数字二手）、`CLIMB`（ICML'26 poster 66332）、`Clairvoyant`（2606.07248）、
+`InferCept` / `AgentServeSim`（连 arXiv ID 都未确证）、SGLang 各 PR 号、HiCache 参数名（我们跑的是 v0.5.10，与当前 docs 可能有差异）。
+
+**@memo 里的引用红线继续有效**：arXiv 2608.30830 的 head-to-head 结论**禁引**。
