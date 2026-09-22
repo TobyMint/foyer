@@ -32,3 +32,14 @@
 - `run_summary.py`：任意长度都能量的汇总（现有脚本写死了 999 步，短 trace 会被静默跳过）。
   并发用**时间加权**，不是按 admit 事件数加权——后者会被高并发时刻带偏。
 - `fig_cliff.py`：并发 vs SLO / 段标准差，画出静态 cap 的悬崖和 Foyer 的位置。
+
+### `quick.sh` —— 一条命令跑一次快速实验
+
+```bash
+quick.sh <短名> "<策略串>" [GPU]
+quick.sh warm2 "budget3:hw=0;target=0.95"      # 自动挑空闲的卡
+QUICK_TRACE=full quick.sh warm2 "..."          # 跑全程（默认跑短 trace）
+```
+
+默认用 `replay_pois200_l04_r2.csv`（约 100 分钟；全程 290 分钟），跑完自动出汇总。
+**今天踩过的坑都封在里面**：端口按 GPU 固定、开跑前挪走同名旧目录、卡被占时拒绝而不是硬上。
