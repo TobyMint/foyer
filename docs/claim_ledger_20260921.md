@@ -1074,3 +1074,31 @@ pois200_pairA_foyerhc    09-21 23:49    286.0        4.6%
   把 pairB 的判定补全；(c) 把上面这张污染表并进主表。
 - **配对实验不要再按原样追加波次**。要并发就先把两条臂放进**同一条 lane**（§五 的修法），
   否则花的还是 20 卡时、拿的还是两个先后跑的 run。
+
+### 补记（09:15）：守望的"完成"判据是错的，而仓库里本来就有对的
+
+给 `pairB_cap2hc` 挂了守望，第一次响是**误报**：`DONE steps=855 wall=0.0min`。
+run 其实**完全健康**（最后一步完成于 3 秒前，3.2 步/分）。
+
+原因：我拿 `metadata.json` 当完成信号，而它是 **run_matrix 在开跑时**写的，
+只含 `started`，整个 run 期间都在，`wall_s` 读出 0。
+
+**而正确的判据仓库里已经有了**，`scripts/lane_done.sh` 第 4 行，
+注释还专门警告过这个坑：
+
+```
+# Mark a lane complete ONLY if every run produced a summary. A lane that aborted
+# (e.g. the pool guard refusing a shrunken KV pool) must NOT look finished, or the
+# chain drivers will skip the retry.
+```
+
+**所以这一条不属于"用了错的仪器"，而属于"没去用仓库里已经写对的那件"。**
+起新守望时我重新发明了一个判据，而不是先看仓库里有没有。
+
+同一分钟里我还犯了第二个错：说"steps.jsonl 16 分钟没动"——
+那是我**凭空假设**时间过了多久，两台机器时钟其实一致，实际只过了 3 秒。
+**两个错都让"run 停摆了"这个判断显得成立，而它不成立。**
+
+**判据（写死在这里，后续守望一律照此）**：
+run 完成 = `results/night/<run>/summary.json` 存在。
+`metadata.json` 存在**不代表**任何事，它从第一秒就在。
