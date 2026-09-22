@@ -1920,3 +1920,60 @@ Prefill batch, #new-token: 2048, #cached-token: 0, input throughput (token/s): 4
 另外这条也说明：**服务器的启动日志里有生效配置和吞吐，读它是免费的**——
 `chunked_prefill_size=2048`（24GB 卡的自动值，文献报告猜的那个数，实测确认）、
 `schedule_policy='fcfs'`、`radix_eviction_policy='lru'`、`hicache_ratio=2.0`。
+
+---
+
+## 三十五、设计草稿：prefix externality 到底用什么信号（**未实现，只是把可用量列清楚**）
+
+MARS diff（§三十四）把贡献收敛到一条：**把"这条会话到达对前缀缓存的外部性"当准入信号**。
+那就得回答：**零引擎改动的前提下，这个量测得到吗？** 把可用量列一遍：
+
+### 逐会话（来自 `steps.jsonl`，控制器每拍已经在读）
+
+```
+prefix_len / input_len / prompt_len          这一轮的上下文构成
+server_cached_prompt_tokens                  实际命中多少
+server_uncached_prompt_tokens                实际要重算多少   ← 直接就是"这一轮的外部性"
+server_prefix_hit_rate / planned_prefix_hit_rate   实测 vs trace 期望（两者之差 = 被挤掉的量）
+round_idx / tool_wait_after_ms               跑到第几轮
+```
+
+### 引擎聚合（来自 Prometheus，控制器每拍已经在读）
+
+```
+sglang:evicted_tokens_total      逐出速率        ← 缓存压力的直接读数
+sglang:cached_tokens_total       累计命中
+sglang:cache_hit_rate            聚合命中率
+sglang:token_usage               池占用（现在只用了这个）
+```
+
+### 第一步（已实现，`foywarm_hc`）：**用"跑到第几轮"当外部性的粗代理**
+
+理由是实测出来的：**round 0 的未命中量中位 15,720 token，round 1+ 是 1,933——差 8 倍**（§三十）。
+`warm_only` 就是在熔断期间只放后者。
+
+### 第二步（**未实现**）：把"逐出速率"加进来
+
+```
+冷会话 + 逐出速率高   →  它会挤掉别人   →  拦
+冷会话 + 逐出速率低   →  池子有余量     →  放（现在这一步也放，但熔断会把它一起拦掉）
+热会话               →  总是便宜         →  总是放
+```
+
+`evicted_tokens_total` 是现成的累计计数器，取相邻差就是速率。**这一步不需要新的可观测量。**
+
+### 还没解决的问题（写在这里免得忘）
+
+**"共享"这一侧测不到。** 上表全都是**事后**的量（这一轮已经跑完了才知道命中多少）。
+要**事前**判断"这个新会话会不会命中已有前缀"，需要知道引擎 radix 树里有什么——
+而 SGLang 只暴露聚合命中率，**不暴露树**。
+
+**这是一个真问题，不是实现细节。** 候选出路：
+
+1. **用同会话历史外推**——一个会话上一轮命中率高，下一轮大概率也高（agentic 的 prompt 是单调增长的）。
+   **这条不需要引擎配合**，而且我们已经有 `server_prefix_hit_rate` 的历史。
+2. **用 trace 的 planned 值**——但那是 clairvoyance，不做。
+3. **让 runner 把前缀指纹报给控制器**——runner 是我们自己的，不算改引擎。但会引入新的耦合。
+
+**倾向 1**，因为它保持在"只读遥测"这条线上，且不需要新信息。
+**待验**：同会话相邻两轮的命中率相关性有多高？这个用现有数据就能算。
