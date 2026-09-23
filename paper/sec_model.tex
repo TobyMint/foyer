@@ -140,7 +140,7 @@ static caps \emph{without} HiCache the two track each other almost exactly.
 every one of the five. An evicted prefix is recomputed, close to one token for
 one, and that recomputation is chunked into decode steps. Those same five runs
 give a monotone relation between recomputation and $\tau$: 8.6\,M uncached
-tokens at 18.4\,ms, 9.2 at 22.4, 11.5 at 25.5, 15.4 at 29.0, 20.7 at 32.2.
+tokens at 28.8\,ms, 9.2 at 27.4, 11.5 at 29.7, 15.4 at 32.4, 20.7 at 36.7.
 That is a mechanism consistent with the $\tau$ trend on all five device-only
 configurations. It is five points on five different policies, not an
 intervention: we did not hold concurrency fixed and vary eviction, so we call
@@ -170,8 +170,8 @@ within rounding on all five. Recomputation is still what the device cannot
 absorb; the host tier is a second absorber in front of it.
 
 That does not resolve the \sys{} family, and we say so plainly. Those runs sit
-at a flat 8.6--8.7\,M recomputed tokens while $\tau$ ranges from 22.5 to
-30.6\,ms. Whatever moves $\tau$ there is not recomputation, and we do not
+at a flat 8.6--8.7\,M recomputed tokens while $\tau_1$ ranges from 27.0 to
+35.7\,ms and $\tau_2$ from 22.7 to 33.1\,ms. Whatever moves $\tau$ there is not recomputation, and we do not
 know what it is. We flag it as the largest open question in the paper, and note
 that the negative result does not rest on it: the cancellation is measured
 directly, not inferred from the mechanism.

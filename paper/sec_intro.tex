@@ -50,9 +50,10 @@ number of running requests, $G$ the generated tokens and $\tau$ the per-step
 cost. An admission policy moves $\overline{R}$, and on our configurations it
 moves little else---\texttt{bres} is the exception, and \S\ref{sec:model}
 uses it to show why moving both components at once is still not enough.
-The difficulty is that $\tau$ is not constant in $\overline{R}$: it rises from
-27.0 to 36.7\,ms as the busy-time running count goes from 1.00 to 1.84, and
-that rise absorbs a third of what the extra concurrency buys.
+The difficulty is that $\tau$ is not constant in $\overline{R}$: across our
+runs $\tau_1$ spans 27.0--36.7\,ms, and on the device-only family, raising the
+busy-time running count from 1.00 to 1.84 absorbs a third of what the extra
+concurrency buys.
 
 The idle component is structural rather than a control failure. A session in a
 tool wait issues no request, so when all live sessions happen to be waiting,

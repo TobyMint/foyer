@@ -11,9 +11,11 @@ The result is unambiguous. Of nine controller variants, none is above the
 envelope. The best, a growth-reserve setting of one round instead of the
 default three, lands $+0.22$ percentage points above the line---and we
 measured how large a margin means nothing. The answer is uncomfortable for our
-own method. Three configurations were run more than once, and while their wall
+own method. Three configurations have been run more than once, and while their wall
 clocks are stable across repeats---coefficients of variation of 0.9\%, 1.6\%
-and 1.8\%---their SLO is not: the ranges are 5.1, 1.0 and 0.5\,pp. The widest
+and 1.8\%---their SLO is not: the ranges are 5.1, 1.0 and 0.5\,pp. A fourth
+pair, two runs of \texttt{cap3}+HiCache, we do not use: one of them exceeded
+its own cap. The widest
 of those belongs to an \emph{envelope anchor}: \texttt{cap4}+HiCache scores
 63.4\% on one run and 68.5\% on its repeat. So the front we measure against
 is not a sharp line, and our $\pm1.0$\,pp verdict band is narrower than the
@@ -36,7 +38,7 @@ The other end of the front deserves its own sentence, because the rest of this
 paper is negative and a reader could close it thinking the answer is to do
 nothing. The run with \emph{no} admission control---every session admitted the
 moment it arrives---finishes in 288.6 minutes at 3.0\% SLO, $87.5$\,pp below
-the envelope and the worst result we report by a factor of three. Its median
+the envelope and the worst SLO we report. Its median
 time-to-first-token is 1{,}774 seconds, its prefix cache hit rate collapses from
 the trace's planned 75.5\% to 1.6\%, and its segment SLO is 30\% in the first
 tenth of the run and exactly zero in each of the nine after that. Uncontrolled
@@ -172,7 +174,7 @@ Sessions grow by roughly 2.5K tokens per round, so the controller reserves
 capacity for the next \texttt{horizon} rounds. We swept the horizon over
 $\{0,1,2,3\}$ and the reserve is not a free parameter to be minimised:
 Fig.~\ref{fig:horizon} shows the response is non-monotone. Removing the
-reserve entirely costs 13.5\,pp of SLO, and a reserve of two rounds is
+reserve entirely costs 12.6\,pp of SLO, and a reserve of two rounds is
 15 minutes \emph{slower} than three. The optimum is at one round, and there it
 touches the static front and stops.
 
@@ -202,11 +204,12 @@ It does not beat the static front either, at either parameter setting
 (Table~\ref{tab:runs}). At the values reported in that paper's evaluation it
 finishes in 364.3 minutes at 81.4\% SLO, $11.2$\,pp below the envelope; the
 same arm with its retuned watermarks finishes in 264.6 minutes at 52.8\%,
-$33.4$\,pp below. The retuned setting also has the second-worst
-segment-to-segment volatility of any run we report (SD 13.2\,pp of SLO, with
-segment values swinging between 37 and 72; only the \sys{}\texttt{-all-off}
-arm is worse, at 14.4), which is what a control loop oscillating around a
-capacity cliff looks like.
+$33.4$\,pp below. The retuned setting is also one of the most
+volatile runs we report: its segment-to-segment SD is 13.2\,pp of SLO, with
+segment values swinging between 37 and 72. Three runs are worse (\texttt{cap4}
+at 15.8, the all-throttles-off arm at 14.4, and \texttt{breshz1} at 14.2), and
+no other controller arm is as bad---which is what a control loop oscillating
+around a capacity cliff looks like.
 
 We report two things honestly about this comparison. First, this is our
 reimplementation of a published control law, not the authors' system, and a
@@ -278,7 +281,7 @@ a tightening is another cap.
   \centering
   \includegraphics[width=\columnwidth]{figs/fig6_horizon.pdf}
   \caption{The growth reserve is not a free parameter. Removing it costs
-  13.5\,pp of SLO; two rounds is 15 minutes slower than three. The optimum at
+  12.6\,pp of SLO; two rounds is 15 minutes slower than three. The optimum at
   one round touches the static front and does not cross it.}
   \label{fig:horizon}
 \end{figure}

@@ -189,9 +189,12 @@ controllers sit relative to them, and at the loose end one of them crosses:
 Two readings, and we give both. The first is that our headline claim is
 conditional: at the strict threshold that interactive serving actually cares
 about, no controller reaches the static front; at a loose one, one does. The
-second is that the crossing is still not a win. $+2.7$\,pp at 20\,s is larger
-than the replicate SLO spread of the two configurations we repeated
-(1.0 and 0.5\,pp), so it is inside the noise we can measure. A third pair
+second is that the crossing is still not a win, though the reason is more
+awkward than we first wrote. $+2.7$\,pp at 20\,s is larger than the replicate
+SLO spread of the two controller-side configurations we repeated (1.0 and
+0.5\,pp) but smaller than that of an envelope anchor (5.1\,pp)---and it is the
+anchors, not the controllers, that set the line the margin is measured
+against. A third pair
 exists---two runs of \texttt{cap3}+HiCache---but one of them exceeded its own
 cap, so we do not use it as a replicate. A margin that appears only at one threshold
 and only at a size we cannot resolve is not evidence that adaptive admission
@@ -217,7 +220,7 @@ engine-side TTFT is still 1.6\,s.
 
 What does \emph{not} change is the verdict. The static envelope keeps the same
 four anchors, and of the eleven controller arms, nine move by no more than
-2.6\,pp and none crosses the $\pm1.0$\,pp band into a new verdict. Two move
+2.7\,pp and none crosses the $\pm1.0$\,pp band into a new verdict. Two move
 more: the all-throttles-off arm improves by 8.3\,pp and the retuned AIMD arm by
 2.8\,pp, both of which stay below the front either way. The one that decides our headline moves the wrong way for
 the controller---\texttt{horizon}=1 goes from $+0.22$ to $-0.68$\,pp, still a
