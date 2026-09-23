@@ -13,12 +13,12 @@ Fig.~\ref{fig:decomp} shows the split for every completed run. Two things are
 immediately visible and both matter later.
 
 First, idle time is not noise. It ranges from 7.4\% of the wall clock for the
-fastest configuration to 36.3\% for the slowest. The stretches are long:
-over 1{,}849 of them the median is 5.6\,s, the 90th percentile is 30.1\,s,
-17.6\% exceed 20\,s and the longest is 511\,s (Fig.~\ref{fig:idle}). A
-median near the 5\,s sampling floor is expected---most tool calls are quick---
-but the tail is what matters for a scheduler, and it sits at the scale of the
-16.85\,s mean tool wait.
+fastest configuration to 36.3\% for the slowest, and it is not spread evenly.
+Over 1{,}849 stretches the median is 5.6\,s---close to the 5\,s sampling
+floor, because most tool calls are quick---but 17.6\% of them exceed 20\,s,
+the 90th percentile is 30.1\,s, and the longest is 511\,s
+(Fig.~\ref{fig:idle}). The tail, not the middle, is what a scheduler feels,
+and it sits at the scale of the 16.85\,s mean tool wait.
 
 Second, the two components move independently. \texttt{bres}
 (\S\ref{sec:results}) reduces idle from 15.9\% to 10.1\%, recovering about 17
@@ -57,7 +57,8 @@ running request. Hence
 \end{equation}
 with $G$ the total generated tokens (fixed by the trace at 706{,}010) and
 $\tau$ the per-step cost. Across our runs $\tau$ is not a fit parameter we
-tuned; we obtain it two ways and check that they agree.
+tuned; we obtain it two independent ways, and reporting both is what shows
+they are measuring different things rather than confirming each other.
 
 \paragraph{Method 1 (derived).} $\tau_1 = W_{\text{busy}} \cdot \overline{R} /
 G$. Two choices in that expression are easy to get wrong and both matter. The
