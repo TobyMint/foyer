@@ -101,16 +101,16 @@ more than once ranges from 0.5\,pp to 12.2\,pp, so for some configurations
 the band is generous and for others it is far too narrow. We flag this as a
 weakness of the criterion, not a defence of it. One further property of the
 envelope deserves flagging, because
-five of our nine controller verdicts rest on it. Its right-hand segment runs
-from \texttt{cap2}+HiCache at 295 minutes to \texttt{cap1} at 527, and
-\texttt{cap1} is the only anchor past the left half that runs \emph{without}
-HiCache. Every \sys{} variant that finishes slower than 295 minutes---five of
-the nine---is therefore judged against an interpolation between one host-tier
-point and one device-only point. If the envelope is drawn from the host-tier
-anchors alone, that segment does not exist and those five runs cannot be
-adjudicated at all; if it is drawn from device-only anchors alone, they are
-further below. The reading we report is the conservative one, and we note that
-the honest statement about those five is \emph{below the front as we defined
+four of the nine controller variants finish slower than 295 minutes. Its
+right-hand segment runs from \texttt{cap2}+HiCache at 295 minutes to
+\texttt{cap1} at 527, and \texttt{cap1} is the only anchor there that runs
+\emph{without} HiCache. Those four---\texttt{hz2}, \texttt{bres},
+\texttt{breshz1} and \texttt{foyfix}---are therefore judged against an
+interpolation between one host-tier point and one device-only point. If the
+envelope is drawn from the host-tier anchors alone, that segment does not exist
+and those four cannot be adjudicated at all; drawn from device-only anchors
+alone, they sit further below. We report the conservative reading and note that
+the honest statement about those four is \emph{below the front as we defined
 it}, not \emph{below every static configuration}. Every verdict in
 this paper is produced by one script from the raw logs, and the script's own
 first version was wrong---it extrapolated past the end of the envelope and

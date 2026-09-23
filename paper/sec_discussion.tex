@@ -49,10 +49,16 @@ static cap of three is still 12\% faster in wall clock, but it gives up
 controller is a different point on the front rather than a dominated one,
 which is exactly what the 200-session tier denies it.
 
-We are careful about the size of this. $+0.9$\,pp is well inside the segment
-volatility of every arm on the tier (SD 5.1 to 21.4\,pp), and the wall-clock
-gap in the other direction is 12\%; read at face value the two arms are tied
-with different shapes. What we will defend is the weaker claim: on the
+We are careful about the size, and about the yardstick. $+0.9$\,pp is
+measured against a straight-line interpolation between static points, not
+against a switching policy anyone ran, so the defensible statement is that
+\sys{} is not dominated by any static point we measured on this tier---not
+that it beats what a static mix could achieve. On 125 requests one request is
+worth 0.8\,pp, so the margin is about one request. The tier's
+segment-to-segment SD (5.1 to 21.4\,pp) is not the right yardstick: segment
+volatility is not run-to-run uncertainty. The right one is the replicate spread
+we have, 1.0 and 0.5\,pp of SLO on the two configurations we repeated, and
+against that $+0.9$\,pp is about a replicate wide. What we will defend is the weaker claim: on the
 low-load tier the controller is not worse, and the same switch that is worth
 $+51\%$ there costs $-42\%$ at high load. A controller that is competitive
 where load is light and dominated where load is heavy is the pattern this
@@ -182,10 +188,18 @@ those five points gives $\epsilon = 0.61$ on the per-request measurement
 concurrency buys roughly 4--6\% of throughput, depending on which step cost
 you can measure---which is why nine controller variants and an independent
 AIMD controller all fail to move the frontier, and why the one that came
-closest landed on it rather than above. We offer this as the paper's
-constructive output: measure $\epsilon$ before building a controller, and
-build one only where it is small. We give both values rather than choosing,
-because the choice is the reader's measurement capability, not ours.
+closest landed on it rather than above. We offer $\epsilon$ as a diagnostic, with a caveat we would rather state
+than bury. On our data it is computed from the same wall clock the model then
+explains---$\tau_1$ is derived from $W_{\text{busy}}$, so using it to predict
+$W_{\text{busy}}$ restates rather than tests---and its five points are five
+different policies, so the slope is a cross-policy association, not a
+transportable causal derivative. $\tau_2$ is genuinely independent of the wall
+clock but measures only decode, so it cannot be dropped into a throughput
+equation that includes prefill. What survives is a comparison tool: the
+elasticity orders workloads by how quickly per-step cost eats added
+concurrency, and it can be computed from two runs before committing to a sweep.
+It is not, as an earlier draft of this paper claimed, something that decides
+the question in minutes before building anything.
 
 \paragraph{The threshold decides the verdict, and we report that.} Every SLO
 number in this paper counts a request as good if its time-to-first-token is
