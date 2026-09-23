@@ -24,11 +24,7 @@ that \emph{decide} something---the leftmost envelope anchor and the best
 controller arm---so the front we compare against, and the best result we report
 against it, are both uncertain at a scale larger than the $\pm1.0$\,pp band
 we judge with. A fifth pair, two runs of \texttt{cap3}+HiCache, we do not use:
-one of them exceeded its own cap. The widest
-of those belongs to an \emph{envelope anchor}: \texttt{cap4}+HiCache scores
-63.4\% on one run and 68.5\% on its repeat. So the front we measure against
-is not a sharp line, and our $\pm1.0$\,pp verdict band is narrower than the
-uncertainty of the points that define it. Against that, the best controller's
+one of them exceeded its own cap. Against that, the best controller's
 $+0.22$\,pp is not merely inside the noise---it is smaller than the noise of
 the anchors by an order of magnitude. We record it as \emph{on} the line
 rather than above it, and we state plainly that resolving a margin this small
@@ -139,7 +135,9 @@ contexts of live sessions, plus a reserve for their growth---at a median of
 89{,}073 tokens against a budget of 96{,}360, i.e.\ 7\% free. Its measured
 occupancy at the same instants is 49{,}905 tokens: 48.2\% of that budget, or
 50.8\% of the pool, is idle. The
-projection is 1.79$\times$ the truth. Two terms produce the gap: charging every
+projection is 1.79$\times$ the truth on this configuration; across our
+controller arms the ratio runs from 1.0 to 4.1 with a median of 1.3, so 1.79 is
+this arm's value, not a constant of the design. Two terms produce the gap: charging every
 live session its full context, when a parked session's KV is evictable and
 therefore absent from the engine's count, and the growth reserve, which alone
 is 26{,}762 tokens, 28\% of the budget.
