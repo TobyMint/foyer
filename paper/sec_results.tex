@@ -378,11 +378,15 @@ instead should keep the engine busy while leaving the resident count high.
 The permit design supports this directly: a paused session finishes its
 current round and blocks before its next one, and resumes when the controller
 re-admits it. We implemented it as a gate on the engine's own
-\texttt{num\_running\_reqs} and swept the gate over $\{2,4\}$.
+\texttt{num\_running\_reqs} and swept the gate over $\{2,4\}$. Only the
+gate-of-four arm completed (999 steps); the gate-of-two arm reached 770 and is
+not used, so what we report below is a single comparison against the no-gate
+arm rather than a sweep.
 
-It does not work, and the measurement says why. The gate drove running
-concurrency from 1.42 to 1.29 and live sessions from 2.78 to 1.91: it
-tightened both rather than pinning the one it aims at. That is what we
+It does not work, and the measurement says why. Against the no-gate arm, a
+gate of four moved mean running requests from 1.33 to 1.30 and mean live
+sessions from 3.25 to 3.03: it tightened both, by 2\% and 7\%, rather than
+pinning the one it aims at. That is what we
 observe, and we state it as the observation it is rather than deriving a bound
 we cannot support. A live session spends most of its time parked in a tool wait
 (the ratio of mean running requests to mean live sessions is 0.38 to 0.66
@@ -397,7 +401,7 @@ boundaries, while pinning an instantaneous count requires control the
 permit mechanism does not have.
 
 The measured outcome matches: the gate drove running concurrency from 1.42 to
-1.29 and live sessions from 2.78 to 1.91. It tightened rather than pinned, and
+1.30 and live sessions from 3.25 to 3.03. It tightened rather than pinned, and
 a tightening is another cap.
 
 \begin{figure}[tb]
