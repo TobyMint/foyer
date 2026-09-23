@@ -22,8 +22,9 @@ We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 (Qwen2.5-Coder-7B, 96K context, SGLang, a 101{,}432-token KV pool) and compare
 a family of admission policies against a sweep of static concurrency caps.
 Nine controller variants, spanning four mechanistically distinct ideas, all
-land on or below the static Pareto front (Fig.~\ref{fig:frontier}). The best
-of them reaches the front and no further.
+land on or below the static Pareto front, and so does a reimplementation of an
+independent congestion-based controller from the literature
+(Fig.~\ref{fig:frontier}). The best of them reaches the front and no further.
 
 \begin{figure}[tb]
   \centering

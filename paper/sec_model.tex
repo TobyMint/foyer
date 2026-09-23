@@ -36,6 +36,17 @@ one thing will get this wrong.
   \label{fig:decomp}
 \end{figure}
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{figs/fig4_idle_segments.pdf}
+  \caption{Survival function of idle-stretch duration, pooled over all
+  completed runs (1{,}849 stretches). Most stretches are short---the median is
+  5.6\,s---but the minutes are not: 69.6\% of all idle \emph{time} sits in
+  stretches longer than 20\,s, and the mean stretch is 20.6\,s, the same order
+  as the 16.85\,s mean tool wait. The cliff is the 5\,s sampling floor.}
+  \label{fig:idle}
+\end{figure}
+
 \subsection{What determines busy time}
 
 During busy time the engine executes steps; each step produces one token per
@@ -74,7 +85,7 @@ interval. That share comes out at 15--28\% across the five device-only
 configurations, which is the right order of magnitude for a workload whose
 prompts are 23{,}k tokens median against sub-1{,}k outputs. So the two are not
 two estimates of one number; they are measurements of two different things,
-and we now say so. Method 2 remains the one that does not depend on the
+and we now say so. Fig.~\ref{fig:steptime} shows both, run by run. Method 2 remains the one that does not depend on the
 quantity it is used to explain, and it is the one we quote when the question
 is the cost of a decode step. The engine's own latency counters
 (\texttt{itl\_p50}, \texttt{e2e\_p50}, \texttt{ttft\_p50}) are exported as zero
@@ -175,17 +186,6 @@ running requests preempted mid-flight, a different event with its own counter.
 We record the episode because it is the same failure mode as the segment
 argument of \S\ref{sec:bg}: a check that looks like a measurement but is an
 identity.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig4_idle_segments.pdf}
-  \caption{Survival function of idle-stretch duration, pooled over all
-  completed runs (1{,}849 stretches). Most stretches are short---the median is
-  5.6\,s---but the minutes are not: 69.6\% of all idle \emph{time} sits in
-  stretches longer than 20\,s, and the mean stretch is 20.6\,s, the same order
-  as the 16.85\,s mean tool wait. The cliff is the 5\,s sampling floor.}
-  \label{fig:idle}
-\end{figure}
 
 \subsection{Why idle time exists, and why recovering it does not pay}
 
