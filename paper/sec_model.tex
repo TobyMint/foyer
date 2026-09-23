@@ -148,10 +148,14 @@ static caps \emph{without} HiCache the two track each other almost exactly.
 \texttt{cap5} evicts 21.3\,M and prefills 20.7\,M; the gap is 0.6--0.7\,M on
 every one of the five. An evicted prefix is recomputed, close to one token for
 one, and that recomputation is chunked into decode steps. Those same five runs
-give a monotone relation between recomputation and $\tau$: 8.6\,M uncached
-tokens at 28.8\,ms, 9.2 at 27.4, 11.5 at 29.7, 15.4 at 32.4, 20.7 at 36.7.
-That is a mechanism consistent with the $\tau$ trend on all five device-only
-configurations. It is five points on five different policies, not an
+give recomputation rising with $\tau$ across four of the five points: 9.2\,M
+uncached tokens at 27.4\,ms, 11.5 at 29.7, 15.4 at 32.4, 20.7 at 36.7. The
+exception is the first point, \texttt{cap1}, which recomputes least (8.6\,M)
+and still costs 28.8\,ms---more than \texttt{cap2} does for more recomputation.
+We report the ordering we have rather than rounding it to a monotone one: it is
+a mechanism consistent with the $\tau$ trend on four of the five device-only
+configurations, and one point it does not order. It is five points on five
+different policies, not an
 intervention: we did not hold concurrency fixed and vary eviction, so we call
 it consistent rather than demonstrated.
 
