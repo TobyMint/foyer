@@ -57,8 +57,11 @@ cares about---the best ties it---; a plain cap on resident sessions remains the 
 measured. That is not an argument for admitting everything: with no control at
 all the median request waits 1{,}774 seconds for its first token, the prefix
 cache collapses from a 75\% planned hit rate to 1.6\%, and SLO falls to 3\%.
-The question is which selective rule, not whether to be selective. The reason
-our variants fail is one we can measure rather than one we can tune away. The wall
+The question is which selective rule, not whether to be selective. The reason our variants fail is
+two measurable effects rather than one we can tune away: the controllers hold a
+fifth of the pool idle while sessions queue---their own headroom estimate is
+1.77$\times$ the truth---and the concurrency they do take is partly paid back
+in per-step cost. The wall
 clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the wall
 clock) is structural---an agent session issues no request while a tool runs,
