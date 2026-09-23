@@ -99,9 +99,10 @@ cheap test for whether admission control can pay on a given workload. Measure
 $\overline{R}$ and $\tau$ (by Method 2, which needs only per-request logs) over
 a range of concurrency. If $\tau$ is flat, raising $\overline{R}$ converts
 directly into wall clock and admission control has room. If $\tau$ rises
-proportionally with $\overline{R}$, the two cancel and it does not. Our seven
-measured configurations give 22.8--31.3\,ms across a running range of
-1.04--1.62, i.e.\ a rise of about 8\,ms over 0.58---enough to cancel the gain.
+proportionally with $\overline{R}$, the two cancel and it does not. Our 13
+measured configurations give 18.4--32.2\,ms across a running range of
+0.64--1.62, i.e.\ a rise of 13.8\,ms over 0.98---a factor of 1.75 against a
+concurrency factor of 2.5, which absorbs more than half the gain.
 We offer this as the paper's constructive output, and we note it is testable
 in minutes on a system that already logs per-request timings.
 

@@ -46,14 +46,15 @@ none. The busy component is governed by
 \end{equation}
 where $\overline{R}$ is the mean number of running requests and $\tau$ is the
 per-step cost. An admission policy controls $\overline{R}$ and nothing else.
-The difficulty is that $\tau$ is not constant in $\overline{R}$: we observe it
-rise by 20--25\% in exactly the two configurations that push concurrency
-hardest, and the rise cancels the gain from the extra concurrency.
+The difficulty is that $\tau$ is not constant in $\overline{R}$: it rises from
+18.4 to 32.2\,ms as $\overline{R}$ goes from 0.64 to 1.62, and that rise
+absorbs more than half of what the extra concurrency buys.
 
 The idle component is structural rather than a control failure. A session in a
 tool wait issues no request, so when all live sessions happen to be waiting,
-the engine is genuinely empty---and we measure that stretches of 5--25\,s of
-zero occupancy are common. Crucially, the tool wait itself is much longer than
+the engine is genuinely empty---and we measure that the median zero-occupancy
+stretch is 11\,s and 30\% exceed 20\,s, an order of magnitude above the 2\,s
+control cycle. Crucially, the tool wait itself is much longer than
 the trace's median suggests: the median inter-round gap is 0.35\,s, but the
 \emph{mean} is 16.85\,s with 22\% of gaps over ten seconds. A controller that
 reads only the median concludes, as we initially did, that sessions never
@@ -70,8 +71,12 @@ leave and therefore that there is no idle time to recover. There is.
         running-request-count. Each is reported with its measured reason
         (\S\ref{sec:results}).
   \item We give a two-part decomposition of the wall clock (\S\ref{sec:model})
-        that explains all of the above with one mechanism: admission policy
-        moves the running-request count, and the per-step cost moves with it.
+        that locates the cancellation: admission policy moves the
+        running-request count, and the per-step cost moves with it. We also
+        report the mechanism we proposed for that rise and had to withdraw,
+        with the two engine counters that refute it (\S\ref{sec:model}); the
+        negative result does not rest on it, because the cancellation is
+        measured rather than inferred.
   \item We characterize when adaptivity \emph{could} have paid, and show that
         our workload is not that case: the same throttle configuration that is
         worth $+51\%$ at 25 sessions costs $-42\%$ at 200 (\S\ref{sec:load}).
