@@ -134,9 +134,10 @@ It does not beat the static front either, at either parameter setting
 (Table~\ref{tab:runs}). At the values reported in that paper's evaluation it
 finishes in 364.3 minutes at 81.4\% SLO, $11.2$\,pp below the envelope; the
 same arm with its retuned watermarks finishes in 264.6 minutes at 52.8\%,
-$33.4$\,pp below. The retuned setting also has the worst segment-to-segment
-volatility of any run we report (SD 13.2\,pp, with segment SLO swinging
-between 37 and 72), which is what a control loop oscillating around a
+$33.4$\,pp below. The retuned setting also has the second-worst
+segment-to-segment volatility of any run we report (SD 13.2\,pp of SLO, with
+segment values swinging between 37 and 72; only the \sys{}\texttt{-all-off}
+arm is worse, at 14.4), which is what a control loop oscillating around a
 capacity cliff looks like.
 
 We report two things honestly about this comparison. First, this is our
@@ -144,13 +145,25 @@ reimplementation of a published control law, not the authors' system, and a
 reimplementation of any controller can underperform its paper. We built it to
 the published law, gave it the same permit interface and the same 2\,s cycle
 as \sys{}, and did not tune it beyond the two documented settings; but the
-caveat stands. Second, at its paper parameters it deadlocked on its first
-attempt---the window pinned at one, no session admitted, the engine idle for
-over an hour---and we kept the run directory rather than discarding it. A
-later attempt completed, and that completion is what we report. We read this
-as a statement about how narrow the stable region is on a pool that holds four
-sessions, not as a defect of the controller in its intended setting; both
-settings sit below the front regardless.
+caveat stands. Second, two runs in this paper deadlocked, and they are worth reporting
+together because they are the same failure in two different controllers. At
+its paper parameters this one pinned its window at one session, admitted
+nothing, and left the engine idle for over an hour. While re-running our own
+best configuration we hit the other: 92 sessions waiting, the engine empty,
+273 seconds with no admission and no error, because the
+single-flight rule considered only the head of the FIFO queue and the head was
+a session too large to fit the remaining budget---so it was never admitted,
+never left the queue, and blocked every smaller session behind it. We fixed
+that one (scan the queue, still admit at most one per cycle) and kept both run
+directories as evidence.
+
+We read these as one finding rather than two incidents: on a pool that holds
+four median sessions, an admission controller's failure mode is not graceful
+degradation but silent standstill, and it does not announce itself. The
+configuration that produced our best result is the same configuration that
+deadlocked on its repeat. That is a statement about how narrow the stable
+region is, and it is one more reason a static cap is hard to beat here---a cap
+has no such failure mode. Both settings sit below the front regardless.
 
 \subsection{Route 4: execution granularity}
 \label{sec:results:gate}
