@@ -4,14 +4,12 @@
 #   日志里没有 prev_started，无法区分，故不做单飞归因。sf_off=Y 的臂是探针：
 #   单飞关闭时闸门不可能拦人，其 remainder 只可能是「没有候选者塞得进预算」。
 run,samples,blocked_cycles,valve_pct,round_gate_pct,projection_over_pct,remainder_pct,sf_disabled
-pois200_foyer_sf0,3193,2859,17.6,0.0,52.8,29.6,Y
 pois200_foyer_bres,8652,8097,17.1,0.0,50.8,32.1,N
 thr25_hwsf,1012,768,3.1,0.0,48.8,48.0,Y
 pois200_foyer_push_25,931,739,3.7,0.0,44.4,52.0,N
 pois200_var_foyer,9844,8374,8.4,0.0,43.2,48.4,N
 pois200_foyer_t85,9928,9349,5.3,0.0,40.8,53.9,N
 pois200_foyer_t90,9411,8844,7.6,0.0,40.6,51.9,N
-pois200_foyer_hc_r2,3187,2868,8.0,0.0,39.2,52.8,N
 pois200_pairA_foyerhc,8436,7868,7.4,0.0,38.7,53.9,N
 pois200_foyer_hc,8784,8196,6.8,0.0,38.4,54.8,N
 pois200_pairB_foyerhc,8723,8140,7.0,0.0,38.4,54.6,N
@@ -49,3 +47,6 @@ pois200_foyer_rg3,1097,776,36.1,18.0,13.3,32.6,N
 pois200_foyer_rg2,6204,5565,47.6,29.3,10.7,12.4,N
 load25c_budget3_sg0,2278,2059,1.5,0.0,8.3,90.2,N
 pois200_v4_r2,1104,507,0.0,0.0,2.2,97.8,N
+# 论文正文引用的集合：pois200_foyer_bres pois200_foyer_breshz1 pois200_foyer_hc pois200_foyer_hz0 pois200_foyer_hz1 pois200_foyer_hz2 pois200_foyer_nogate pois200_foyer_rg4
+# paper_set_median,valve_pct=32.7,projection_over_pct=32.2,remainder_pct=45.1
+# paper_set_range,valve=6.8~67.9,projection_over=19.5~50.8

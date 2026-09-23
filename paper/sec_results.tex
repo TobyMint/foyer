@@ -176,9 +176,16 @@ its unexplained remainder falls to 29.6\% against a median of 51.4\% across the
 eighteen single-flight arms. That puts the single-flight path at roughly twenty
 points and leaves the headroom estimate as the largest cause we can measure.
 
-Across the nineteen controller runs we instrumented, the projection is over
-budget in a median 35.7\% of blocked cycles (10.7\% to 52.8\%) and the valve in
-a median 17.1\% (0.2\% to 67.9\%); the round gate never exceeds 0.6\% on any run.
+Across the eight \sys{} variants that left controller logs---the set is named in
+\texttt{gate\_attrib.csv}, and it is eight rather than nine because
+\texttt{foyfix} and the two AIMD arms run a different controller and log no
+gate state---the projection is over budget in a median 32.2\% of blocked
+cycles (19.5\% to 50.8\%) and the valve in a median 32.7\% (6.8\% to 67.9\%).
+Both medians move with the set, which is why we name it: over the wider group
+of runs in that file they are 37.6\% and 10.5\%. The round gate never binds
+except in the two runs that enable it---\texttt{rg2} at 29.3\% and \texttt{rg3}
+at 18.0\% of blocked cycles, against 0.6\% or less everywhere else---which is
+what one expects of a gate that is off by default.
 We also record what this accounting omits, because it changes the picture: the
 controller has a starvation guard that bypasses the budget entirely once the
 oldest waiter has waited 240\,s, cooling down for 300\,s. On the base run it
@@ -237,7 +244,7 @@ measurably higher cost. Everything else is a residual.
 \end{tabular}
 \end{center}
 
-Four of the ten are attributed. Six are not: their occupancy and their step
+Four of the eleven are attributed. Seven are not: their occupancy and their step
 cost both sit close to their comparison cap's, and their shortfall is real but
 we cannot say from these measurements which mechanism produced it. We publish
 the table rather than a summary because a summary would claim more than we
@@ -365,13 +372,16 @@ current round and blocks before its next one, and resumes when the controller
 re-admits it. We implemented it as a gate on the engine's own
 \texttt{num\_running\_reqs} and swept the gate over $\{2,4\}$.
 
-It does not work, and the reason is structural rather than a tuning matter.
-A live session is running between 38\% and 66\% of the time (the ratio of
-mean running requests to mean live sessions across our arms), so the running
-count is a fraction of the live count rather than a multiple of it.
-Constraining the live count to $N$ therefore constrains the running count to
-at most about $0.66N$, which is below the gate---so the gate can only throttle,
-never pin. Both repairs fail: without a
+It does not work, and the measurement says why. The gate drove running
+concurrency from 1.42 to 1.29 and live sessions from 2.78 to 1.91: it
+tightened both rather than pinning the one it aims at. That is what we
+observe, and we state it as the observation it is rather than deriving a bound
+we cannot support. A live session spends most of its time parked in a tool wait
+(the ratio of mean running requests to mean live sessions is 0.38 to 0.66
+across our arms), so pausing live sessions removes capacity that was not
+running in the first place---but that ratio is an average over a run, not a
+bound on any instant, and the running count can in principle reach the live
+count. Both repairs fail: without a
 constraint on admission, a paused session is re-admitted on the next cycle and
 blocks for at most one 2\,s cycle; with one, the policy is a session cap again.
 The obstacle is granularity---\texttt{paused} takes effect at round

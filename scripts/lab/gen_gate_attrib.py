@@ -55,6 +55,15 @@ def proj(d):
     return max(d.get("resident") or 0, d.get("ctx_sum") or 0) + (d.get("growth_sum") or 0)
 
 
+# 论文正文引用的统计集合 —— 【显式列名】，不再用"十九条"这种无法复现的口径。
+# 这是 Table I 的控制器段（九条 Foyer 变体 + 两个 AIMD 设置）。
+# 九条 Foyer 变体里，有八条留了 controller.jsonl；foyfix_hc 与两个 AIMD 没有
+# （AIMD 走另一套控制器），所以它们不在本表里 —— 正文必须按这八条写。
+PAPER_SET = ["pois200_foyer_hz0", "pois200_foyer_hz1", "pois200_foyer_hz2",
+             "pois200_foyer_hc", "pois200_foyer_bres", "pois200_foyer_breshz1",
+             "pois200_foyer_nogate", "pois200_foyer_rg4"]
+
+
 def main():
     root = sys.argv[1]
     out_path = sys.argv[2]
@@ -112,6 +121,21 @@ def main():
             f.write("%s,%d,%d,%.1f,%.1f,%.1f,%.1f,%s\n" % (
                 r["run"], r["samples"], k, 100*r["valve"]/k, 100*r["gate"]/k,
                 100*r["over"]/k, 100*r["rem"]/k, "Y" if r["sf_off"] else "N"))
+    # 论文正文用的集合，单独汇总并写进 CSV（含名单），使那两个中位数可复现
+    sel = [r for r in rows if r["run"] in PAPER_SET]
+    if sel:
+        k = lambda key: sorted(100.0 * r[key] / r["blocked"] for r in sel)
+        vp, op, rp = k("valve"), k("over"), k("rem")
+        mid = lambda v: v[len(v) // 2]
+        print()
+        print("论文集合（%d 条，名单见 CSV 注释）：阀门中位 %.1f%%、投影超预算中位 %.1f%%、"
+              "remainder 中位 %.1f%%" % (len(sel), mid(vp), mid(op), mid(rp)))
+        with open(out_path, "a") as f:
+            f.write("# 论文正文引用的集合：%s\n" % " ".join(sorted(r["run"] for r in sel)))
+            f.write("# paper_set_median,valve_pct=%.1f,projection_over_pct=%.1f,remainder_pct=%.1f\n"
+                    % (mid(vp), mid(op), mid(rp)))
+            f.write("# paper_set_range,valve=%.1f~%.1f,projection_over=%.1f~%.1f\n"
+                    % (vp[0], vp[-1], op[0], op[-1]))
     print("-> %s" % out_path)
 
 

@@ -86,15 +86,18 @@ embarrassing. $\tau_1$ exceeds $\tau_2$ on every run, by 7.9--39.8\%, which in
 absolute terms is 2.6--8.2\,ms of a 27--37\,ms step. The gap is
 \emph{consistent with} engine steps that are prefill and
 therefore emit no output token---we can bound it, not identify it, because
-subtracting a median from a mean does not isolate a component. The quantity we
-can actually form is a ratio of \emph{times}, not of steps: $\tau_1$ averages
-over all steps while $\tau_2$ measures only the decode interval, so the excess
-$\tau_1/\tau_2 - 1$ runs 17.6--39.8\% across the five device-only
-configurations. That is a fraction of step \emph{time}, and we do not have a
-measurement of the fraction of step \emph{counts} that are prefill; chunked
-prefill makes those two different numbers. So the two are not
+subtracting a median from a mean does not isolate a component. All we can form
+from these two is their ratio: the excess $\tau_1/\tau_2 - 1$ runs
+17.6--39.8\% across the five device-only configurations. Two things follow, and
+we separate them. First, it is a ratio of \emph{times}, not of steps, and we
+have no measurement of the fraction of step \emph{counts} that are prefill---
+chunked prefill makes those two different numbers. Second, even as a time
+ratio it is the gap between two measurements, not a decomposition of one: it
+is consistent with prefill and non-decode work filling it, but we cannot rule
+out that some of the difference is the two estimators disagreeing for other
+reasons. So the two are not
 two estimates of one number; they are measurements of two different things,
-and we now say so. Fig.~\ref{fig:steptime} shows both, run by run. Method 2 remains the one that does not depend on the
+and we do not size a component with their difference. Fig.~\ref{fig:steptime} shows both, run by run. Method 2 remains the one that does not depend on the
 quantity it is used to explain, and it is the one we quote when the question
 is the cost of a decode step. The engine's own latency counters
 (\texttt{itl\_p50}, \texttt{e2e\_p50}, \texttt{ttft\_p50}) are exported as zero
