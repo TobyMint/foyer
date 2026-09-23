@@ -1,0 +1,10 @@
+# 无准入控制基线 + 命中率的四种口径 —— 由 scripts/lab/gen_nocontrol.py 生成
+# ttft_p50_s/p90_s: 引擎侧 first_token_ms 的分位（不含等 permit）
+# plan_*: 四种口径。论文 §Related Work 用 plan_r1_mean；
+#         无控制那段的 75.5% 是 runner 自己报的全步口径，与此不同
+run,n_steps,ttft_p50_s,ttft_p90_s,slo_pct,plan_all_mean,plan_all_tok,plan_r1_mean,plan_r1_tok
+default,997,1774.0,2743.6,3.0,73.8,85.23,80.84,86.14
+foyer_hc,999,2.2,10.4,89.8,73.83,85.25,80.87,86.16
+cap4_hc,999,5.5,44.2,63.4,73.83,85.25,80.87,86.16
+foyer_hz1,999,2.8,13.6,84.8,73.83,85.25,80.87,86.16
+cap2,999,2.2,10.5,89.5,73.83,85.25,80.87,86.16

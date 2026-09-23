@@ -93,9 +93,11 @@ leave and therefore that there is no idle time to recover. There is.
         per-step cost with respect to the running count (\S\ref{sec:criterion}),
         and measure it at $0.38$ on the model-consistent step cost and $0.61$
         on the per-request one, on the configurations whose mechanism we can
-        account for token for token. This is the paper's
-        constructive output: it decides in minutes, from logs a serving system
-        already writes, whether admission control has room.
+        account for token for token. We offer it as a diagnostic rather than a
+        predictor: it says where on the curve a policy operates and how much
+        the remaining headroom is worth, and \S\ref{sec:criterion} is explicit
+        about the sense in which it is circular and the sense in which it is
+        not.
   \item We characterize when adaptivity \emph{could} have paid, and show that
         our workload is not that case: the same throttle configuration that is
         worth $+51\%$ at 25 sessions costs $-42\%$ at 200 (\S\ref{sec:load}).
