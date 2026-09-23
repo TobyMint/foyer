@@ -104,9 +104,10 @@ limitation these works would press on.
 
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
 an admission policy should use. In our workload it is not a policy variable:
-round-1+ hit rate equals the trace's own planned value (89.8\%) to within one
-percentage point across four different admission policies, so admission does
-not move it. We note the boundary of this claim---we varied admission policy,
+round-1+ hit rate tracks the trace's own planned value (80.9\%) to within
+1.1\,pp across four different admission policies---80.6\% on the \sys{}
+baseline against 78.5\% for the worst static cap---so admission moves it
+hardly at all. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
 test. A characterization of production KV-cache traffic at a large cloud
 provider finds that eviction-policy design is ``highly workload-dependent''
@@ -245,7 +246,7 @@ above the static front. The reason is a cancellation. Admission policy controls
 how many requests are in flight; the per-step cost rises with that number; and
 the product is what the wall clock sees. We gave a two-part decomposition of
 the wall clock that makes the cancellation measurable, identified a structural
-idle component the policy cannot recover, and showed the regime in which
+idle component that no policy we built recovers at a profit, and showed the regime in which
 adaptivity should have paid---where the same switch is worth $+51\%$ and
 $-42\%$---is one where a stateless cap still wins. The constructive output is a
 per-request measurement that decides, in minutes, whether admission control
