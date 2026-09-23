@@ -5,6 +5,7 @@
 #   200 档 999 步为跑满；995-998 步的（hz0/hz2/rg4）标了实际步数，不当作跑满
 #   25 档 125 步为跑满
 run,tier,steps,wall_min,conc,slo_pct,sd_pp,family
+default,200,997,288.6,1.69,3.0,9.1,static
 cap1,200,999,527.4,1.00,94.8,2.4,static
 cap2,200,999,304.2,1.99,89.5,6.4,static
 cap3_fixed,200,999,258.7,2.89,74.4,7.5,static

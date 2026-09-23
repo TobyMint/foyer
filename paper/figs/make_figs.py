@@ -66,6 +66,7 @@ def fig_frontier():
     # 阈值放到 995：hz0/hz2/rg4 分别少跑 4/2/1 步，是真实的测量点，
     # 悄悄丢掉它们会让图 1 只有 6 条 Foyer 变体，而图注和正文都说 9 条。
     rows = [r for r in load("runs.csv") if r["tier"] == "200" and int(r["steps"]) >= 995]
+    # default（不设任何准入控制）单独画，它不是 cap 也不是控制器，是「什么都不做」
     fig, ax = plt.subplots(figsize=(3.5, 2.9))
     front = sorted([(float(r["wall_min"]), float(r["slo_pct"]))
                     for r in rows if r["family"].startswith("static")])
@@ -94,8 +95,15 @@ def fig_frontier():
                                     shrinkA=1.5, shrinkB=2.5))
     ax.set_xlabel("end-to-end wall clock (min)", labelpad=1)
     ax.set_ylabel("SLO attainment (\\%)")
-    ax.set_ylim(20, 100); ax.set_xlim(188, 548)
-    ax.set_yticks([20, 30, 40, 50, 60, 70, 80, 90, 100])
+    # 纵轴放到 0：不设任何准入控制的那条 run 落在 SLO 3%，把它切掉就等于
+    # 藏起「不做控制的代价」——那正是本文问题的一半。
+    ax.set_ylim(-2, 102); ax.set_xlim(188, 548)
+    ax.set_yticks([0, 20, 40, 60, 80, 100])
+    for r in rows:
+        if r["run"] == "default":
+            ax.annotate("no control", (288.6, 3.0), xytext=(0, 10),
+                        textcoords="offset points", ha="center", fontsize=6,
+                        color="0.15")
     legend_below(ax, ncol=2, y=-0.24)
     fig.savefig(os.path.join(HERE, "fig1_frontier.pdf"))
     plt.close(fig)

@@ -20,6 +20,18 @@ spread of the very configuration this paper is about. We record it as
 more than two or three repeats per configuration to resolve a margin this
 small---which we did not run.
 
+The other end of the front deserves its own sentence, because the rest of this
+paper is negative and a reader could close it thinking the answer is to do
+nothing. The run with \emph{no} admission control---every session admitted the
+moment it arrives---finishes in 288.6 minutes at 3.0\% SLO, $87.5$\,pp below
+the envelope and the worst result we report by a factor of three. Its median
+time-to-first-token is 1{,}774 seconds, its prefix cache hit rate collapses from
+the trace's planned 75.5\% to 1.6\%, and its segment SLO is 30\% in the first
+tenth of the run and exactly zero in each of the nine after that. Uncontrolled
+admission does not degrade gracefully; it destroys the cache and then serves
+almost nobody. The question this paper addresses is therefore not whether to
+admit selectively, but which selective rule to use.
+
 Two features of the front are worth noting before the negative results.
 The envelope is steep between 213 and 236 minutes (0.76\,pp per minute) and
 shallow thereafter (0.18\,pp per minute), so the cost of buying SLO by
@@ -50,6 +62,7 @@ appearance of the mechanism that drives the whole frontier.
     Policy & Wall (min) & Conc. & SLO (\%) & $\Delta$ (pp) \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps}}\\
+    no control        & 288.6 & 1.69 & 3.0 & $-$87.45 \\
     cap1              & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
     cap2              & 304.2 & 1.99 & 89.5 & $-$2.23 \\
     cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$10.70 \\

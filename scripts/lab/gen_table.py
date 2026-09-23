@@ -16,6 +16,7 @@ import csv, sys
 
 # 表里的行标签（与论文一致），以及它们的排序位置由 Δ 决定
 LABEL = {
+    "default": "no control",
     "cap1": "cap1", "cap2": "cap2", "cap3_fixed": "cap3 (fixed)",
     "cap4": "cap4", "cap5": "cap5",
     "pairB_cap2hc": "cap2+HC", "cap3_hc": "cap3+HC", "cap4_hc": "cap4+HC",
@@ -59,7 +60,7 @@ def main():
             LABEL[k], r["wall_min"], r["conc"], r["slo_pct"], ds)
 
     print("    \\multicolumn{5}{l}{\\emph{Static caps}}\\\\")
-    for k in ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]:
+    for k in ["default", "cap1", "cap2", "cap3_fixed", "cap4", "cap5"]:
         print(row(k, anchor=(k == "cap1")))
     print("    \\midrule")
     print("    \\multicolumn{5}{l}{\\emph{Static caps + HiCache}}\\\\")
