@@ -15,10 +15,30 @@ two regimes, opposite signs, both around 40--50\%
 
 This is the regime in which adaptive control should win, and we now have the
 same-generation measurement that earlier drafts of this paper were missing.
-Four arms on the 25-session tier, all under the current harness (Table of
-\S\ref{sec:load}, data in \texttt{tier25.csv}): static caps of two, three and
-four finish in 32.4, 24.2 and 23.6 minutes at 92.8\%, 91.2\% and 79.2\% SLO,
-and \sys{} finishes in 27.6 minutes at 92.8\%.
+Four arms on the 25-session tier, all under the current harness
+(Table~\ref{tab:tier25}): static caps of two, three and four finish in 32.4,
+24.2 and 23.6 minutes at 92.8\%, 91.2\% and 79.2\% SLO, and \sys{} finishes
+in 27.6 minutes at 92.8\%.
+
+\begin{table}[tb]
+  \caption{The 25-session tier, all four arms under the current harness.
+  This is the same-generation comparison earlier drafts of this paper were
+  missing; \texttt{cap4} and the \sys{} arm were run for this revision.}
+  \label{tab:tier25}
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Policy & Wall (min) & Conc. & SLO (\%) & Seg.\ SD (pp) \\
+    \midrule
+    cap2          & 32.4 & 1.95 & 92.8 & 11.0 \\
+    cap3          & 24.2 & 2.77 & 91.2 &  5.1 \\
+    cap4          & 23.6 & 3.39 & 79.2 & 21.4 \\
+    \sys{}        & 27.6 & 2.47 & 92.8 &  7.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 The finding is a trade, not a defeat, and it is the opposite of what the
 200-session tier shows. Against the same-generation envelope---which runs from
@@ -54,8 +74,8 @@ direction we did not finish, and we are explicit that we did not finish it.
   \includegraphics[width=\columnwidth]{figs/fig5_loadtier.pdf}
   \caption{The same throttle switch, two load tiers, opposite signs. The
   25-session bars are from an earlier harness revision and are shown as a
-  direction, not a magnitude; the matching current-harness arm was interrupted
-  and is not reported.}
+  direction, not a magnitude---the current-harness 25-session comparison is in
+  Table~\ref{tab:tier25} instead. The 200-session bars are current.}
   \label{fig:loadtier}
 \end{figure}
 
