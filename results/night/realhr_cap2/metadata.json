@@ -1,0 +1,14 @@
+{
+ "lane": "realhr",
+ "policy": "static=2",
+ "trace": "/data/xbw/turnstile/data/replay_realhr.csv",
+ "trace_md5": "882c29a022",
+ "gpu": 2,
+ "port": 30031,
+ "started": 1789500060.3599086,
+ "pool_tokens": 101432,
+ "cap": 2,
+ "runner_rc": 0,
+ "wall_s": 7916.7,
+ "finished": 1789508093.0251842
+}

@@ -1,0 +1,8 @@
+# 控制器臂相对最近【同配置 HiCache】静态锚点的 span 差分解 —— gen_wall_split.py 生成
+# 恒等式 span = idle + busy（不是 wall！decomp 的 wall 比 span 小约 6 分钟采样偏移）
+arm,anchor,d_span_min,d_idle_min,d_busy_min,frac_idle,tau_contrib_min,rbar_contrib_min,resid_min,dRbar
+foyer_hc,pairB_cap2hc,-5.8,-2.7,-3.1,0.466,14.8,-18.8,0.90,0.100
+foyer_hz1,cap3_hc,19.4,12.6,6.8,0.649,9.3,-1.4,-1.04,0.010
+foyer_bres,cap3_hc,59.0,6.4,52.6,0.108,48.5,4.4,-0.34,-0.030
+foyer_hz2,cap3_hc,69.7,15.7,53.9,0.225,45.6,10.6,-2.26,-0.070
+foyer_hz0,cap4_hc,77.1,28.9,48.2,0.375,41.7,8.5,-1.98,-0.070

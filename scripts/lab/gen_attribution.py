@@ -13,8 +13,11 @@
 """
 import csv, os, sys
 
-ARMS = ["foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_bres", "foyer_breshz1",
-        "foyer_nogate", "foyer_rg4", "foyfix_hc", "aimd2", "aimd2_paper"]
+# 九条 Foyer 变体 + 两个 AIMD 设置。hz0 原来漏在这里，导致正文说「九条变体」
+# 而表里只有八条 —— codex 抓到的。
+ARMS = ["foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0", "foyer_bres",
+        "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc",
+        "aimd2", "aimd2_paper"]
 STATIC = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "pairB_cap2hc", "cap1",
           "cap4", "cap3_fixed", "cap2", "cap5"]
 

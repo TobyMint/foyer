@@ -1,0 +1,9 @@
+# 两条分段弹性曲线并列 —— gen_elasticity_hc.py 生成
+# config: device_only = §IV 现用；hicache = 控制器臂实际配置
+config,from,to,r0,r1,tau0_ms,tau1_ms,epsilon
+device_only,cap1,cap2,1.00,1.27,28.8,27.4,-0.208
+device_only,cap2,cap3_fixed,1.27,1.53,27.4,29.7,0.433
+device_only,cap3_fixed,cap4,1.53,1.65,29.7,32.4,1.152
+device_only,cap4,cap5,1.65,1.84,32.4,36.7,1.143
+hicache,pairB_cap2hc,cap3_hc,1.25,1.51,27.0,28.0,0.192
+hicache,cap3_hc,cap4_hc,1.51,1.73,28.0,29.8,0.458

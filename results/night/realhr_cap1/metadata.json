@@ -1,0 +1,29 @@
+{
+ "lane": "realhr_sweep",
+ "policy": "static=1",
+ "trace": "/data/xbw/turnstile/data/replay_realhr.csv",
+ "trace_md5": "882c29a022",
+ "gpu": 2,
+ "port": 30032,
+ "started": 1789882362.1642702,
+ "code": {
+  "run_matrix.py": "9c7545548a5f",
+  "controller_budget3.py": "2b573829083c",
+  "controller_aimd2.py": "c370cc4c7589",
+  "controller_aimd.py": "d2b8b7461ddf",
+  "session_runner": "34e5cea815f5",
+  "path_divergence": "none",
+  "git_sha": "unknown (BASE is not a git working copy)"
+ },
+ "build": {
+  "TURNSTILE_HICACHE_ARGS": "unset",
+  "TURNSTILE_EXPECT_POOL": "unset",
+  "TURNSTILE_MEMFRAC": "0.85",
+  "TURNSTILE_RUN_TIMEOUT_H": "8",
+  "TURNSTILE_TRACE": "/data/xbw/turnstile/data/replay_realhr.csv",
+  "hicache_enabled": false
+ },
+ "pool_tokens": 101432,
+ "pool_attempts": 1,
+ "memfrac_used": null
+}

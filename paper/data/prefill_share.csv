@@ -1,0 +1,9 @@
+# prefill 占比 vs 步成本 —— gen_prefill_share.py 生成
+# 口径：metrics.csv 累计计数器末值；prefill_share = prompt/(prompt+generation)
+run,Rbar_busy,tau1_ms,prefill_share,prompt_tokens,generation_tokens,family
+cap1,1.000,28.8,0.9758,28527903,706021,static
+cap2,1.270,27.4,0.9759,28503927,703508,static
+foyer_hc,1.350,28.7,0.9759,28500345,703413,controller
+cap3_fixed,1.530,29.7,0.9759,28483759,703589,static
+cap4,1.650,32.4,0.9757,28309600,704674,static
+cap5,1.840,36.7,0.9758,28508588,705951,static
