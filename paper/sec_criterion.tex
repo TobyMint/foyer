@@ -21,18 +21,22 @@ runs from 1.00 to 1.84. A least-squares fit of Eq.~\ref{eq:elasticity} over
 those five points gives $\epsilon = 0.61$ on the per-request measurement
 ($R^2 = 0.89$), or $0.38$ on the model-consistent one
 (Fig.~\ref{fig:cancel}). The practical reading is that every 10\% of added
-concurrency buys roughly 4--6\% of throughput, depending on which step cost
-you can measure---which is why nine controller variants and an independent
-AIMD controller all fail to move the frontier, and why the one that came
-closest landed on it rather than above. We offer $\epsilon$ as a diagnostic, with a caveat we would rather state
+concurrency buys roughly 4--6\% of throughput, depending on which step cost you
+can measure. That is a statement about what added concurrency is worth on this
+workload. It is \emph{not} a proof that a controller must lose---a controller
+could still win by raising concurrency at times a fixed cap does not---so we
+report it alongside the measurements of \S\ref{sec:results}, not instead of
+them. We offer $\epsilon$ as a diagnostic, with a caveat we would rather state
 than bury. On our data it is computed from the same wall clock the model then
 explains---$\tau_1$ is derived from $W_{\text{busy}}$, so using it to predict
 $W_{\text{busy}}$ restates rather than tests---and its five points are five
 different policies, so the slope is a cross-policy association, not a
 transportable causal derivative. $\tau_2$ is genuinely independent of the wall
 clock but measures only decode, so it cannot be dropped into a throughput
-equation that includes prefill. What survives is a comparison tool: the
-elasticity orders workloads by how quickly per-step cost eats added
-concurrency, and it can be computed from two runs before committing to a sweep.
+equation that includes prefill. What survives is a comparison tool on a single
+workload: the elasticity says how quickly per-step cost eats added concurrency
+\emph{here}, and it can be computed from two runs before committing to a
+sweep. Whether it orders \emph{different} workloads the way it orders
+concurrency on this one is untested, and we do not claim it.
 It is not, as an earlier draft of this paper claimed, something that decides
 the question in minutes before building anything.

@@ -47,7 +47,9 @@ at least one request in flight, and \emph{idle} time, during which it has
 none. The busy component is governed by $W_{\text{busy}} \approx
 (G/\overline{R})\,\tau$ (Eq.~\ref{eq:busy}), where $\overline{R}$ is the mean
 number of running requests, $G$ the generated tokens and $\tau$ the per-step
-cost. An admission policy controls $\overline{R}$ and nothing else.
+cost. An admission policy moves $\overline{R}$, and on our configurations it
+moves little else---\texttt{bres} is the exception, and \S\ref{sec:model}
+uses it to show why moving both components at once is still not enough.
 The difficulty is that $\tau$ is not constant in $\overline{R}$: it rises from
 27.0 to 36.7\,ms as the busy-time running count goes from 1.00 to 1.84, and
 that rise absorbs a third of what the extra concurrency buys.

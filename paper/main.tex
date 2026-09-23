@@ -38,26 +38,27 @@ Agentic LLM sessions are long, multi-round jobs whose KV footprint grows every
 round, and on a memory-constrained accelerator the pool is the binding
 resource. Admission control therefore looks like the obvious lever: a
 controller that reads engine telemetry and admits on measured capacity should
-beat a static cap. We give a way to decide, before building
-anything, whether it can. Throughput during busy time is
+beat a static cap. We give a measurement that says how much
+room there is, and show what happens when you build against it. Throughput during busy time is
 $\overline{R}/\tau$---running requests over per-step cost---so raising
 concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
-$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero,
-admission control has room; near one, it has none. We measure $\epsilon$ on a
+$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero, added concurrency converts into
+throughput and any policy that raises it gains; near one it does not, and that
+is a property of the workload rather than of the controller. We measure $\epsilon$ on a
 memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
 four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
 system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
 
 The verdict that criterion returns here is negative, and we report it at that
 strength. Nine controller variants spanning four routes, plus a
-reimplementation of an independent congestion-based controller, all fail to
-reach the static Pareto front at the latency threshold interactive serving
-cares about; a plain cap on resident sessions remains the fastest policy we
+reimplementation of an independent congestion-based controller, none is
+above the static Pareto front at the latency threshold interactive serving
+cares about---the best ties it---; a plain cap on resident sessions remains the fastest policy we
 measured. That is not an argument for admitting everything: with no control at
 all the median request waits 1{,}774 seconds for its first token, the prefix
 cache collapses from a 75\% planned hit rate to 1.6\%, and SLO falls to 3\%.
 The question is which selective rule, not whether to be selective. The reason
-our variants fail is a decomposition rather than a tuning failure. The wall
+our variants fail is one we can measure rather than one we can tune away. The wall
 clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the wall
 clock) is structural---an agent session issues no request while a tool runs,

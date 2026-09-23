@@ -108,9 +108,9 @@ on; chunked prefill with stall-free batching \cite{sarathi}, prefill/decode
 disaggregation \cite{distserve}, and cache-centric scheduling
 \cite{mooncake} are the refinements. Our \S\ref{sec:model} attributes 11--20\,ms of each
 27--37\,ms step to work that is not decoding---prefill share and non-decode
-overhead---which is exactly what this line attacks. We
-emphasise that these techniques raise the achievable rate for \emph{all}
-policies; they move the frontier rather than deciding who sits above it.
+overhead---which is exactly what this line attacks. We expect these techniques to move the frontier rather than to decide who
+sits above it, but we did not run the interaction and so state it as an
+expectation.
 
 \paragraph{State retention and preemption.} A third line keeps session state
 alive across the gaps we measure in \S\ref{sec:model}: keeping KV on cheaper
@@ -190,9 +190,10 @@ Two readings, and we give both. The first is that our headline claim is
 conditional: at the strict threshold that interactive serving actually cares
 about, no controller reaches the static front; at a loose one, one does. The
 second is that the crossing is still not a win. $+2.7$\,pp at 20\,s is larger
-than the replicate spread of two of the three configurations we repeated
-(0.5 and 1.0\,pp of SLO) but smaller than the third's (12.2\,pp), so it is
-inside the noise we can measure. A margin that appears only at one threshold
+than the replicate SLO spread of the two configurations we repeated
+(1.0 and 0.5\,pp), so it is inside the noise we can measure. A third pair
+exists---two runs of \texttt{cap3}+HiCache---but one of them exceeded its own
+cap, so we do not use it as a replicate. A margin that appears only at one threshold
 and only at a size we cannot resolve is not evidence that adaptive admission
 works; it is evidence that the question needs more runs than we have. We state
 the conditional version in the abstract, and we flag this as the second thing
@@ -236,8 +237,11 @@ capacity-bound by construction; on a device with a much larger pool the
 premise may not hold and the conclusion may invert---we regard reproducing on
 a larger device as the single most important next experiment. Second, the
 load is stationary, single-tenant and single-SLO. The load-dependence result
-of \S\ref{sec:load} says the reverse should be expected when conditions vary,
-and multi-tenant or heterogeneous-SLO settings are where we would look next.
+of \S\ref{sec:load} is measured on two \emph{separate} constant-load tiers, so
+it says what to expect when conditions differ, not what happens while they
+change; a trace whose load moves during the run is the experiment that would
+settle it, and we did not run one. Multi-tenant and heterogeneous-SLO settings
+are where we would look next.
 
 \paragraph{Reproducibility.} Every verdict in this paper is produced by one
 script from the raw per-step logs, and every run is guarded against a shrunken
@@ -273,6 +277,8 @@ the product is what the wall clock sees. We gave a two-part decomposition of
 the wall clock that makes the cancellation measurable, identified a structural
 idle component that no policy we built recovers at a profit, and showed the regime in which
 adaptivity should have paid---where the same switch is worth $+51\%$ and
-$-42\%$---is one where a stateless cap still wins. The constructive output is a
-per-request measurement that decides, in minutes, whether admission control
-has room on a given workload.
+$-42\%$---is one where the controller is not dominated by any static point we
+measured, and does not dominate one either. The constructive output is a
+per-request measurement of how much room added concurrency has on a given
+workload---a diagnostic an engineer can take before committing to a sweep, not
+a predictor we have validated on a workload other than this one.

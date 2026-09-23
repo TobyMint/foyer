@@ -67,7 +67,7 @@ wall clock charges idle time to the steps. And $\overline{R}$ must be the mean
 running count \emph{during busy time}, not the mean over the whole run: the
 whole-run mean includes the idle samples, where the count is zero, so it equals
 $\overline{R}_{\text{busy}} \times$ (busy fraction). Using it makes $\tau_1$
-too low by exactly the busy fraction---26\% for \texttt{cap1}, whose idle
+too low by exactly the busy fraction---36.3\% for \texttt{cap1}, whose idle
 share is 36.3\%. We report both columns in the data, and use the
 busy-conditional mean throughout; the whole-run mean is what an earlier
 revision of this paper used, and it made the two methods agree far better than
@@ -141,8 +141,10 @@ every one of the five. An evicted prefix is recomputed, close to one token for
 one, and that recomputation is chunked into decode steps. Those same five runs
 give a monotone relation between recomputation and $\tau$: 8.6\,M uncached
 tokens at 18.4\,ms, 9.2 at 22.4, 11.5 at 25.5, 15.4 at 29.0, 20.7 at 32.2.
-That is the mechanism, and on the device-only configurations it explains the
-$\tau$ trend completely.
+That is a mechanism consistent with the $\tau$ trend on all five device-only
+configurations. It is five points on five different policies, not an
+intervention: we did not hold concurrency fixed and vary eviction, so we call
+it consistent rather than demonstrated.
 
 \begin{figure}[tb]
   \centering
