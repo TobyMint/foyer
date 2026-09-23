@@ -162,12 +162,19 @@ it consistent rather than demonstrated.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig7_elasticity.pdf}
-  \caption{Per-step cost against the running count during busy time, for the
-  five device-only configurations. Two measurements: $\tau_1$ is
-  model-consistent (it averages over all engine steps, including prefill that
-  emits no output token), $\tau_2$ is the per-request decode interval. The
-  fitted exponent is the elasticity $\varepsilon$ of Eq.~\ref{eq:elasticity},
-  and $\tau_1$ exceeds $\tau_2$ by 8--40\%---that gap is the prefill share.}
+  \caption{Per-step cost against the running count during busy time. Solid
+  circles are $\tau_1$ and squares $\tau_2$ for the five device-only
+  configurations; $\tau_1$ is model-consistent (it averages over all engine
+  steps, including prefill that emits no output token), $\tau_2$ is the
+  per-request decode interval, and $\tau_1$ exceeds $\tau_2$ by 8--40\%. The
+  green triangles are $\tau_1$ for the three HiCache configurations---the ones
+  the controllers run---and they are drawn against the same axes to make
+  \S\ref{sec:criterion}'s point visible: over $\overline{R}_{\text{busy}}$ 1.25
+  to 1.73, which covers the whole controller operating range, the host-tier
+  curve rises 27.0 to 29.8\,ms while the device-only curve over a comparable
+  span rises 27.4 to 36.7. We plot $\tau_1$ only for the HiCache points to keep
+  the figure readable. The fitted exponent is the elasticity $\varepsilon$ of
+  Eq.~\ref{eq:elasticity}; it is fit to the device-only points alone.}
   \label{fig:cancel}
 \end{figure}
 

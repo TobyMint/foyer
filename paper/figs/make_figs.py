@@ -294,8 +294,13 @@ def fig_cancel():
     0.57，看上去抵消得更厉害。
 
     两条测量都画：τ₁ 是模型自洽的（含 prefill 步），τ₂ 是逐请求 decode 间隔
-    （不含 prefill）。两者之差就是 prefill 所占的步时间比例。
-    只用无 HiCache 的五条静态 cap —— 这一族的重算机制已由 eviction.csv 确证。
+    （不含 prefill）。两者之差是我们能构造的量，但它是一个【时间】比值，
+    不是 prefill 的【步数】占比（chunked prefill 下两者不同）。
+
+    **2026-09-24 更新**：原来只画无 HiCache 的五条静态 cap。但九条控制器臂全部
+    开 HiCache，而 §IV 现在说「device-only 的悬崖在控制器自己的配置上不存在」——
+    只画一条曲线会与正文矛盾。所以同时画 HiCache 的三条（pairB_cap2hc / cap3_hc /
+    cap4_hc），让读者直接看到后者在控制器运行区间内没有悬崖。
     """
     import math
     rows = [r for r in load("decomp.csv") if r["step_back_ms"]]
@@ -316,6 +321,13 @@ def fig_cancel():
     e2, r2v = fit(rb, t2)
     e1, _ = fit(rb, t1)
 
+    # HiCache 三条：控制器臂实际运行的配置（§IV 的要点是它没有悬崖）
+    hids = ["pairB_cap2hc", "cap3_hc", "cap4_hc"]
+    hrows = sorted([r for r in load("decomp.csv") if r["run"] in hids],
+                   key=lambda r: float(r["running"]))
+    hrb = [float(r["running"]) for r in hrows]
+    ht1 = [float(r["step_back_ms"]) for r in hrows]
+
     fig, ax = plt.subplots(figsize=(3.5, 2.6))
     xs = [1.00 + i * 0.008 for i in range(110)]
     ax.plot(xs, [t2[0] * (x / rb[0]) ** e2 for x in xs], "--", color="0.5", lw=0.9,
@@ -324,9 +336,16 @@ def fig_cancel():
             label="model-consistent $\\tau_1$")
     ax.plot(rb, t2, "s-", color=C_STATIC, ms=4, lw=1.0,
             label="per-request $\\tau_2$")
+    ax.plot(hrb, ht1, "^--", color=C_STATIC_HC, ms=4, lw=1.0,
+            label="with HiCache (the controllers' config)")
     for r, x, y in zip(rows, rb, t1):
         ax.annotate(r["run"].replace("_fixed", ""), (x, y), xytext=(3, 4),
                     textcoords="offset points", fontsize=6, color="0.2")
+    # 标注错开：第一条放右下、第二条放左下、第三条放右上，避开 cap 的标注
+    hoff = [(4, -9), (-16, -9), (5, 4)]
+    for (r, x, y), off in zip(zip(hrows, hrb, ht1), hoff):
+        ax.annotate("+HC", (x, y), xytext=off, textcoords="offset points",
+                    fontsize=6, color=C_STATIC_HC)
     ax.set_xlabel("mean running requests during busy time", labelpad=1)
     ax.set_ylabel("step time (ms)")
     ax.set_xlim(0.92, 1.98); ax.set_ylim(18, 40)
