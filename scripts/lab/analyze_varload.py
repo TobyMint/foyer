@@ -80,7 +80,7 @@ def main():
     print("策略:", meta.get("policy"), " 墙钟:", meta.get("cap"), " 切点在 %.1f 分钟" % a.switch_min)
     print()
     print("%-6s %6s %9s %9s %9s %9s %8s" % (
-        "阶段", "轮数", "SLO引擎%", "SLO到达%", "等p50", "等p90", "等max(s)"))
+        "阶段", "轮数", "SLO引擎%", "SLO到达%", "等p50(s)", "等p90(s)", "等max(s)"))
     for ph in ("低载", "高载"):
         g = [r for r in rows if r["phase"] == ph]
         if not g:
@@ -89,11 +89,39 @@ def main():
         sa = 100 * sum(1 for r in g if r["ready"] < TH) / len(g)
         w = sorted(r["wait"] for r in g)
         print("%-6s %6d %9.1f %9.1f %9.0f %9.0f %8.0f" % (
-            ph, len(g), se, sa, statistics.median(w), w[int(.9 * len(w))], max(w) / 1000))
+            ph, len(g), se, sa, statistics.median(w) / 1000, w[int(.9 * len(w))] / 1000, max(w) / 1000))
     g = rows
     se = 100 * sum(1 for r in g if r["engine"] < TH) / len(g)
     sa = 100 * sum(1 for r in g if r["ready"] < TH) / len(g)
     print("%-6s %6d %9.1f %9.1f" % ("全程", len(g), se, sa))
+
+    # 总墙钟（首个提交 -> 最后一个完成），与论文 Table 同源
+    subs = [s["submit_timestamp"] for s in st if s.get("submit_timestamp")]
+    comps = [s["complete_timestamp"] for s in st if s.get("complete_timestamp")]
+    if subs and comps:
+        print("总墙钟 %.1f 分钟（首个提交 -> 最后完成）" % ((max(comps) - min(subs)) / 60))
+
+    # 切换后的积压：已到达但尚未提交的会话数随时间变化。
+    # 这是 codex 要求的执行侧指标之一 —— SLO 掉了不等于系统被压垮，
+    # 积压是否随切换单调增长才是「准入跟不上」的直接证据。
+    arr = sorted(base + ss[0]["arrival_time_ms"] / 1000.0 for ss in by.values())
+    # 只数第 0 轮的提交 —— 拿「会话数」减「所有轮次数」是量纲错误（曾出现 -359 的负积压）
+    sub = sorted(s["submit_timestamp"] for s in st
+                 if s.get("submit_timestamp") and s.get("round_idx") == 0)
+    if arr and sub:
+        assert len(sub) <= len(arr), "第 0 轮提交数不该超过会话数"
+        print()
+        print("=== 切换后的积压（已到达未提交的会话数）===")
+        print("%10s %10s %10s" % ("时刻(分)", "已到达", "积压"))
+        import bisect as _b
+        marks = [a.switch_min] + [a.switch_min + d for d in (10, 20, 30, 45, 60, 90)]
+        for m in marks:
+            t = base + m * 60
+            na = _b.bisect_right(arr, t)
+            ns = _b.bisect_right(sub, t)
+            if na == 0:
+                continue
+            print("%10.1f %10d %10d" % (m, na, na - ns))
 
     # 切换侧的执行指标
     sw = os.path.join(a.run_dir, "switcher.jsonl")
