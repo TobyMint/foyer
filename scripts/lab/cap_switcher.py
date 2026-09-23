@@ -24,7 +24,15 @@
 """
 import argparse, json, os, time
 
-EVENTS = ("queued",)
+# 到达时刻的来源。2026-09-24 实测：static=N 模式下 runner 立即放行、没有东西压着
+# 会话，admissions.jsonl 里【一个 queued 都没有】（400 条全是 admit/release），
+# 所以原来只数 queued 的写法让 n_recent 恒为 0、切换器跑满全程一次没切。
+# 改用 admit 事件的 waited_ms 反推真实到达：arrival = ts - waited_ms/1000。
+# 这是可部署的量（一个会话等了多久），不是偷看 trace。
+# 验证：反推出的速率在 0-125 分为 0.009~0.019/s、125-175 分为 0.030~0.037/s，
+# 切点 125 分与 trace 设计的 124.5 分吻合。
+# 切换规则本身（阈值 0.025/0.020、窗 600s、连续两窗）一个字未改。
+ARRIVAL_EVENTS = ("queued", "admit")
 
 
 def read_new(path, pos):
@@ -68,8 +76,10 @@ def main():
     while True:
         evs, pos = read_new(args.admission_log, pos)
         for e in evs:
-            if e.get("event") in EVENTS and e.get("ts"):
-                arrivals.append(float(e["ts"]))
+            if e.get("event") in ARRIVAL_EVENTS and e.get("ts"):
+                # queued 事件的 ts 就是到达时刻；admit 事件要减去等待时长
+                w = (e.get("waited_ms") or 0) / 1000.0 if e.get("event") == "admit" else 0.0
+                arrivals.append(float(e["ts"]) - w)
 
         now = time.time()
         recent = [t for t in arrivals if t >= now - args.window]
