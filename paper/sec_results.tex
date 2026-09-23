@@ -290,11 +290,12 @@ capacity for the next \texttt{horizon} rounds. We swept the horizon over
 $\{0,1,2,3\}$ and the reserve is not a free parameter to be minimised:
 Fig.~\ref{fig:horizon} shows the response is non-monotone. Removing the
 reserve entirely costs 12.6\,pp of SLO, and a reserve of two rounds is
-15 minutes \emph{slower} than three. The optimum is at one round, and there it
-touches the static front and stops---but that single point is the one this
-paper spends the most words on, because it does not reproduce: the repeat of
-this configuration lands 4.6\,pp below the line (\S\ref{sec:results}). Read the
-sweep as a shape, not as a result at its minimum.
+15 minutes \emph{slower} than three. The optimum is at one round, and there it comes closest to the
+static front---0.92\,pp below it, inside the tie band---and that single point is
+the one this paper spends the most words on, because it does not reproduce: the
+repeat of this configuration lands 5.6\,pp below the line
+(\S\ref{sec:results}). Read the sweep as a shape, not as a result at its
+minimum.
 
 \subsection{Route 3: the hard ceiling}
 
@@ -412,8 +413,9 @@ a tightening is another cap.
   \includegraphics[width=\columnwidth]{figs/fig6_horizon.pdf}
   \caption{The growth reserve is not a free parameter. Removing it costs
   12.6\,pp of SLO; two rounds is 15 minutes slower than three. The optimum at
-  one round touches the static front and does not cross it---and is the one
-  point here that does not reproduce on a repeat (it lands 4.6\,pp below).
+  one round comes closest to the static front, 0.9\,pp below it---and is the
+  one point here that does not reproduce on a repeat (it lands 5.6\,pp
+  below).
   The other three settings were each run once, so the shape is better
   supported than any single point on it.}
   \label{fig:horizon}
