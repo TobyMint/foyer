@@ -20,23 +20,39 @@ def norm(tok):
     return tok.replace("{,}", "").replace(",", "").replace("\\,", "")
 
 def load_data_numbers():
-    """数据文件里出现过的所有数字（字符串形式，含各种舍入）。"""
+    """数据文件里出现过的所有数字（字符串形式，含各种舍入）。
+
+    注意：**必须按 CSV 字段解析，不能用正则扫整行** —— 正则里的千分位逗号
+    逻辑会把列分隔符也吃掉（"200,999,260" 被当成一个数），于是行内的真值
+    反而进不了集合，审计会满屏假阳性。这个 bug 犯过一次。
+    """
+    import csv as _csv
     vals = set()
+
+    def add(x):
+        for d in (0, 1, 2, 3):
+            vals.add(round(x, d))
+            vals.add(round(x / 100.0, d))     # 百分比 vs 小数
+            vals.add(round(x * 100.0, d))
+
     for p in DATA:
-        with open(p) as f:
-            for line in f:
-                if line.startswith("#"):
-                    continue
-                for m in NUM.finditer(line):
-                    v = norm(m.group(1))
-                    try:
-                        x = float(v)
-                    except ValueError:
+        with open(p, newline="") as f:
+            for row in _csv.reader(l for l in f if not l.startswith("#")):
+                for cell in row:
+                    cell = cell.strip()
+                    if not cell:
                         continue
-                    for d in (0, 1, 2):
-                        vals.add(round(x, d))
-                        vals.add(round(x / 100.0, d))   # 百分比 vs 小数
-                        vals.add(round(x * 100.0, d))
+                    try:
+                        add(float(cell))
+                        continue
+                    except ValueError:
+                        pass
+                    # 单元格里可能嵌着数字（如 "1.42 to 1.30"）
+                    for m in NUM.finditer(cell.replace(",", "")):
+                        try:
+                            add(float(m.group(1)))
+                        except ValueError:
+                            pass
     return vals
 
 def main():

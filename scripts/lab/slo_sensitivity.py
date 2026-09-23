@@ -16,9 +16,12 @@ RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap3_
 
 def main():
     root = sys.argv[1]
+    out_path = sys.argv[2] if len(sys.argv) > 2 else None
+    _rows = []
     print("%-14s %8s %7s %7s %7s %7s %7s" %
           ("run", "TTFT50", "p90", "p99", "SLO5%", "SLO10%", "SLO20%"))
     out = {}
+    _envs, _deltas = {}, {}
     for r in RUNS:
         p = os.path.join(root, "pois200_" + r, "steps.jsonl")
         if not os.path.exists(p):
@@ -46,6 +49,7 @@ def main():
             if s > best:
                 env.append((w, round(s, 1))); best = s
         print("阈值 %4.0fs 的静态前沿: %s" % (t, " -> ".join("%.0f/%.1f" % e for e in env)))
+        _envs[t] = list(env)
         # 各 Foyer/AIMD 变体相对该前沿的有符号距离
         def front_slo(w):
             for (w0, s0), (w1, s1) in zip(env, env[1:]):
@@ -61,6 +65,30 @@ def main():
                 if f is not None:
                     deltas.append("%s %+.1f" % (r.replace("foyer_", ""), out[r][3][t] - f))
         print("            距离: %s" % "  ".join(deltas))
+        _deltas[t] = deltas
+
+    # 落盘：论文 §VI 的阈值敏感性表要能追到一个文件，不能只活在终端输出里
+    if out_path:
+        import csv as _csv
+        with open(out_path, "w", newline="") as f:
+            w = _csv.writer(f)
+            w.writerow(["# 阈值敏感性 —— slo_sensitivity.py 生成"])
+            w.writerow(["# 每个阈值下各控制器相对该阈值静态前沿的有符号距离（pp）"])
+            w.writerow(["run"] + ["slo%d_pp" % t for t in THRESH])
+            names = ["foyer_hz1", "foyer_hc", "foyer_bres", "foyer_nogate", "aimd2_paper"]
+            for r in names:
+                row = [r.replace("foyer_", "")]
+                for t in THRESH:
+                    hit = [d for d in _deltas.get(t, []) if d.startswith(r.replace("foyer_", "") + " ")]
+                    row.append(hit[0].split()[-1] if hit else "")
+                w.writerow(row)
+            w.writerow([])
+            w.writerow(["# 各阈值下的静态前沿锚点"])
+            w.writerow(["threshold_s"] + ["anchor%d_wall,anchor%d_slo" % (i + 1, i + 1) for i in range(4)])
+            for t in THRESH:
+                flat = [x for e in _envs.get(t, []) for x in e]
+                w.writerow([t] + flat)
+        print("-> %s" % out_path)
 
 
 if __name__ == "__main__":
