@@ -241,8 +241,8 @@ inspection and once by the end-to-end measurement here.
 
 We asked whether an adaptive admission controller can beat a tuned static
 concurrency cap on a memory-bound agentic LLM workload, and found that on our
-system it cannot: nine variants, four mechanistically distinct routes, none
-above the static front. The reason is a cancellation. Admission policy controls
+system it cannot: nine variants, four routes tested, none above the static
+front. The reason is a cancellation. Admission policy controls
 how many requests are in flight; the per-step cost rises with that number; and
 the product is what the wall clock sees. We gave a two-part decomposition of
 the wall clock that makes the cancellation measurable, identified a structural

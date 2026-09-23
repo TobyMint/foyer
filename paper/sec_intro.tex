@@ -60,13 +60,18 @@ leave and therefore that there is no idle time to recover. There is.
 \subsection{Contributions}
 
 \begin{itemize}
-  \item We falsify, with pre-registered criteria, four mechanistically
-        distinct routes by which an adaptive admission controller was expected
-        to beat a tuned static cap on this workload: changing the accounting
-        base, changing the growth reserve, changing the hard ceiling, and
-        changing the execution granularity from session-count to
-        running-request-count. Each is reported with its measured reason
-        (\S\ref{sec:results}).
+  \item We test four routes by which an adaptive admission controller was
+        expected to beat a tuned static cap on this workload, and we are
+        precise about what each one rests on. Two are falsified by measurement
+        against criteria we fixed before the runs---changing the accounting
+        base (\S\ref{sec:results}) and changing the growth reserve. One is a
+        knob rather than a hypothesis, and we report it only because it slides
+        the operating point along the front and adds no mechanism. The fourth,
+        changing the execution granularity from session count to
+        running-request count, is falsified by measurement \emph{and} by an
+        argument about why the permit mechanism cannot express the control it
+        would need. We do not call the last two of these falsifications of a
+        stated hypothesis, because they were not.
   \item We give a two-part decomposition of the wall clock (\S\ref{sec:model})
         that locates the cancellation: admission policy moves the
         running-request count, and the per-step cost moves with it. We also
