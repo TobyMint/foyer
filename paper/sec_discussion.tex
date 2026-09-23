@@ -15,6 +15,15 @@ throttles costs 42\% (291.3 to 415.0 minutes) and 43.7\,pp of SLO. One switch,
 two regimes, opposite signs, both around 40--50\%
 (Fig.~\ref{fig:loadtier}). No single scalar setting is optimal across both.
 
+We flag the generation gap rather than let the figure imply more than we ran.
+The two 200-session numbers are current; the two 25-session numbers are from an
+earlier harness revision, and we never ran the all-throttles-off arm on the
+25-session tier under the current one. So the reversal is a direction we
+measured across two harness generations, not a same-generation paired
+comparison, and a reviewer should read it that way. The same-generation
+25-session measurement we do have is in Table~\ref{tab:tier25}, and it does not
+contain that arm.
+
 This is the regime in which adaptive control should win, and we now have the
 same-generation measurement that earlier drafts of this paper were missing.
 Four arms on the 25-session tier, all under the current harness
@@ -228,13 +237,26 @@ loss is systematic: tight caps queue the hardest, so \texttt{cap1} falls from
 session admitted last under \texttt{cap1} can wait hours for its turn; its
 engine-side TTFT is still 1.6\,s.
 
-What does \emph{not} change is the verdict. The static envelope keeps the same
-four anchors, and of the eleven controller arms, nine move by no more than
+What does \emph{not} change is the verdict, within the subset we recomputed.
+The static envelope keeps the same four anchors, and of the eleven controller
+arms, nine move by no more than
 2.7\,pp and none crosses the $\pm1.0$\,pp band into a new verdict. Two move
 more: the all-throttles-off arm improves by 8.3\,pp and the retuned AIMD arm by
 2.8\,pp, both of which stay below the front either way. The one that decides our headline moves the wrong way for
 the controller---\texttt{horizon}=1 goes from $+0.22$ to $-0.68$\,pp, still a
-tie but now on the below side. We report this because a reviewer should ask it,
+tie but now on the below side.
+
+The subset matters and we state its edge. The two configurations whose repeats
+decide how we read the verdict---\texttt{horizon}=1's repeat and the fastest
+anchor \texttt{cap4}+HC's---are not in the nineteen, because we did not
+recompute their per-step logs on the ready clock; the rebuilt envelope
+therefore rests on the original anchors without their repeats, and a
+ready-clock frontier that included them could move the line by the 3.9 and
+5.1\,pp those repeats differ by. We do not claim the verdict is unchanged under
+every SLO definition---only that on the runs we could recompute, moving the
+clock to the ready point costs every configuration 3--19\,pp and changes no
+verdict in that set.
+We report this because a reviewer should ask it,
 and because the answer is the useful part: the negative result is not an
 artifact of choosing an SLO definition that flatters controllers. If anything
 the flattering choice was the one that let our best arm sit above the line.
