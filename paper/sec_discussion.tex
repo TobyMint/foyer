@@ -204,15 +204,26 @@ and multi-tenant or heterogeneous-SLO settings are where we would look next.
 
 \paragraph{Reproducibility.} Every verdict in this paper is produced by one
 script from the raw per-step logs, and every run is guarded against a shrunken
-KV pool. We report five claims we retracted during the work, because the
-retractions were the most informative events: a median-based reading of the
-tool wait that inverted a central assumption; a growth-sensitivity conclusion
-that rested on an arm we had already invalidated; the accounting double-charge
-of \S\ref{sec:results}, falsified twice---once by source inspection and once
-by the end-to-end measurement here; a monotone relation between idle fraction
-and concurrency that the full data does not show; and a mechanism refutation
-that was itself refuted, because both of its checks were identities rather than
-measurements (\S\ref{sec:model}).
+KV pool. We report six claims we retracted during the work, because the retractions
+were the most informative events. In order of how much they cost us:
+
+\emph{The denominator of the step cost.} Our first \S\ref{sec:model} divided by
+the whole-run mean running count while multiplying by busy time. The two are
+not the same quantity---the whole-run mean includes the idle samples---so
+$\tau$ came out low by exactly the busy fraction, 36\% for \texttt{cap1}, and
+two independent errors cancelled to make our two measurement methods appear to
+agree. This is the one that changed a headline number.
+
+\emph{A mechanism refutation that was itself refuted}: we withdrew the
+eviction-to-recomputation account on the strength of two checks that were both
+identities rather than measurements (\S\ref{sec:model}).
+
+\emph{A median-based reading of the tool wait} that inverted a central
+assumption. \emph{A monotone relation between idle fraction and concurrency}
+that the full data does not show. \emph{A growth-sensitivity conclusion} that
+rested on an arm we had already invalidated. And \emph{the accounting
+double-charge} of \S\ref{sec:results}, falsified twice---once by source
+inspection and once by the end-to-end measurement here.
 
 \section{Conclusion}
 
