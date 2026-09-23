@@ -91,7 +91,18 @@ and cache contents across a switch could bend the line. It is the criterion we
 apply, and it is conservative in the direction that matters: it can only make
 our negative result harder to claim, never easier. So we take the upper-left
 envelope of the static points and report each controller's signed distance
-above or below it. Every verdict in
+above or below it. One property of that envelope deserves flagging, because
+five of our nine controller verdicts rest on it. Its right-hand segment runs
+from \texttt{cap2}+HiCache at 295 minutes to \texttt{cap1} at 527, and
+\texttt{cap1} is the only anchor past the left half that runs \emph{without}
+HiCache. Every \sys{} variant that finishes slower than 295 minutes---five of
+the nine---is therefore judged against an interpolation between one host-tier
+point and one device-only point. If the envelope is drawn from the host-tier
+anchors alone, that segment does not exist and those five runs cannot be
+adjudicated at all; if it is drawn from device-only anchors alone, they are
+further below. The reading we report is the conservative one, and we note that
+the honest statement about those five is \emph{below the front as we defined
+it}, not \emph{below every static configuration}. Every verdict in
 this paper is produced by one script from the raw logs, and the script's own
 first version was wrong---it extrapolated past the end of the envelope and
 declared the slowest static cap a winner. We fixed it and report the episode
