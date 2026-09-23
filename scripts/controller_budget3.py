@@ -388,21 +388,35 @@ def main():
             # count -- paused sessions stay parked until a running one finishes.
             gate_full = bool(args.round_gate) and running_n >= args.round_gate
             if waiting and not valve and not gate_full and (prev_started or args.disable_single_flight):
-                head = waiting if args.disable_single_flight else waiting[:1]
+                # Single-flight used to mean `waiting[:1]` -- consider ONLY the head
+                # of the FIFO. That deadlocks: if the head is a session too large to
+                # fit in the remaining budget it is never admitted, so it never leaves
+                # the queue, and every smaller session behind it is blocked forever
+                # while the engine sits idle. Observed 2026-09-23 on a repeat of
+                # foyer_hz1: 92 sessions waiting, engine empty, 273 s with no admit and
+                # no candidate. Scanning the whole queue and stopping at the first one
+                # that fits keeps the single-flight property (at most one admission per
+                # cycle, via the `break` below) and removes the head-of-line block.
+                head = waiting
                 for sid in head:
                     s = sess[sid]
                     # resume/shed survivors must be budgeted at their KNOWN current
                     # context, not their original arrival size (GPT audit 2: the
                     # prompt0-based need under-counted paused sessions massively)
-                    base = s["ctx"] or s["prompt0"]
+                    # NB: `cand_base`, not `base`. This loop used to shadow the outer
+                    # `base` (the projection floor, logged every cycle). The log then
+                    # showed the *candidate's* context under the name `base`, which is
+                    # how a deadlocked run appeared to have base=73390 while the engine
+                    # reported usage=0.
+                    cand_base = s["ctx"] or s["prompt0"]
                     # charge=delta: a session that has already run a round has its prefix
                     # resident (that is what `resident` counts), so only the marginal
                     # recompute is charged. Engine-measured, not modelled.
                     if (args.charge_mode == "delta"
                             and s["last_round"] >= 0
                             and s.get("uncached") is not None):
-                        base = s["uncached"]
-                    n = (base + forecast(s)) * args.margin
+                        cand_base = s["uncached"]
+                    n = (cand_base + forecast(s)) * args.margin
                     if projection + n <= budget:
                         candidates.append(sid)
                         projection += n
