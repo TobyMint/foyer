@@ -105,6 +105,47 @@ appearance of the mechanism that drives the whole frontier.
   \end{tabular}
 \end{table}
 
+\subsection{The controllers leave memory unused}
+\label{sec:results:idle-memory}
+
+Before the routes, one measurement that reframes all of them. Our controller
+keeps every session's permit for its lifetime, so its pool occupancy is a
+policy output, not a constraint. It runs at a median of 49.2\% of the pool on
+the base configuration, and the median number of sessions queueing for
+admission is 66. The configuration that finishes fastest, a static cap of four
+with the host tier, runs at 70.2\%. The ordering is the same across every arm
+we have: occupancy, then running requests, then wall clock.
+
+The controller believes it is nearly full. Its own decision log records the
+projection it admits against---the largest of measured occupancy and the summed
+contexts of live sessions, plus a reserve for their growth---at a median of
+89{,}073 tokens against a budget of 96{,}360, i.e.\ 7\% free. Its measured
+occupancy at the same instants is 49{,}905 tokens, i.e.\ 46\% free. The
+projection is 1.77$\times$ the truth. Two terms produce the gap: charging every
+live session its full context, when a parked session's KV is evictable and
+therefore absent from the engine's count, and the growth reserve, which alone
+is 26{,}762 tokens, 28\% of the budget.
+
+Two things follow, and we are careful about the second.
+
+The first is that the controllers under-use the pool, and that this is a
+property of their estimates rather than of the hardware: the base
+configuration holds a fifth of the pool idle with 66 sessions queued, because
+it believes it has 7\% free when it has 46\%. Any account of why it is slow
+that does not mention this is incomplete.
+
+The second is that under-use does \emph{not} order the outcomes, so it is not
+the whole explanation either. \texttt{horizon}=1 and \texttt{cap3}+HiCache sit
+at the same median occupancy (57.8\% of the pool) and the same mean running
+count (1.31 against 1.36), and the cap is 19 minutes faster. \texttt{hz0} runs
+at 64.1\%, higher than that cap, and is 54 minutes slower. Occupancy buys
+running requests reliably---the two columns in \texttt{occupancy.csv} track
+each other across all twenty arms---but converting running requests into wall
+clock is where the per-step cost of \S\ref{sec:model} does its work. Both
+effects are real; on this workload the unused-memory one is larger for the arms
+that finish worst, and the step-cost one is what separates the arms that finish
+close together.
+
 \subsection{Route 1: the accounting base}
 
 Our controller's projection (Eq.~\ref{eq:proj}) charges a session for its full
