@@ -134,12 +134,13 @@ $\tau$ trend completely.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\columnwidth]{figs/fig7_cancel.pdf}
-  \caption{Where the concurrency goes. Both curves are the same five static
-  caps without HiCache; the dashed one is what busy time would be if the
-  per-step cost stayed at its measured minimum. The measured curve flattens
-  because $\tau$ rises, and the gap at \texttt{cap5} is 100 of the 206
-  minutes that raising the running count would otherwise have bought.}
+  \includegraphics[width=\columnwidth]{figs/fig7_elasticity.pdf}
+  \caption{Per-step cost against the running count during busy time, for the
+  five device-only configurations. Two measurements: $\tau_1$ is
+  model-consistent (it averages over all engine steps, including prefill that
+  emits no output token), $\tau_2$ is the per-request decode interval. The
+  fitted exponent is the elasticity $\varepsilon$ of Eq.~\ref{eq:elasticity},
+  and $\tau_1$ exceeds $\tau_2$ by 8--40\%---that gap is the prefill share.}
   \label{fig:cancel}
 \end{figure}
 
@@ -179,9 +180,10 @@ identity.
   \centering
   \includegraphics[width=\columnwidth]{figs/fig4_idle_segments.pdf}
   \caption{Survival function of idle-stretch duration, pooled over all
-  completed runs (1{,}849 stretches). The median stretch is 11\,s and 30\%
-  exceed 20\,s---the same scale as the 16.85\,s mean tool wait, and far above
-  the 2\,s control cycle. The vertical cliff at 10\,s is the sampling floor.}
+  completed runs (1{,}849 stretches). Most stretches are short---the median is
+  5.6\,s---but the minutes are not: 69.6\% of all idle \emph{time} sits in
+  stretches longer than 20\,s, and the mean stretch is 20.6\,s, the same order
+  as the 16.85\,s mean tool wait. The cliff is the 5\,s sampling floor.}
   \label{fig:idle}
 \end{figure}
 

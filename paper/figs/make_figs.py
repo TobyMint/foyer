@@ -207,7 +207,7 @@ def fig_idle_segments():
                 textcoords="offset points", fontsize=6, color="0.15")
     ax.set_xscale("log")
     ax.set_xlim(4, 700); ax.set_ylim(0, 100)
-    ax.text(4.6, 4, "5 s sampling makes\n10 s the floor", fontsize=6,
+    ax.text(4.6, 4, "5 s sampling floor", fontsize=6,
             color="0.45", linespacing=1.25)
     ax.set_xlabel("duration of an idle stretch (s, log scale)", labelpad=1)
     ax.set_ylabel("\\% of stretches longer than $x$")
