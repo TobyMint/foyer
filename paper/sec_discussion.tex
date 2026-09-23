@@ -117,8 +117,8 @@ rather than the admission decision. Iteration-level batching and paged KV
 \cite{yu2022orca,kwon2023pagedattention} are the substrate every policy here runs
 on; chunked prefill with stall-free batching \cite{sarathi}, prefill/decode
 disaggregation \cite{distserve}, and cache-centric scheduling
-\cite{mooncake} are the refinements. Our \S\ref{sec:model} attributes 11--20\,ms of each
-27--37\,ms step to work that is not decoding---prefill share and non-decode
+\cite{mooncake} are the refinements. Our \S\ref{sec:model} measures 2.6--8.2\,ms of each
+27--37\,ms step as work that is not decoding---prefill and non-decode
 overhead---which is exactly what this line attacks. We expect these techniques to move the frontier rather than to decide who
 sits above it, but we did not run the interaction and so state it as an
 expectation.

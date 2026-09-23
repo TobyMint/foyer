@@ -252,7 +252,7 @@ double charge and removed it, admitting on engine telemetry alone.
 
 The charge is not double. Removing it did admit more---median engine occupancy
 rose from 49.2\% to 56.9\% of the pool---and the round-1+ prefix hit rate held at
-80.8\% against 80.6\%, so no eviction spiral occurred. But the run was
+80.2\% against the 80.6\% of the run that keeps the charge, so no eviction spiral occurred. But the run was
 4.2 minutes \emph{slower} and lost 6.0\,pp of SLO. Per \S\ref{sec:model}, the
 extra occupancy raised both $\overline{R}$ (1.35 to 1.48) and $\tau_2$
 (23.8\,ms to 31.3\,ms), and the two cancelled.
@@ -358,10 +358,12 @@ re-admits it. We implemented it as a gate on the engine's own
 \texttt{num\_running\_reqs} and swept the gate over $\{2,4\}$.
 
 It does not work, and the reason is structural rather than a tuning matter.
-Since a live session is running about 45\% of the time, the running count is
-approximately $0.45 \times (\text{live count})$. Constraining the live count to
-$N$ therefore constrains the running count to $0.45N$, which is below the
-gate---so the gate can only throttle, never pin. Both repairs fail: without a
+A live session is running between 38\% and 66\% of the time (the ratio of
+mean running requests to mean live sessions across our arms), so the running
+count is a fraction of the live count rather than a multiple of it.
+Constraining the live count to $N$ therefore constrains the running count to
+at most about $0.66N$, which is below the gate---so the gate can only throttle,
+never pin. Both repairs fail: without a
 constraint on admission, a paused session is re-admitted on the next cycle and
 blocks for at most one 2\,s cycle; with one, the policy is a session cap again.
 The obstacle is granularity---\texttt{paused} takes effect at round
