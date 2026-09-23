@@ -211,7 +211,7 @@ def fig_idle_segments():
                 linespacing=1.25)
     med = d[n // 2]
     ax.plot([med], [50], "o", ms=3.5, color=C_FOYER, zorder=4)
-    ax.annotate("median %.0f s" % med, (med, 50), xytext=(5, 5),
+    ax.annotate("median %.1f s" % med, (med, 50), xytext=(5, 5),
                 textcoords="offset points", fontsize=6, color="0.15")
     ax.set_xscale("log")
     ax.set_xlim(4, 700); ax.set_ylim(0, 100)

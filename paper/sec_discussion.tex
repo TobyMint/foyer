@@ -131,10 +131,14 @@ limitation these works would press on.
 
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
 an admission policy should use. In our workload it is not a policy variable:
-round-1+ hit rate tracks the trace's own planned value (80.9\%) to within
-1.1\,pp across four different admission policies---80.6\% on the \sys{}
-baseline against 78.5\% for the worst static cap---so admission moves it
-hardly at all. We note the boundary of this claim---we varied admission policy,
+round-1+ hit rate tracks the trace's own planned value to within a few points
+across four different admission policies---80.6\% measured against 80.9\%
+planned on the \sys{} baseline, and 78.5\% against the same 80.9\% for the
+worst static cap---so admission moves it hardly at all. (Both numbers are the
+unweighted mean of the per-step planned hit rate over rounds 1 and later; the
+token-weighted figure for the same steps is 86.2\%, and the all-steps figure
+is 73.8\%. We use the unweighted round-1+ convention throughout, and flag it
+because the paper's earlier drafts mixed conventions.) We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
 test. A characterization of production KV-cache traffic at a large cloud
 provider finds that eviction-policy design is ``highly workload-dependent''
