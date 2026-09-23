@@ -68,8 +68,12 @@ that it beats what a static mix could achieve. On 125 requests one request is
 worth 0.8\,pp, so the margin is about one request. The tier's
 segment-to-segment SD (5.1 to 21.4\,pp) is not the right yardstick: segment
 volatility is not run-to-run uncertainty. The right one is the replicate spread
-we have, 1.0 and 0.5\,pp of SLO on the two configurations we repeated, and
-against that $+0.9$\,pp is about a replicate wide. What we will defend is the weaker claim: on the
+we have---which, across the four configurations we repeated, is 0.5, 1.0, 3.9
+and 5.1\,pp. Against the two tightest of those $+0.9$\,pp is about a replicate
+wide; against the two widest---which belong to the configurations that decide
+our headline elsewhere---it is well inside one. We quote the tightest pair
+because it is the least favourable to us, not because it is the whole
+distribution. What we will defend is the weaker claim: on the
 low-load tier the controller is not worse, and the same switch that is worth
 $+51\%$ there costs $-42\%$ at high load. A controller that is competitive
 where load is light and dominated where load is heavy is the pattern this
@@ -143,9 +147,15 @@ limitation these works would press on.
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
 an admission policy should use. In our workload it is not a policy variable:
 round-1+ hit rate tracks the trace's own planned value to within a few points
-across four different admission policies---80.6\% measured against 80.9\%
-planned on the \sys{} baseline, and 78.5\% against the same 80.9\% for the
-worst static cap---so admission moves it hardly at all. (Both numbers are the
+across the admission policies that keep the pool from overflowing---80.6\%
+measured against 80.9\% planned on the \sys{} baseline, and 78.5\% against the
+same 80.9\% for \texttt{cap2}. The qualifier is load-bearing and we did not
+state it in an earlier draft: \texttt{cap5} admits five sessions to a pool that
+holds four, and its round-1+ hit rate is \textbf{32.8\%}, not within a few
+points of 80.9\%. So admission policy does move this quantity---it just does not
+move it for policies that stay under the pool's capacity. What is true is the
+narrower claim: among policies that do not oversubscribe, the prefix cache is
+not a lever they can pull. (Both numbers are the
 unweighted mean of the per-step planned hit rate over rounds 1 and later; the
 token-weighted figure for the same steps is 86.2\%, and the all-steps figure
 is 73.8\%. We use the unweighted round-1+ convention throughout, and flag it

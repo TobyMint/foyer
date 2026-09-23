@@ -139,9 +139,11 @@ contexts of live sessions, plus a reserve for their growth---at a median of
 89{,}073 tokens against a budget of 96{,}360, i.e.\ 7\% free. Its measured
 occupancy at the same instants is 49{,}875 tokens: 48.2\% of that budget, or
 50.8\% of the pool, is idle. The
-projection is 1.79$\times$ the truth on this configuration; across our
-controller arms the ratio runs from 1.0 to 4.1 with a median of 1.3, so 1.79 is
-this arm's value, not a constant of the design. Two terms produce the gap: charging every
+projection is 1.79$\times$ the truth on this configuration. Across the
+seventeen controller runs we have projection logs for, the ratio runs from 1.24
+to 4.11 with a median of 1.59 (\texttt{projection.csv}), so 1.79 is this arm's
+value, not a constant of the design; the set is named here because the median
+moves with it---over every run in that file it is 1.40. Two terms produce the gap: charging every
 live session its full context, when a parked session's KV is evictable and
 therefore absent from the engine's count, and the growth reserve, which alone
 is 26{,}762 tokens, 28\% of the budget.
