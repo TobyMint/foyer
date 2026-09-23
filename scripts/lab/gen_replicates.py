@@ -11,7 +11,8 @@ import csv, glob, json, os, statistics, sys
 
 # 同配置分组。按 run_summary 的 policy 串判的，不是按名字——名字会骗人。
 GROUPS = {
-    "cap2+HiCache": ["pairA_cap2hc", "pairB_cap2hc"],
+    "cap4+HiCache (frontier anchor)": ["cap4_hc", "cap4_hc_r2"],
+    "cap2+HiCache (frontier anchor)": ["pairA_cap2hc", "pairB_cap2hc"],
     "Foyer base (hw=0,t=0.95,h=3)": ["pairA_foyerhc", "pairB_foyerhc", "foyer_hc"],
 }
 

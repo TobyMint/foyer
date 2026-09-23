@@ -10,15 +10,18 @@ gives the numbers and each controller's signed distance from that envelope.
 The result is unambiguous. Of nine controller variants, none is above the
 envelope. The best, a growth-reserve setting of one round instead of the
 default three, lands $+0.22$ percentage points above the line---and we
-measured how large a margin means nothing. Two configurations were run more
-than once: \texttt{cap2}+HiCache twice and the \sys{} base configuration
-three times. Their wall clocks have coefficients of variation of 1.6\% and
-1.8\% (ranges 3.2\% and 4.0\%), and their SLO has standard deviations of
-0.5\,pp and 0.2\,pp. A margin of 0.22\,pp is therefore at the replicate
-spread of the very configuration this paper is about. We record it as
-\emph{on} the line rather than above it, and we note that we would have needed
-more than two or three repeats per configuration to resolve a margin this
-small---which we did not run.
+measured how large a margin means nothing. The answer is uncomfortable for our
+own method. Three configurations were run more than once, and while their wall
+clocks are stable across repeats---coefficients of variation of 0.9\%, 1.6\%
+and 1.8\%---their SLO is not: the ranges are 5.1, 1.0 and 0.5\,pp. The widest
+of those belongs to an \emph{envelope anchor}: \texttt{cap4}+HiCache scores
+63.4\% on one run and 68.5\% on its repeat. So the front we measure against
+is not a sharp line, and our $\pm1.0$\,pp verdict band is narrower than the
+uncertainty of the points that define it. Against that, the best controller's
+$+0.22$\,pp is not merely inside the noise---it is smaller than the noise of
+the anchors by an order of magnitude. We record it as \emph{on} the line
+rather than above it, and we state plainly that resolving a margin this small
+would need several repeats per configuration, which we did not run.
 
 The other end of the front deserves its own sentence, because the rest of this
 paper is negative and a reader could close it thinking the answer is to do

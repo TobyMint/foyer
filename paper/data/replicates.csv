@@ -1,5 +1,6 @@
 # 同配置重复 run 的离散度 —— 由 scripts/lab/gen_replicates.py 生成
 # 论文里「+0.20pp 在 run-to-run 波动内」这句就靠这张表
 group,n,wall_min_mean,wall_min_sd,wall_cv_pct,wall_range_pct,slo_mean,slo_sd_pp,slo_range_pp,runs
-cap2+HiCache,2,299.7,4.72,1.57,3.15,91.1,0.5,1.0,pairA_cap2hc pairB_cap2hc
+cap4+HiCache (frontier anchor),2,211.1,1.93,0.92,1.83,65.9,2.55,5.11,cap4_hc cap4_hc_r2
+cap2+HiCache (frontier anchor),2,299.7,4.72,1.57,3.15,91.1,0.5,1.0,pairA_cap2hc pairB_cap2hc
 "Foyer base (hw=0,t=0.95,h=3)",3,286.9,5.07,1.77,4.0,89.5,0.21,0.5,pairA_foyerhc pairB_foyerhc foyer_hc
