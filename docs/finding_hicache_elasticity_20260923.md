@@ -202,3 +202,50 @@ EVENTS = ("queued",)     # 只数 queued 事件当到达
 `sglang:num_queue_reqs` 中位 0（最大 2）—— **cap 从未被在跑数顶满**。
 cap 限的是**活跃会话数**（含停在 tool_wait 的），不是在跑数，
 所以引擎空着而会话在排队（积压最高 67 个）。这与子 agent 在 realhr 上的发现一致。
+
+---
+
+# 追加（09-24 03:00）：四条车道把卡 0/1 的两条 run 跑废了
+
+## 事实
+
+02:36 起，卡 0 的 `pois200_foyer_sf0` 与卡 1 的 `pois200_foyer_hc_r2` 双双失败：
+
+```
+                 尝试    成功    失败
+foyer_hc_r2       624     528     96     ← 未跑满 999 步
+foyer_sf0         679     595     84     ← 未跑满 999 步
+```
+
+失败模式：`steps.jsonl` 里 `status=FAILED`、错误为
+`request error: ... connection closed before message completed`，
+从 148.4 分钟起成簇出现，成功请求在 148.8 分钟处**全部停止**。
+server 日志末尾：`Subprocess scheduler_0 (pid=...) crashed with exit code -15`。
+
+两条 run 的引擎死在**同一绝对时刻**（02:36:46 与 02:37:00，相隔 14 秒），
+所以是外部杀死，不是自己崩的。
+
+## 根因：我违反了项目已经记下的教训
+
+`scripts/watchdog.sh` 的注释里写着（2026-09-21 学到）：
+
+> CARDS 0 AND 1 ARE DELIBERATELY ABSENT. ... because **saturating all four gets
+> our long-running processes reaped by other tenants on this shared box.**
+
+我把车道从 2 条加到 4 条，于是长跑进程被共享机器上其它租户的 reaper 杀掉。
+**SIGTERM 是结果不是原因** —— 我去查谁发的 SIGTERM 是白费功夫。
+
+## 处置
+
+1. 撤掉卡 0/1 的 stream 与 gate；总并发回到 <= 2。
+2. 三条失败的 run 目录挪到 `_failed_4lane_*`（按项目规矩，同名目录必须先挪走，
+   否则追加式日志会把两次 run 静默混合）。
+3. 重新串行排队：卡 2 跑 var_cap2 → foyer_hc_r2 → var_switch2；
+   卡 3 跑 var_cap3 → foyer_sf0_r2。lane 脚本的卡号/端口已相应改掉。
+4. 教训写进 `CLAUDE.md`「硬件与运维」节。
+
+## 一条仍然有效的观察
+
+`var_foyer`（变负载控制器臂）在四条车道期间**跑完了 999 步、0 失败**，
+所以它没有受影响。四条变负载臂里已完成的是 var_foyer 与 var_switch（后者等价于
+静态 cap3）。

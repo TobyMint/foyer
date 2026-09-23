@@ -46,6 +46,14 @@
 
 - 平时只用**卡 2 和卡 3**。卡 0/1 仅限 00:00–08:00 且确认空闲（`memory.used < 200 MiB`）。
 - **别人占着卡就等，不要算剩余空间够不够。只在完整的卡上跑。**
+- **不要同时占满四张卡。** 卡 0/1 可用时，总并发仍应 <= 2 条车道。
+  2026-09-21 学到过一次（记在 `scripts/watchdog.sh` 注释里）：把四张卡全占满，
+  长跑进程会被共享机器上其它租户的 reaper 杀掉。**2026-09-24 又犯了一次**：
+  四条车道一起开，卡 0/1 的两条 run 在 02:36:46 / 02:37:00（相隔 14 秒，
+  同一绝对时刻）双双被 SIGTERM，只跑到 679 和 624 步就终止，两条都作废。
+  症状：`steps.jsonl` 里 `connection closed before message completed` 在某个时刻
+  突然成簇出现，`status=FAILED`；server 日志里 `Subprocess scheduler_0 crashed
+  with exit code -15`。**这个 SIGTERM 是结果不是原因，别去查谁发的。**
 - KV pool 必须落在 `101,432 ± 20`，否则该 run 作废，不记录——SGLang 按启动时的空闲显存
   定池子，池子小了数字就不可比。
 
