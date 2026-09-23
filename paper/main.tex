@@ -1,0 +1,79 @@
+% ============================================================================
+%  When Does Admission Control Pay?
+%  Decomposing End-to-End Wall Clock in Memory-Bound Agentic LLM Serving
+%
+%  编译:  latexmk -pdf main.tex
+%  编译前先跑 figs/make_figs.py 生成图。
+%
+%  写作纪律（本项目用血换来的，改动正文时请守住）：
+%   1. 每条主张只写到审计文件 paper/claims_audit.md 允许的强度。
+%      尤其：步时间是【两个导出量互相印证】，不是引擎直采（metrics.csv 的
+%      itl/e2e/ttft 列在 SGLang v0.5.10 下是空的）。
+%   2. 25 档的节流对照来自旧 harness，与 200 档不同代，正文必须标注。
+%   3. 不写"我们的模型预测了"，写"这个分解解释了"。
+%   4. 任何没有对照的数字不进正文。
+% ============================================================================
+\documentclass[10pt,conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+
+\newcommand{\sys}{Foyer}
+
+\begin{document}
+
+\title{When Does Admission Control Pay?\\
+Decomposing End-to-End Wall Clock in Memory-Bound Agentic LLM Serving}
+
+\author{\IEEEauthorblockN{Anonymous Submission}}
+
+\maketitle
+
+\begin{abstract}
+Agentic LLM workloads differ from chat in a way that makes admission control
+look like the obvious lever: each session is a long, multi-round job whose KV
+footprint grows every round, and a single session can occupy most of a
+memory-constrained GPU's KV pool. A natural hypothesis follows---a controller
+that reads engine telemetry and admits on measured capacity should beat a
+static concurrency cap. We test that hypothesis directly and find that, on our
+workload and hardware, it is false: across nine controller variants, none
+lands above the static Pareto front, and a plain cap on resident sessions
+remains the fastest policy we measured.
+
+We explain why, and the explanation is the contribution. We decompose the
+end-to-end wall clock into \emph{busy} and \emph{idle} time, and show that the
+busy component is governed by two quantities the admission decision does not
+control: the per-step cost and the number of requests actually in flight.
+Admission policy moves the second---but the first rises with it, so the two
+cancel. The idle component (7.4--36.3\% of the wall clock) is structural: an
+agent session issues no request while waiting on a tool, and we measure that
+this wait averages 16.85\,s, not the sub-second figure a naive reading of the
+trace suggests. We further show that the same throttle setting that is worth
+51\% at low load costs 42\% at high load---so no single scalar can be optimal
+across regimes, which is precisely the regime in which adaptive control could
+have paid. We report four mechanistically distinct policy routes we
+falsified, each with its measured reason, and we argue that prior systems'
+reported gains from state-preserving suspension are already realised by the
+permit-per-session design our controller inherits---which is why adding
+adaptivity on top of it yields nothing.
+\end{abstract}
+
+\begin{IEEEkeywords}
+LLM serving, admission control, KV cache, agentic workloads, performance
+characterization, negative results
+\end{IEEEkeywords}
+
+\input{sec_intro}
+\input{sec_background}
+\input{sec_model}
+\input{sec_results}
+\input{sec_discussion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

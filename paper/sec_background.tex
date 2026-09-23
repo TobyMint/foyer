@@ -1,0 +1,79 @@
+\section{Background and Setup}
+\label{sec:bg}
+
+\subsection{Workload}
+
+We replay 200 coding-agent sessions drawn from real traces. Each session is a
+sequence of rounds; a round presents a prompt of median 23{,}187 tokens
+(p90 51{,}064; maximum 89{,}436, which alone is 88\% of the KV pool), and
+between rounds the session waits on a tool before returning with a longer
+context. Arrivals are Poisson at $\lambda=0.04\,\text{s}^{-1}$ over an
+80-minute window, giving 999 steps in total. Two sessions of maximum size
+cannot be co-resident: their combined contexts exceed the pool by 76\%.
+
+The tool wait is the load's defining property and the one most easily
+misread. Its \emph{median} is 0.35\,s, which invites the conclusion that
+sessions never leave the engine. Its \emph{mean} is 16.85\,s, 22\% of waits
+exceed ten seconds, and the maximum is 300\,s. We verified that our replay
+harness honors the trace faithfully: across 799 round transitions the measured
+gap is 16.85\,s mean against a demanded 15.82\,s, a ratio of 1.001. This
+matches the source corpus's own reported mean tool time of 16.8\,s.
+
+\subsection{Engine and the binding constraint}
+
+We use SGLang v0.5.10 with Qwen2.5-Coder-7B-Instruct extended to 96K context,
+on one RTX 3090 (24\,GB). At \texttt{mem-fraction-static} 0.85 the KV pool is
+101{,}432 tokens. Hierarchical caching (HiCache) is enabled throughout, with a
+host tier of twice the device pool. Every run is guarded: if the pool does not
+come out at $101{,}432 \pm 20$---which happens when another tenant holds
+memory on the card---the run is aborted rather than recorded, because SGLang
+sizes the pool from free memory at startup and a shrunken pool silently
+produces incomparable numbers.
+
+The relevant consequence is that the pool holds only about four median
+sessions. Concurrency is therefore capacity-bound, not scheduler-bound, and
+this is the premise on which everything below rests.
+
+\subsection{The controller under test}
+
+\sys{} is an admission controller that reads engine telemetry and issues
+\emph{named} permits rather than a scalar cap: a session is admitted by
+appearing in a permit file, and the runner refuses to start a round for a
+session that is not listed. This design choice matters for the comparison,
+because it is what allows per-session actions at all---including the pause
+primitive we exploit in \S\ref{sec:results:gate}. It also means that a session,
+once admitted, holds its permit for its entire lifetime and its KV is
+preserved across tool waits. We return to this point in \S\ref{sec:discussion},
+because we believe it is why published gains from state-preserving suspension
+do not reappear here.
+
+Each control cycle (2\,s) the controller computes
+\begin{equation}
+  \Pi \;=\; \max(\rho, \textstyle\sum_i c_i) \;+\; \textstyle\sum_i g_i ,
+  \label{eq:proj}
+\end{equation}
+where $\rho$ is the engine's reported occupancy, $c_i$ the context length of
+live session $i$, and $g_i$ its forecast growth over the next
+\texttt{horizon} rounds. A session is admitted when $\Pi + n \le B$, with $n$
+the candidate's estimated need and $B$ the budget. The three terms are
+respectively the measured physical occupancy, a reservation for sessions
+currently parked in a tool wait (whose KV is evictable and therefore absent
+from $\rho$), and a reservation for future growth.
+
+\subsection{Baselines and the verdict criterion}
+
+Baselines are static caps: at most $N$ sessions resident, $N \in \{1,\dots,5\}$,
+with and without HiCache. We compare on two axes: end-to-end wall clock
+(time from the first submission to the last completion) and SLO attainment
+(fraction of requests whose time-to-first-token is under 10\,s).
+
+The verdict criterion deserves care, because ``faster than cap-$N$'' is not
+the question. The question is whether a policy reaches a point \emph{above}
+the static front. A point that lies merely between two static caps is not a
+win: mixing cap-$N$ and cap-$M$ by time slice approximates any point on the
+line between them. So we take the upper-left envelope of the static points and
+report each controller's signed distance above or below it. Every verdict in
+this paper is produced by one script from the raw logs, and the script's own
+first version was wrong---it extrapolated past the end of the envelope and
+declared the slowest static cap a winner. We fixed it and report the episode
+because it is the failure mode this criterion is most prone to.

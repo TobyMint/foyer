@@ -1,0 +1,7 @@
+# horizon 扫描：增长预留宁可留几轮（默认 3）
+# 全部 999 步同代码代；对照 foyer_hc = horizon 3
+horizon,run,wall_min,slo_pct,conc
+0,foyer_hz0,290.0,77.2,2.69
+1,foyer_hz1,255.8,84.8,2.58
+2,foyer_hz2,306.1,86.9,2.22
+3,foyer_hc,291.3,89.8,2.06

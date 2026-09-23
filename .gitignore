@@ -1,16 +1,9 @@
-# Large data artifacts (fetched separately — see README "Reproducing")
-enwik9*
-*.duckdb
-*.zip
-vendor/
-target/
-
-# Runtime noise
+paper/*.aux
+paper/*.log
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
 __pycache__/
-*.pyc
-server_*.log
-*.log
-nohup.out
-
-# Local secrets
-.env

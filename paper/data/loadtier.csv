@@ -1,0 +1,8 @@
+# 节流开关在两个负载档上的反向效应（2026-09-23）
+# thr=on 是控制器默认（水位线 + SLO 阀 + 增长预留都开）；off 是全关
+# ⚠ 25 档的 thr 两行来自【旧 harness】，与 200 档不同代，只能作方向；新 harness 的同代对照未跑完
+tier,arm,throttle,wall_min,slo_pct,harness
+25,base,on,58.4,95.2,old
+25,push,off,28.8,92.8,old
+200,foyer_hc,on,291.3,89.8,new
+200,foyfix_hc,off,415.0,46.1,new
