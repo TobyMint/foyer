@@ -59,16 +59,18 @@ repeat---; a plain cap on resident sessions remains the fastest policy we
 measured. That is not an argument for admitting everything: with no control at
 all the median request waits 1{,}774 seconds for its first token, the prefix
 cache collapses from a 75\% planned hit rate to 1.6\%, and SLO falls to 3\%.
-The question is which selective rule, not whether to be selective. Two measurable effects, rather than one we can tune
-away, account for much of why our variants fail---though, as the arm-by-arm
-attribution of \S\ref{sec:results:attribution} shows, only for four of the
-eleven arms we tested, the rest being residuals we can measure and cannot yet
-explain. They hold nearly half
+The question is which selective rule, not whether to be selective. Two
+measurable effects, rather than one we can tune away, account for part of why
+our variants fail---the arm-by-arm attribution of
+\S\ref{sec:results:attribution} covers four of the eleven arms we tested and
+leaves seven as residuals we can measure and cannot yet explain. They hold
+nearly half
 the pool idle while sessions queue---their own headroom estimate is
-1.79$\times$ the truth---and the segment of the curve they work in is
-the one where added concurrency no longer pays: five of the nine arms run past
-the point where the marginal return turns negative (local elasticity 1.15,
-against 0.38 for a global fit that averages the curve flat). The wall
+1.79$\times$ the truth---and the per-step elasticity measured on the
+configuration they actually run stays below one across their whole operating
+range, so the engine had room they did not take: the ceiling we measure on
+device-only caps does not survive on the host-tier configuration the
+controllers use. The wall
 clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the wall
 clock) is structural---an agent session issues no request while a tool runs,

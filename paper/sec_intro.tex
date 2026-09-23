@@ -12,10 +12,14 @@ fixed number.
 
 We believed this, built a controller that does exactly that, and spent a
 considerable amount of GPU time discovering that on our workload and hardware
-it is false. This paper reports that negative result, but the negative result
-is not its contribution. Its contribution is a way to know in advance---one
-number, measurable from logs a serving system already writes, that says how
-much room admission control has before anyone builds a controller.
+it is false. This paper reports that negative result, and the negative result is
+most of what we have. Alongside it we report one measurement---the elasticity of
+per-step cost with respect to the running count---that we hoped would say in
+advance how much room admission control has. It does bound that room on the
+configurations we measured, but when we tested whether it explains our
+controllers' failure, on their own configuration and on a second workload, it
+did not. We report it as a diagnostic of a workload, not as a predictor of
+whether a controller will win.
 
 \subsection{What we measured}
 

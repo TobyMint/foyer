@@ -30,37 +30,54 @@ concurrency still buys something; above it, $\epsilon$ passes one, which means
 the engine gets \emph{slower} in wall clock as more requests run. The single
 number $0.38$ averages those regimes and describes none of them.
 
-The operating region is the one that matters, and most of it is the expensive
-one. Our nine controller arms run at $\overline{R}_{\text{busy}}$ between 1.35
-and 1.69. Four sit below 1.53, in the $\epsilon = 0.43$ segment where added
-concurrency still pays a little; the other five sit at 1.63 or above, in the
-$\epsilon \approx 1.15$ segment where it does not pay at all. A controller
-that admits more sessions there does not buy throughput; it buys the same work
-spread over more steps. This is a sharper statement than the
-global elasticity and it points the other way: the criterion is not ``how much
-does added concurrency cost on this workload'' but ``where on the curve does
-\emph{this} policy operate'', and a policy that cannot move left along the
-curve gains nothing from moving right.
+The operating region is the one that matters, and it is not the region the
+controllers run in. All nine controller arms run with HiCache enabled, which
+the five device-only caps above do not. Measuring the same elasticity on the
+three HiCache configurations we have gives $\epsilon = +0.19$ from
+\texttt{cap2}+HC to \texttt{cap3}+HC and $+0.46$ from \texttt{cap3}+HC to
+\texttt{cap4}+HC, over $\overline{R}_{\text{busy}}$ 1.25 to 1.73. That range
+covers the whole controller operating region (1.35 to 1.69), and over it
+$\epsilon$ never approaches one. At matched running counts the HiCache caps pay
+$1.7$\,ms less per step at $\overline{R}_{\text{busy}} \approx 1.5$.
 
-We are explicit about what this does and does not establish. It explains why
-pushing concurrency does not pay in the region our controllers reach. It does
-not by itself explain why they do not instead operate further left with a
-better SLO, which is the axis \S\ref{sec:results:idle-memory} and the
-queueing measurement of \S\ref{sec:discussion} address---and when we attribute
-the arms one by one (\S\ref{sec:results:attribution}) it covers only a
-minority of them. And it is measured on
-five different policies rather than by an intervention, so it is a
-cross-policy association. We offer $\epsilon$ as a diagnostic, with a caveat we would rather state
-than bury. On our data it is computed from the same wall clock the model then
-explains---$\tau_1$ is derived from $W_{\text{busy}}$, so using it to predict
-$W_{\text{busy}}$ restates rather than tests---and its five points are five
-different policies, so the slope is a cross-policy association, not a
-transportable causal derivative. $\tau_2$ is genuinely independent of the wall
-clock but measures only decode, so it cannot be dropped into a throughput
-equation that includes prefill. What survives is a comparison tool on a single
-workload: the elasticity says how quickly per-step cost eats added concurrency
-\emph{here}, and it can be computed from two runs before committing to a
-sweep. Whether it orders \emph{different} workloads the way it orders
-concurrency on this one is untested, and we do not claim it.
-It is not, as an earlier draft of this paper claimed, something that decides
-the question in minutes before building anything.
+This contradicts what an earlier draft of this paper claimed, and it changes
+what the criterion is for. The cliff in the device-only curve is a
+recomputation effect: \S\ref{sec:model} measures that those runs recompute what
+they evict, while under HiCache the host tier absorbs it. The cliff does not
+survive on the configuration our controllers actually use. So the criterion
+does \emph{not} explain why they lose---on their own configuration they were
+not in a region where added concurrency was self-defeating, and the engine had
+room they did not take. What the measurement does is rule one explanation out.
+The failure is not that this workload denies admission control its lever; it is
+that our controllers do not pull the lever they have, which is what
+\S\ref{sec:results:idle-memory} and the attribution of
+\S\ref{sec:results:attribution} measure directly.
+
+We are explicit about what this does and does not establish. The HiCache curve
+rests on three configurations and two segments, one run each, with no
+error bars, and it stops at 1.73---we cannot see whether a cliff appears
+beyond the controllers' region. A $\pm10\%$ perturbation of $\tau$ puts the
+segment elasticities' bounds across one even on the device-only curve, so the
+cliff is a description of the fitted points rather than a threshold we have
+located precisely. And it is measured on
+different policies rather than by an intervention, so it is a
+cross-policy association. On our data it is also computed from the same wall
+clock the model then explains---$\tau_1$ is derived from $W_{\text{busy}}$, so
+using it to predict $W_{\text{busy}}$ restates rather than tests---and its
+points are different policies, so the slope is a cross-policy association, not
+a transportable causal derivative. $\tau_2$ is genuinely independent of the
+wall clock but measures only decode, so it cannot be dropped into a throughput
+equation that includes prefill.
+
+We tested whether the curve transfers to a second workload and it does not
+obviously do so. On a real agent trace (117 sessions, tool waits of seconds
+rather than the 95\,ms of the synthetic trace, three static caps and one
+controller arm), the model-consistent elasticity is negative across the measured
+range---$-2.40$ then $-0.28$, at $\overline{R}_{\text{busy}}$ 1.08 to 1.29---and
+the controller arm there runs at 1.22, below every one of the nine arms above,
+and still does not beat the static front. The per-request measure has the
+opposite sign on that trace ($+0.41$, $+0.48$). We report this as a boundary:
+the criterion is a description of one workload on one configuration, and where
+we could check it elsewhere it neither transferred nor explained the failure.
+It is not, as an earlier draft claimed, something that decides the question in
+minutes before building anything.
