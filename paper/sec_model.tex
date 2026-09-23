@@ -23,7 +23,7 @@ minutes---and is nonetheless \emph{slower} than its own baseline, because its
 busy time grows by 21 minutes. Any account that treats ``more concurrency'' as
 one thing will get this wrong.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig2_decomp.pdf}
   \caption{Wall clock split into busy and idle for every completed run,
@@ -64,7 +64,7 @@ an engine-reported one. The engine's own latency counters
 by SGLang v0.5.10 in our configuration, so no directly measured step time
 exists in our data; instrumenting this is future work.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig3_steptime.pdf}
   \caption{Per-step cost by two independent measurements: circles derive it
@@ -95,7 +95,7 @@ This is the crux of the paper. An admission policy can raise $\overline{R}$,
 and raising $\overline{R}$ is exactly what raises $\tau$. The two effects
 partially cancel, and in our measurements they cancel almost completely.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig4_idle_conc.pdf}
   \caption{Idle fraction falls monotonically with mean running requests. The

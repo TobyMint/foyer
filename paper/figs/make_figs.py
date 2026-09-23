@@ -167,9 +167,9 @@ def fig_loadtier():
         ax.text(0.5, max(float(on["wall_min"]), float(off["wall_min"])) * 0.92,
                 "%+.0f%%" % d, ha="center", fontsize=8, weight="bold",
                 color="#8a5a10" if d < 0 else "#1a5a1a")
+        ax.set_ylim(0, max(float(on["wall_min"]), float(off["wall_min"])) * 1.22)
         if tier == "25":
-            ax.text(0.5, -0.42, "old harness", transform=ax.transAxes,
-                    ha="center", fontsize=6, color="0.45")
+            ax.set_xlabel("harness: earlier revision", fontsize=6, color="0.45")
     fig.savefig(os.path.join(HERE, "fig5_loadtier.pdf"))
     plt.close(fig)
 

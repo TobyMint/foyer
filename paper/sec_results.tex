@@ -22,17 +22,7 @@ five sessions (260.9\,min) is \emph{slower} than four (213.0\,min), because
 the per-step cost rises faster than the request count does. That non-monotonicity
 is the first appearance of the mechanism that explains everything else.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig1_frontier.pdf}
-  \caption{Every completed run on the (wall clock, SLO) plane. The grey line
-  is the upper-left envelope of the static points; a policy below or on it has
-  not beaten a static cap, because time-slicing two caps approximates any
-  point on the segment between them. Nine controller variants, none above.}
-  \label{fig:frontier}
-\end{figure}
-
-\begin{table}[t]
+\begin{table}[tb]
   \caption{All completed runs. $\Delta$ is the signed distance from the
   static envelope at that wall clock; positive would mean a genuine win.}
   \label{tab:runs}
@@ -134,7 +124,7 @@ The measured outcome matches: the gate drove running concurrency from 1.42 to
 1.29 and live sessions from 2.78 to 1.91. It tightened rather than pinned, and
 a tightening is another cap.
 
-\begin{figure}[t]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig6_horizon.pdf}
   \caption{The growth reserve is not a free parameter. Removing it costs

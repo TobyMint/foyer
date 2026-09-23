@@ -25,6 +25,16 @@ Nine controller variants, spanning four mechanistically distinct ideas, all
 land on or below the static Pareto front (Fig.~\ref{fig:frontier}). The best
 of them reaches the front and no further.
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{figs/fig1_frontier.pdf}
+  \caption{Every completed run on the (wall clock, SLO) plane. The grey line
+  is the upper-left envelope of the static points; a policy below or on it has
+  not beaten a static cap, because time-slicing two caps approximates any
+  point on the segment between them. Nine controller variants, none above.}
+  \label{fig:frontier}
+\end{figure}
+
 \subsection{Why}
 
 We decompose the wall clock into \emph{busy} time, during which the engine has
