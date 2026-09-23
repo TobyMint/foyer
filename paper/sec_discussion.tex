@@ -97,8 +97,12 @@ round-1+ hit rate equals the trace's own planned value (89.8\%) to within one
 percentage point across four different admission policies, so admission does
 not move it. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
-test, and production KV-cache traces show hit rate is sensitive to policy in
-ways a single trace family may not reveal \cite{wang2025kvcachewild}.
+test. A characterization of production KV-cache traffic at a large cloud
+provider finds that eviction-policy design is ``highly workload-dependent''
+and that reuse patterns differ sharply by request category
+\cite{wang2025kvcachewild}; that is reason to expect a single trace family to
+understate the space, though it is not a policy comparison and we do not
+present it as one.
 
 \section{Discussion}
 \label{sec:discussion}

@@ -17,9 +17,12 @@ misread. Its \emph{median} is 0.35\,s, which invites the conclusion that
 sessions never leave the engine. Its \emph{mean} is 16.85\,s, 22\% of waits
 exceed ten seconds, and the maximum is 300\,s. We verified that our replay
 harness honors the trace faithfully: across 799 round transitions the measured
-gap is 16.85\,s mean against a demanded 15.82\,s, a ratio of 1.001. This
-matches the source corpus's own reported mean tool time of 16.8\,s
-\cite{zhu2026tracelab}.
+gap is 16.85\,s mean against a demanded 15.82\,s, a ratio of 1.001. The
+corpus's own characterization makes the same point qualitatively---it reports
+``diverse and heavily-tailed tool calls'' and calls these gaps
+``human-paced''---but gives no numeric mean \cite{zhu2026tracelab}, so the
+16.85\,s above is our measurement over the released trace, not a figure we
+quote from that paper.
 
 \subsection{Engine and the binding constraint}
 
