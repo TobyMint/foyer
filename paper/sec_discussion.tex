@@ -13,19 +13,30 @@ throttles costs 42\% (291.3 to 415.0 minutes) and 43.7\,pp of SLO. One switch,
 two regimes, opposite signs, both around 40--50\%
 (Fig.~\ref{fig:loadtier}). No single scalar setting is optimal across both.
 
-This is the regime in which adaptive control should win, and we report two
-findings about it. The first is discouraging for our controller: on the
-25-session tier it does not win. A static cap of three, re-run under the
-current harness, finishes in 24.2 minutes at 91.2\% SLO---16\% faster than the
-most aggressive \sys{} configuration we measured on that tier, and with better
-run-to-run stability (segment SD 5.1 against 11.0 for cap-2). The stateless
-cap, which cannot see occupancy, backlog or remaining work, is simply better
-here. We flag one caveat and one gap. The caveat is that the tier comparison
-above is cross-generation: the 25-session throttle arms come from an earlier
-harness revision and are not directly comparable to the 200-session numbers,
-so we treat them as a direction rather than a magnitude. The gap is that the
-matching \sys{} arm on the 25-session tier under the current harness was
-interrupted by another tenant and is not reported.
+This is the regime in which adaptive control should win, and we now have the
+same-generation measurement that earlier drafts of this paper were missing.
+Four arms on the 25-session tier, all under the current harness (Table of
+\S\ref{sec:load}, data in \texttt{tier25.csv}): static caps of two, three and
+four finish in 32.4, 24.2 and 23.6 minutes at 92.8\%, 91.2\% and 79.2\% SLO,
+and \sys{} finishes in 27.6 minutes at 92.8\%.
+
+The finding is a trade, not a defeat, and it is the opposite of what the
+200-session tier shows. Against the same-generation envelope---which runs from
+\texttt{cap4} at (23.6, 79.2) through \texttt{cap3} at (24.2, 91.2) to
+\texttt{cap2} at (32.4, 92.8)---\sys{} sits $+0.9$\,pp above the line. A
+static cap of three is still 12\% faster in wall clock, but it gives up
+1.6\,pp of SLO to do it, so neither dominates the other. On this tier the
+controller is a different point on the front rather than a dominated one,
+which is exactly what the 200-session tier denies it.
+
+We are careful about the size of this. $+0.9$\,pp is well inside the segment
+volatility of every arm on the tier (SD 5.1 to 21.4\,pp), and the wall-clock
+gap in the other direction is 12\%; read at face value the two arms are tied
+with different shapes. What we will defend is the weaker claim: on the
+low-load tier the controller is not worse, and the same switch that is worth
+$+51\%$ there costs $-42\%$ at high load. A controller that is competitive
+where load is light and dominated where load is heavy is the pattern this
+paper set out to explain, and it is the pattern we measured.
 
 The second finding is the more useful one. The signal an adaptive controller
 would need is available---the number of sessions waiting for admission differs

@@ -1,0 +1,8 @@
+# 25 档（125 步，约 30 分钟），【全部同代 harness】—— 2026-09-23 补齐 cap4_25 与 foyer_push_25
+# 由 lab-3090 的 run_summary.py 导出；判决口径同 scripts/lab/frontier.py
+# 列: run,steps,wall_min,conc,slo_pct,seg_sd_pp,ttft_p50_ms,policy
+run,steps,wall_min,conc,slo_pct,seg_sd_pp,ttft_p50_ms,policy
+cap2_25,125,32.4,1.95,92.8,11.0,1409,static=2
+cap3_25,125,24.2,2.77,91.2,5.1,1568,static=3
+cap4_25,125,23.6,3.39,79.2,21.4,3030,static=4
+foyer_push_25,125,27.6,2.47,92.8,7.1,1537,budget3:hw=0;target=0.95
