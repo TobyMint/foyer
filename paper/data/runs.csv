@@ -2,7 +2,8 @@
 # 列: run, tier, steps, wall_min, conc, slo_pct, sd_pp, family
 #   tier   200 = 200 会话档(泊松 λ=0.04/s, 999 步)；25 = 25 会话档(125 步)
 #   family static / static_hc(带 HiCache) / foyer
-#   只收 999 步跑满的（25 档为 125 步）；截断的 run 不列
+#   200 档 999 步为跑满；995-998 步的（hz0/hz2/rg4）标了实际步数，不当作跑满
+#   25 档 125 步为跑满
 run,tier,steps,wall_min,conc,slo_pct,sd_pp,family
 cap1,200,999,527.4,1.00,94.8,2.4,static
 cap2,200,999,304.2,1.99,89.5,6.4,static

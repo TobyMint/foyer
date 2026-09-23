@@ -71,7 +71,7 @@ bres    295.5 / 83.8  −7.82  BELOW
 hz2     306.1 / 86.9  −4.85  BELOW
 breshz1 310.9 / 72.3 −19.55  BELOW
 nogate  272.3 / 66.6 −20.9   BELOW
-rg4     275.9 / 64.2 −24.0   BELOW
+rg4     282.3 / 64.3 −24.0   BELOW  (998 步，非跑满)
 foyfix  415.0 / 46.1 −48.7   BELOW（全表最差）
 ```
 

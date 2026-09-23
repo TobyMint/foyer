@@ -71,8 +71,13 @@ The verdict criterion deserves care, because ``faster than cap-$N$'' is not
 the question. The question is whether a policy reaches a point \emph{above}
 the static front. A point that lies merely between two static caps is not a
 win: mixing cap-$N$ and cap-$M$ by time slice approximates any point on the
-line between them. So we take the upper-left envelope of the static points and
-report each controller's signed distance above or below it. Every verdict in
+line between them. We flag this segment argument as an argument, not a
+measurement---we did not run the time-sliced policies, and carrying queue state
+and cache contents across a switch could bend the line. It is the criterion we
+apply, and it is conservative in the direction that matters: it can only make
+our negative result harder to claim, never easier. So we take the upper-left
+envelope of the static points and report each controller's signed distance
+above or below it. Every verdict in
 this paper is produced by one script from the raw logs, and the script's own
 first version was wrong---it extrapolated past the end of the envelope and
 declared the slowest static cap a winner. We fixed it and report the episode
