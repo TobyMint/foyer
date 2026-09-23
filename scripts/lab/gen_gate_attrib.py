@@ -58,8 +58,8 @@ def main():
         "run", "采样", "被挡周期", "阀门%", "roundgate%", "投影超%", "残差%(单飞等)"))
     for r in rows:
         print("%-26s %6d %8d %8.1f %9.1f %9.1f %10.1f" % r)
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
-                       "paper", "data", "gate_attrib.csv")
+    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "..", "paper", "data", "gate_attrib.csv")
     with open(out, "w") as f:
         f.write("# 「有等待不放行」周期的闸门归因 —— gen_gate_attrib.py 生成\n")
         f.write("# 残差列 = 排除 valve/gate_full/投影超预算之后剩下的，主要来自单飞闸门 prev_started\n")
