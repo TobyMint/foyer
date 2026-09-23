@@ -146,8 +146,9 @@ Two things follow, and we are careful about the second.
 
 The first is that the controllers under-use the pool, and that this is a
 property of their estimates rather than of the hardware: the base
-configuration holds a fifth of the pool idle with 66 sessions queued, because
-it believes it has 7\% free when it has 46\%. Any account of why it is slow
+configuration holds nearly half the pool idle (48.2\% of its budget, 50.8\% of\
+the pool) with 66 sessions queued, because
+it believes it has 7\% free when it has 48\%. Any account of why it is slow
 that does not mention this is incomplete.
 
 The second is that under-use does \emph{not} order the outcomes, so it is not

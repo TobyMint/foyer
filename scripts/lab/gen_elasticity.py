@@ -13,7 +13,7 @@
 
 用法: python3 gen_elasticity.py <decomp.csv> <out.csv>
 """
-import csv, math, sys
+import csv, math, os, sys
 
 IDS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
 
@@ -31,9 +31,19 @@ def main():
         print("%-13s -> %-13s %8.2f %8.1f %+8.2f" % (n0, n1, r1, t1, e))
     # 控制器臂落在哪一段。⚠ decomp.csv 只有 5 条 foyer；另外 4 条要从
     # metrics.csv 现算，别拿 5 条冒充 9 条（第一版就是这么错的）。
-    cr = [1.35, 1.44, 1.48, 1.52, 1.63, 1.67, 1.67, 1.68, 1.69]   # 九条，见 occupancy.csv
+    # 从 arm_running.csv 读，不再硬编码。原来那行注释说「见 occupancy.csv」，
+    # 但 occupancy.csv 的 running_mean 是【全时段均值】(0.97~1.41)，不含 1.63+。
+    # 这个错让 §IV 的「五条在 1.63 以上」与同稿的归因表当场互相否证。
+    arm_csv = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                           "paper", "data", "arm_running.csv")
+    cr = []
+    if os.path.exists(arm_csv):
+        for r in csv.DictReader(l for l in open(arm_csv) if not l.startswith("#")):
+            if r["family"] == "controller" and not r["run"].startswith("aimd"):
+                cr.append(float(r["running_busy"]))
+    assert cr, "读不到 arm_running.csv，先跑 gen_arm_running.py"
     print()
-    print("九条控制器臂 R̄busy: %.2f ~ %.2f" % (min(cr), max(cr)))
+    print("九条控制器的 Foyer 臂 R̄busy: %.2f ~ %.2f" % (min(cr), max(cr)))
     segs = [(1.00, 1.27, -0.21), (1.27, 1.53, 0.43), (1.53, 1.65, 1.15), (1.65, 1.85, 1.14)]
     for i, (lo, hi, e) in enumerate(segs):
         last = (i == len(segs) - 1)

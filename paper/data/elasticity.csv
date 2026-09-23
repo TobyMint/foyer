@@ -7,5 +7,5 @@ cap1,cap2,1.0,1.27,28.8,27.4,-0.21
 cap2,cap3_fixed,1.27,1.53,27.4,29.7,0.43
 cap3_fixed,cap4,1.53,1.65,29.7,32.4,1.15
 cap4,cap5,1.65,1.84,32.4,36.7,1.14
-# controller_arms_Rbar_min,1.350000
-# controller_arms_Rbar_max,1.690000
+# controller_arms_Rbar_min,1.353000
+# controller_arms_Rbar_max,1.689000

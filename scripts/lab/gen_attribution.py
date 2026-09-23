@@ -25,6 +25,15 @@ def load(p):
 
 def main():
     runs, occ, dec = load(sys.argv[1]), load(sys.argv[2]), load(sys.argv[3])
+    # R̄ 一律用 busy 条件口径，与 §IV 的弹性一致 —— 原来这张表用的是
+    # occupancy.csv 的全时段均值，导致同一符号在相隔两页的地方有两个值
+    armr = {}
+    ap = os.path.join(os.path.dirname(sys.argv[3]), "arm_running.csv")
+    if os.path.exists(ap):
+        armr = {r["run"]: r for r in csv.DictReader(l for l in open(ap) if not l.startswith("#"))}
+    def rb(k):
+        if k in armr: return float(armr[k]["running_busy"])
+        return float(occ[k]["running_mean"]) if k in occ else None
     out = sys.argv[4]
     rows = []
     print("%-14s %7s %7s %8s %8s %9s %s" % (
@@ -38,8 +47,8 @@ def main():
                    key=lambda s: abs(float(runs[s]["wall_min"]) - wall))
         o_a = float(occ[a]["occ_p50_pct"]) if a in occ else None
         o_n = float(occ[near]["occ_p50_pct"])
-        r_a = float(occ[a]["running_mean"]) if a in occ else None
-        r_n = float(occ[near]["running_mean"])
+        r_a = rb(a)
+        r_n = rb(near)
         t_a = float(dec[a]["step_back_ms"]) if a in dec else None
         t_n = float(dec[near]["step_back_ms"]) if near in dec else None
 
