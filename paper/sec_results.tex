@@ -19,8 +19,9 @@ The envelope is steep between 213 and 236 minutes (0.76\,pp per minute) and
 shallow thereafter (0.18\,pp per minute), so the cost of buying SLO by
 retreating from the fast end is high. And $W$ is not monotone in concurrency:
 five sessions (260.9\,min) is \emph{slower} than four (213.0\,min), because
-the per-step cost rises faster than the request count does. That non-monotonicity
-is the first appearance of the mechanism that explains everything else.
+the per-step cost rises faster than the request count does. We return to this
+non-monotonicity in \S\ref{sec:model}, where it turns out to be the first
+appearance of the mechanism that drives the whole frontier.
 
 \begin{table}[tb]
   \caption{All completed runs. $\Delta$ is the signed distance from the

@@ -103,18 +103,50 @@ $\overline{R}$ from 0.64 to 1.62 buys. An admission policy can raise
 $\overline{R}$; it cannot raise it without raising $\tau$; and the second
 effect eats the first.
 
-\paragraph{A mechanism we proposed and had to withdraw.} Our first account was
-that a full pool forces evictions, and that an evicted prefix must be
-recomputed when its session returns, with that recomputation chunked into
-decode steps. Two direct counters refute it. SGLang reports zero retractions
-on every run (maximum 1 across all 13), and the total prefilled tokens equal
-the trace's planned prefill exactly---28.5\,M for eleven runs and 28.4\,M for
-the other two, ratios of 1.00. No token is computed twice. The correlation
-between $\tau$ and $\overline{R}$ is real; the explanation we attached to it
-was wrong, and we do not have a replacement. We flag this as the largest open
-question in the paper: \S\ref{sec:discussion} argues the negative result does
-not depend on it, because the cancellation is measured directly rather than
-inferred from the mechanism.
+\paragraph{What the engine is doing when it is not decoding.} SGLang exposes
+two counters that answer this directly: tokens evicted from the radix cache,
+and prompt tokens that had to be prefilled rather than reused. Across the five
+static caps \emph{without} HiCache the two track each other almost exactly.
+\texttt{cap1} evicts 9.2\,M tokens and prefills 8.6\,M uncached;
+\texttt{cap5} evicts 21.3\,M and prefills 20.7\,M; the gap is 0.6--0.7\,M on
+every one of the five. An evicted prefix is recomputed, close to one token for
+one, and that recomputation is chunked into decode steps. Those same five runs
+give a monotone relation between recomputation and $\tau$: 8.6\,M uncached
+tokens at 18.4\,ms, 9.2 at 22.4, 11.5 at 25.5, 15.4 at 29.0, 20.7 at 32.2.
+That is the mechanism, and on the device-only configurations it explains the
+$\tau$ trend completely.
+
+\paragraph{Where the mechanism stops.} With HiCache enabled the
+correspondence breaks---and it breaks in a way that confirms the mechanism
+rather than undermining it. The device cache misses as much as before:
+\texttt{cap4\_hc} misses 22.4\,M tokens on the device, more than the
+device-only \texttt{cap4} misses. But only 9.1\,M of that is recomputed; the
+other 13.3\,M is served from the host tier. Across the eight host-tier runs
+the host serves 13--19\,M tokens each, and across the five device-only runs it
+serves \emph{exactly zero}---the device miss equals the recomputed count to
+within rounding on all five. Recomputation is still what the device cannot
+absorb; the host tier is a second absorber in front of it.
+
+That does not resolve the \sys{} family, and we say so plainly. Those runs sit
+at a flat 8.6--8.7\,M recomputed tokens while $\tau$ ranges from 22.5 to
+30.6\,ms. Whatever moves $\tau$ there is not recomputation, and we do not
+know what it is. We flag it as the largest open question in the paper, and note
+that the negative result does not rest on it: the cancellation is measured
+directly, not inferred from the mechanism.
+
+\paragraph{A refutation we had to withdraw.} An earlier revision withdrew this
+mechanism outright, on two checks that were both wrong. The first was that
+total prefilled tokens equalled the trace's planned prefill to a ratio of 1.00,
+so no token could have been computed twice. \texttt{prompt\_tokens\_total}
+counts the full submitted prompt \emph{including} its cached portion, so it
+equals the sum of prompt lengths by construction and cannot detect
+recomputation; the quantity that can is the uncached count used above, which
+varies by 2.4$\times$ across these runs. The second was that SGLang reported
+no retractions. Radix-cache eviction is not a retraction---retractions count
+running requests preempted mid-flight, a different event with its own counter.
+We record the episode because it is the same failure mode as the segment
+argument of \S\ref{sec:bg}: a check that looks like a measurement but is an
+identity.
 
 \begin{figure}[tb]
   \centering

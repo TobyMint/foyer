@@ -108,15 +108,22 @@ present it as one.
 \label{sec:discussion}
 
 \paragraph{Why published gains do not reappear.} The systems cited above win
-by preserving session state across tool waits and by pausing at agent
-granularity. \sys{} inherits both properties from its permit design: a session
-holds its permit for its whole lifetime and its KV is preserved across waits,
-and the permit file supports the same pause primitive \cite{concur} uses. If
-that mechanism is where the published gains come from---and the measurements
-in those papers suggest it is---then a controller that already has it has
-nothing left to add by admitting more cleverly. This reframes our negative
-result: it is not that admission control cannot work, but that on this workload
-the mechanism that makes it work has already been spent.
+by keeping session state alive across tool waits and by pausing at agent
+granularity rather than request granularity. \sys{} has both properties by
+construction: the permit file gives per-session pause and resume, and the
+controller never frees capacity by discarding a session---it admits fewer
+sessions instead. To that extent the mechanism these systems add is one our
+controller already has, which is one reason adding admission intelligence on
+top of it buys nothing here.
+
+We are careful not to overstate this, because the distinction is between
+\emph{choosing} to discard state and \emph{having} it evicted. Retention here
+is the engine's radix cache doing its ordinary job; it is not something the
+controller implements, and \S\ref{sec:model} measures that the cache evicts
+parked prefixes under pressure and that they are recomputed. What \sys{}
+avoids is the deliberate trade of state for capacity. A system that manages the
+host tier as an explicit policy---as \cite{mori} and \cite{yu2025pensieve}
+do---holds a lever we do not, and our negative result does not cover it.
 
 \paragraph{A criterion, not just a verdict.} The decomposition suggests a
 cheap test for whether admission control can pay on a given workload. Measure
@@ -142,12 +149,15 @@ and multi-tenant or heterogeneous-SLO settings are where we would look next.
 
 \paragraph{Reproducibility.} Every verdict in this paper is produced by one
 script from the raw per-step logs, and every run is guarded against a shrunken
-KV pool. We report three claims we retracted during the work, because the
+KV pool. We report five claims we retracted during the work, because the
 retractions were the most informative events: a median-based reading of the
-tool wait that inverted a central assumption, a growth-sensitivity conclusion
-that rested on an arm we had already invalidated, and the accounting
-double-charge of \S\ref{sec:results}, falsified twice---once by source
-inspection and once by the end-to-end measurement here.
+tool wait that inverted a central assumption; a growth-sensitivity conclusion
+that rested on an arm we had already invalidated; the accounting double-charge
+of \S\ref{sec:results}, falsified twice---once by source inspection and once
+by the end-to-end measurement here; a monotone relation between idle fraction
+and concurrency that the full data does not show; and a mechanism refutation
+that was itself refuted, because both of its checks were identities rather than
+measurements (\S\ref{sec:model}).
 
 \section{Conclusion}
 

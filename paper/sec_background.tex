@@ -48,10 +48,13 @@ appearing in a permit file, and the runner refuses to start a round for a
 session that is not listed. This design choice matters for the comparison,
 because it is what allows per-session actions at all---including the pause
 primitive we exploit in \S\ref{sec:results:gate}. It also means that a session,
-once admitted, holds its permit for its entire lifetime and its KV is
-preserved across tool waits. We return to this point in \S\ref{sec:discussion},
-because we believe it is why published gains from state-preserving suspension
-do not reappear here.
+once admitted, holds its permit for its entire lifetime, so the controller
+never frees capacity by discarding a session's state---it admits fewer sessions
+instead. That is a statement about the \emph{policy}, not about the memory: the
+engine's radix cache still evicts parked prefixes under pressure, and we
+measure that it does and that they are recomputed (\S\ref{sec:model}). We
+return to this distinction in \S\ref{sec:discussion}, because it bounds how far
+our negative result generalises.
 
 Each control cycle (2\,s) the controller computes
 \begin{equation}

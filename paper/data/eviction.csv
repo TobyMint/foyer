@@ -1,0 +1,22 @@
+# 驱逐 vs 重算 —— 由 scripts/lab/gen_eviction.py 生成，勿手改
+# dev_miss_M: prompt - cached_tokens_total —— 【设备侧】没接住的部分
+# host_hit_M: dev_miss - uncached —— 设备没接住、但也没重算的那部分 = host 梯队接住的。
+#             无 HiCache 时精确为 0（五条全是），有 HiCache 时 13~19M
+# uncached_M: steps.jsonl 的 server_uncached_prompt_tokens 累加（真正重新 prefill 的量）
+# evicted_M: metrics.csv 的 sglang:evicted_tokens_total 末值
+# host_hit_M 是最关键的一列：无 HiCache 的五条精确为 0.0，有 HiCache 的八条 13~19M。
+# evicted_M 单列出来只作参照——驱逐量本身不决定重算量，dev_miss 才决定。
+run,hicache,prompt_M,dev_miss_M,host_hit_M,uncached_M,evicted_M,running,step_back_ms,step_perreq_ms
+cap1,0,28.5,8.6,0.0,8.6,9.2,0.64,,
+cap2,0,28.5,9.2,-0.0,9.2,9.8,1.04,,
+cap3_fixed,0,28.5,11.5,-0.0,11.5,12.1,1.32,,
+cap4,0,28.5,15.4,-0.0,15.4,16.1,1.48,,
+cap5,0,28.5,20.7,-0.0,20.7,21.3,1.62,,
+pairB_cap2hc,1,28.5,27.9,19.3,8.6,9.9,1.05,,
+cap3_hc,1,28.5,26.0,17.1,8.9,12.3,1.36,,
+cap4_hc,1,28.5,22.4,13.3,9.1,16.8,1.6,,
+foyer_hc,1,28.5,27.5,18.9,8.6,10.3,1.14,,
+foyer_hz1,1,28.5,26.2,17.5,8.7,11.9,1.31,,
+foyer_hz2,1,28.4,26.9,18.2,8.7,10.8,1.25,,
+foyer_hz0,1,28.2,24.8,16.1,8.7,13.3,1.41,,
+foyer_bres,1,28.5,26.6,17.8,8.7,11.5,1.33,,

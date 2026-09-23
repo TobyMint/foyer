@@ -44,12 +44,15 @@ workload and hardware, it is false: across nine controller variants, none
 lands above the static Pareto front, and a plain cap on resident sessions
 remains the fastest policy we measured.
 
-We explain why, and the explanation is the contribution. We decompose the
-end-to-end wall clock into \emph{busy} and \emph{idle} time, and show that the
-busy component is governed by two quantities the admission decision does not
-control: the per-step cost and the number of requests actually in flight.
-Admission policy moves the second---but the first rises with it, so the two
-cancel. The idle component (7.4--36.3\% of the wall clock) is structural: an
+We give a decomposition that locates the reason, and the decomposition is the
+contribution. We split the end-to-end wall clock into \emph{busy} and
+\emph{idle} time, and show that the busy component is governed by two
+quantities the admission decision does not control: the per-step cost and the
+number of requests actually in flight. Admission policy moves the
+second---but the first rises with it, and the rise absorbs more than half of
+what the extra concurrency buys. On configurations without a host cache tier
+we can account for that rise token for token: evicted prefixes are recomputed
+at close to one for one, and the recomputation is charged to the decode step. The idle component (7.4--36.3\% of the wall clock) is structural: an
 agent session issues no request while waiting on a tool, and we measure that
 this wait averages 16.85\,s, not the sub-second figure a naive reading of the
 trace suggests. We further show that the same throttle setting that is worth
