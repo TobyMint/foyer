@@ -145,25 +145,35 @@ reimplementation of a published control law, not the authors' system, and a
 reimplementation of any controller can underperform its paper. We built it to
 the published law, gave it the same permit interface and the same 2\,s cycle
 as \sys{}, and did not tune it beyond the two documented settings; but the
-caveat stands. Second, two runs in this paper deadlocked, and they are worth reporting
-together because they are the same failure in two different controllers. At
-its paper parameters this one pinned its window at one session, admitted
-nothing, and left the engine idle for over an hour. While re-running our own
-best configuration we hit the other: 92 sessions waiting, the engine empty,
-273 seconds with no admission and no error, because the
-single-flight rule considered only the head of the FIFO queue and the head was
-a session too large to fit the remaining budget---so it was never admitted,
-never left the queue, and blocked every smaller session behind it. We fixed
-that one (scan the queue, still admit at most one per cycle) and kept both run
-directories as evidence.
+caveat stands. Second, both controllers stall. At its paper parameters this one pinned its
+window at one session, admitted nothing, and left the engine idle for over an
+hour. Our own controller does the same thing more briefly: in 4 of the 11
+\sys{} runs an audit found a single window of 150--175\,s in which the engine
+was empty, the queue held ~90 sessions, the SLO valve was open, and the
+controller issued no permit at all---about 0.9\% of each run's wall clock. The
+remaining runs, including the best one, show no such window. Nothing is logged
+as an error and the run recovers on its own.
 
-We read these as one finding rather than two incidents: on a pool that holds
-four median sessions, an admission controller's failure mode is not graceful
-degradation but silent standstill, and it does not announce itself. The
-configuration that produced our best result is the same configuration that
-deadlocked on its repeat. That is a statement about how narrow the stable
-region is, and it is one more reason a static cap is hard to beat here---a cap
-has no such failure mode. Both settings sit below the front regardless.
+We traced one such window in a repeat of our best configuration and found a
+code path that explains it: single-flight admission considered only the head of
+the FIFO queue, and when the head was a session too large to fit the remaining
+budget it was never admitted, never left the queue, and blocked every smaller
+session behind it. We fixed that (scan the queue, still admit at most one per
+cycle), but we are explicit that this is \emph{a} path, not a proven cause:
+the audit is a log signature, and the same signature can be produced by other
+closed gates. What we can say is that the signature is present in a third of
+our \sys{} runs and absent from all of our static caps, which have no
+admission decision to get stuck in.
+
+That is the honest version of a finding we first reported too strongly. An
+intermediate draft of this paper called it a deadlock and said the
+configuration that produced our best result was the one that deadlocked on its
+repeat. Neither holds: the windows are ~160\,s and self-clearing, and the best
+configuration never showed one. The windows are also too small (0.9\%) to move
+any verdict we report. We keep them because the mechanism is real and its size
+is the point: on a pool that holds four median sessions, a controller's failure
+mode is a silent stall, not graceful degradation, and it took a repeat run to
+see it.
 
 \subsection{Route 4: execution granularity}
 \label{sec:results:gate}
