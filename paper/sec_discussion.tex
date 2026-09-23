@@ -125,17 +125,32 @@ avoids is the deliberate trade of state for capacity. A system that manages the
 host tier as an explicit policy---as \cite{mori} and \cite{yu2025pensieve}
 do---holds a lever we do not, and our negative result does not cover it.
 
-\paragraph{A criterion, not just a verdict.} The decomposition suggests a
-cheap test for whether admission control can pay on a given workload. Measure
-$\overline{R}$ and $\tau$ (by Method 2, which needs only per-request logs) over
-a range of concurrency. If $\tau$ is flat, raising $\overline{R}$ converts
-directly into wall clock and admission control has room. If $\tau$ rises
-proportionally with $\overline{R}$, the two cancel and it does not. Our 13
-measured configurations give 18.4--32.2\,ms across a running range of
-0.64--1.62, i.e.\ a rise of 13.8\,ms over 0.98---a factor of 1.75 against a
-concurrency factor of 2.5, which absorbs more than half the gain.
-We offer this as the paper's constructive output, and we note it is testable
-in minutes on a system that already logs per-request timings.
+\paragraph{A criterion, not just a verdict.} The decomposition turns the
+question into one number. Throughput during busy time is
+$\overline{R}/\tau$, so raising concurrency by a factor $f$ buys a factor
+$f^{1-\epsilon}$, where
+\begin{equation}
+  \epsilon \;=\; \frac{\mathrm{d}\ln \tau}{\mathrm{d}\ln \overline{R}}
+  \label{eq:elasticity}
+\end{equation}
+is the elasticity of per-step cost with respect to the running count. At
+$\epsilon = 0$ the step cost is flat, concurrency converts one for one into
+throughput, and an admission controller has room to work. At $\epsilon = 1$
+the two cancel exactly and it has none. Everything in between is a
+quantitative statement about how much room, and it is measurable in minutes
+from per-request logs a serving system already writes.
+
+On the five device-only configurations, where \S\ref{sec:model} establishes
+that the step cost is driven by recomputation, $\tau$ runs from 18.4 to
+32.2\,ms as $\overline{R}$ runs from 0.64 to 1.62. A least-squares fit of
+Eq.~\ref{eq:elasticity} over those five points gives
+$\epsilon = 0.57$ ($R^2 = 0.95$). The practical reading is that every 10\% of
+added concurrency buys 4.3\% of throughput---which is why nine controller
+variants
+and an independent AIMD controller all fail to move the frontier, and why the
+one that came closest landed on it rather than above. We offer this as the
+paper's constructive output: measure $\epsilon$ before building a controller,
+and build one only where it is small.
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
 model and one trace family; generality is untested. Only two configurations

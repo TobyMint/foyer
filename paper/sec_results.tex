@@ -38,6 +38,7 @@ appearance of the mechanism that drives the whole frontier.
   \label{tab:runs}
   \centering
   \small
+  \setlength{\tabcolsep}{4pt}%
   \begin{tabular}{lrrrr}
     \toprule
     Policy & Wall (min) & Conc. & SLO (\%) & $\Delta$ (pp) \\
@@ -60,14 +61,14 @@ appearance of the mechanism that drives the whole frontier.
     horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
     resident base     & 295.5 & 2.40 & 83.8 & $-$7.82 \\
     horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.5 \\
-    horizon$=$1, hw off & 310.9 & 2.77 & 72.3 & $-$19.6 \\
+    horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.6 \\
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.9 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$24.0 \\
     all throttles off & 415.0 & 2.58 & 46.1 & $-$48.7 \\
     \midrule
-    \multicolumn{5}{l}{\emph{Independent adaptive controller}}\\
-    Concur-style AIMD, retuned & 264.6 & 3.87 & 52.8 & $-$33.4 \\
-    Concur-style AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.2 \\
+    \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
+    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$33.4 \\
+    AIMD, paper params& 364.3 & 1.91 & 81.4 & $-$11.2 \\
     \bottomrule
   \end{tabular}
 \end{table}
