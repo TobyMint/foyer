@@ -33,7 +33,7 @@ plt.rcParams.update({
     "figure.dpi": 200, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
 })
 
-C_STATIC, C_STATIC_HC, C_FOYER = "#4C72B0", "#55A868", "#C44E52"
+C_STATIC, C_STATIC_HC, C_FOYER, C_AIMD = "#4C72B0", "#55A868", "#C44E52", "#8172B3"
 
 
 def load(name):
@@ -74,7 +74,8 @@ def fig_frontier():
     ax.plot(*zip(*env), "-", color="0.35", lw=1.0, zorder=1, label="static envelope")
     for fam, c, mk, lab in [("static", C_STATIC, "s", "static cap"),
                             ("static_hc", C_STATIC_HC, "^", "static cap + HiCache"),
-                            ("foyer", C_FOYER, "o", "Foyer")]:
+                            ("foyer", C_FOYER, "o", "Foyer"),
+                            ("aimd", C_AIMD, "D", "Concur-style AIMD")]:
         xs = [float(r["wall_min"]) for r in rows if r["family"] == fam]
         ys = [float(r["slo_pct"]) for r in rows if r["family"] == fam]
         ax.scatter(xs, ys, c=c, marker=mk, s=24, zorder=3, label=lab,

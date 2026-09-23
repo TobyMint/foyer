@@ -2,52 +2,73 @@
 % 投稿前请逐条核对会议/页码（调研 agent 的检索结果，个别 venue 字段可能需要更正）。
 
 @inproceedings{sarathi,
-  title     = {Taming Throughput-Latency Tradeoff in {LLM} Inference with {Sarathi-Serve}},
-  author    = {Agrawal, Amey and Kedia, Nitin and Panwar, Ashish and Mohan, Jayashree and Kwatra, Nipun and Gulavani, Bhargav S. and Tumanov, Alexey and Ramjee, Ramachandran},
-  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
-  year      = {2024}
+  title     = {Taming {Throughput-Latency} Tradeoff in {LLM} Inference with {Sarathi-Serve}},
+  author    = {Agrawal, Amey and Kedia, Nitin and Panwar, Ashish and Mohan, Jayashree and Kwatra, Nipun and Gulavani, Bhargav and Tumanov, Alexey and Ramjee, Ramachandran},
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI '24)},
+  year      = {2024},
+  pages     = {117--134},
+  publisher = {USENIX Association}
 }
 
 @inproceedings{distserve,
-  title     = {DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving},
+  title     = {{DistServe}: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving},
   author    = {Zhong, Yinmin and Liu, Shengyu and Chen, Junda and Hu, Jianbo and Zhu, Yibo and Liu, Xuanzhe and Jin, Xin and Zhang, Hao},
-  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
-  year      = {2024}
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI '24)},
+  year      = {2024},
+  pages     = {193--210},
+  publisher = {USENIX Association}
 }
 
 @article{mooncake,
   title   = {Mooncake: A {KVCache-centric} Disaggregated Architecture for {LLM} Serving},
-  author  = {Qin, Ruoyu and Li, Zheming and He, Weiran and others},
-  journal = {arXiv preprint arXiv:2407.00079},
-  year    = {2024}
+  author  = {Qin, Ruoyu and Li, Zheming and He, Weiran and Cui, Jialei and Tang, Heyi and Ren, Feng and Ma, Teng and Cai, Shangming and Zhang, Yineng and Zhang, Mingxing and Wu, Yongwei and Zheng, Weimin and Xu, Xinran},
+  journal = {ACM Transactions on Storage},
+  volume  = {22},
+  number  = {4},
+  pages   = {1--38},
+  year    = {2026},
+  doi     = {10.1145/3773772}
 }
 
-@article{concur,
-  title   = {{CONCUR}: High-Throughput Agentic Batch Inference of {LLM} via Congestion-Based Concurrency Control},
-  author  = {{CONCUR authors}},
-  journal = {arXiv preprint arXiv:2601.22705},
-  year    = {2026}
+@inproceedings{concur,
+  title     = {{CONCUR}: High-Throughput Agentic Batch Inference of {LLM} via Congestion-Based Concurrency Control},
+  author    = {Chen, Qiaoling and Ye, Zhisheng and Tang, Tian and Sun, Peng and Tian, Boyu and Wang, Guoteng and Li, Shenggui and Wen, Yonggang and Han, Zhenhua and Zhang, Tianwei},
+  booktitle = {International Conference on Machine Learning (ICML 2026)},
+  year      = {2026},
+  note      = {Poster, Seoul, July 2026; OpenReview id U7c6glPdDW; arXiv:2601.22705}
 }
 
-@article{continuum,
-  title   = {Continuum: Efficient and Robust Multi-Turn {LLM} Agent Scheduling with {KV} Cache Time-to-Live},
-  author  = {{Continuum authors}},
-  journal = {arXiv preprint arXiv:2511.02230},
-  year    = {2025}
+@misc{continuum,
+  title         = {Continuum: Efficient and Robust Multi-Turn {LLM} Agent Scheduling with {KV} Cache Time-to-Live},
+  author        = {Li, Hanchen and He, Runyuan and Mang, Qiuyang and Zhang, Qizheng and Mao, Huanzhi and Chen, Xiaokun and Zhou, Hangrui and Zhang, Huanchen and Cheung, Alvin and Gonzalez, Joseph and Stoica, Ion},
+  year          = {2025},
+  eprint        = {2511.02230},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.OS},
+  doi           = {10.48550/arXiv.2511.02230},
+  note          = {Preprint, no venue}
 }
 
-@article{thunderagent,
-  title   = {{ThunderAgent}: A Simple, Fast and Program-Aware Agentic Inference System},
-  author  = {{ThunderAgent authors}},
-  journal = {arXiv preprint arXiv:2602.13692},
-  year    = {2026}
+@misc{thunderagent,
+  title         = {{ThunderAgent}: A Simple, Fast and Program-Aware Agentic Inference System},
+  author        = {Kang, Hao and Li, Ziyang and Xu, Weili and Yang, Xinyu and Chen, Yinfang and Wang, Junxiong and Chen, Beidi and Krishna, Tushar and Xu, Chenfeng and Arora, Simran},
+  year          = {2026},
+  eprint        = {2602.13692},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.OS},
+  doi           = {10.48550/arXiv.2602.13692},
+  note          = {Preprint, no venue}
 }
 
-@article{talaria,
-  title   = {Talaria: Session-Aware Serverless Serving of Hundred-Billion-Parameter {LLMs}},
-  author  = {{Talaria authors}},
-  journal = {arXiv preprint arXiv:2607.17181},
-  year    = {2026}
+@misc{talaria,
+  title         = {Talaria: Session-Aware Serverless Serving of Hundred-Billion-Parameter {LLMs}},
+  author        = {Meng, Utopia and Zhao, Unicornt and Li, Derek and Gao, Goalen and Du, Frank},
+  year          = {2026},
+  eprint        = {2607.17181},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.DC},
+  doi           = {10.48550/arXiv.2607.17181},
+  note          = {Preprint; author names as listed on arXiv}
 }
 
 @misc{mori,
@@ -59,7 +80,6 @@
   primaryClass  = {cs.OS},
   doi           = {10.48550/arXiv.2606.00866},
   note          = {Preprint, no venue}
-}
 }
 
 % ---- 2026-09-23 核实补入（每个条目的标题/作者/页码经 arXiv abs 页与 USENIX/ACM 页面交叉核对）----

@@ -64,6 +64,10 @@ appearance of the mechanism that drives the whole frontier.
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.9 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$24.0 \\
     all throttles off & 415.0 & 2.58 & 46.1 & $-$48.7 \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Independent adaptive controller}}\\
+    Concur-style AIMD, retuned & 264.6 & 3.87 & 52.8 & $-$33.4 \\
+    Concur-style AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.2 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -103,6 +107,44 @@ touches the static front and stops.
 Lowering the budget fraction is the crudest available knob and behaves as the
 other routes do: it slides the operating point along the front. We report it
 only for completeness, since it adds no mechanism.
+
+\subsection{An independent adaptive controller}
+\label{sec:results:aimd}
+
+Every controller above is ours, which invites the objection that the negative
+result is a statement about one design rather than about adaptive admission.
+We therefore implemented a second, mechanistically different controller: an
+AIMD window over an agent-level admission set, following the control law of
+the congestion-based system we compare against in \S\ref{sec:related}. The
+window grows additively while cache occupancy sits below a low watermark, is
+cut multiplicatively when occupancy exceeds a high watermark \emph{and} the
+prefix hit rate falls below a threshold, and holds otherwise. Cuts pause the
+youngest sessions at their next step boundary; growth resumes paused sessions
+first. Every input is a runtime gauge---occupancy and hit rate from the
+engine, nothing from the trace---and the window acts through the same named
+permits as \sys{}.
+
+It does not beat the static front either, at either parameter setting
+(Table~\ref{tab:runs}). At the values reported in that paper's evaluation it
+finishes in 364.3 minutes at 81.4\% SLO, $11.2$\,pp below the envelope; the
+same arm with its retuned watermarks finishes in 264.6 minutes at 52.8\%,
+$33.4$\,pp below. The retuned setting also has the worst segment-to-segment
+volatility of any run we report (SD 13.2\,pp, with segment SLO swinging
+between 37 and 72), which is what a control loop oscillating around a
+capacity cliff looks like.
+
+We report two things honestly about this comparison. First, this is our
+reimplementation of a published control law, not the authors' system, and a
+reimplementation of any controller can underperform its paper. We built it to
+the published law, gave it the same permit interface and the same 2\,s cycle
+as \sys{}, and did not tune it beyond the two documented settings; but the
+caveat stands. Second, at its paper parameters it deadlocked on its first
+attempt---the window pinned at one, no session admitted, the engine idle for
+over an hour---and we kept the run directory rather than discarding it. A
+later attempt completed, and that completion is what we report. We read this
+as a statement about how narrow the stable region is on a pool that holds four
+sessions, not as a defect of the controller in its intended setting; both
+settings sit below the front regardless.
 
 \subsection{Route 4: execution granularity}
 \label{sec:results:gate}
