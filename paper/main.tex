@@ -49,8 +49,8 @@ contribution. We split the end-to-end wall clock into \emph{busy} and
 \emph{idle} time, and show that the busy component is governed by two
 quantities the admission decision does not control: the per-step cost and the
 number of requests actually in flight. Admission policy moves the
-second---but the first rises with it, and the rise absorbs more than half of
-what the extra concurrency buys. On configurations without a host cache tier
+second---but the first rises with it, and takes back about half of what the
+extra concurrency buys. On configurations without a host cache tier
 we can account for that rise token for token: evicted prefixes are recomputed
 at close to one for one, and the recomputation is charged to the decode step. The idle component (7.4--36.3\% of the wall clock) is structural: an
 agent session issues no request while waiting on a tool, and we measure that

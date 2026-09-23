@@ -271,8 +271,52 @@ def fig_horizon():
     plt.close(fig)
 
 
+
+
+# ------------------------------------------------ 图 7：并发买来的时间去哪了
+def fig_cancel():
+    """论文核心主张的一图版：加并发买来的时间被 τ 的上升吃掉了。
+
+    横轴在跑请求均值，纵轴 busy 时间。虚线是「τ 保持最低值不变」时的预测
+    （双曲线），点是实测。两条线之间的差就是抵消掉的量。
+
+    只用无 HiCache 的五条静态 cap：这一族的重算机制已由 eviction.csv 确证，
+    所以这里的差可以归因到 τ，而不是归因到一个说不清的混合效应。
+    """
+    rows = [r for r in load("decomp.csv") if r["step_back_ms"]]
+    ids = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
+    rows = sorted([r for r in rows if r["run"] in ids],
+                  key=lambda r: float(r["running"]))
+    G = 706010.0
+    rb = [float(r["running"]) for r in rows]
+    busy = [float(r["busy_min"]) for r in rows]
+    tau = busy[0] * 60 * rb[0] / G            # 取最低那条的 τ 作基准
+    xs = [0.60 + i * 0.01 for i in range(105)]
+    ideal = [G / x * tau / 60 for x in xs]
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.6))
+    ax.plot(xs, ideal, "--", color="0.45", lw=1.0,
+            label="if $\\tau$ stayed at %.1f ms" % (tau * 1000))
+    ax.plot(rb, busy, "o-", color=C_STATIC, ms=4, lw=1.0, label="measured")
+    # 把 cap5 处的差标出来
+    ax.annotate("", xy=(rb[-1], busy[-1]), xytext=(rb[-1], G / rb[-1] * tau / 60),
+                arrowprops=dict(arrowstyle="<->", lw=0.7, color=C_FOYER))
+    ax.text(rb[-1] - 0.03, (busy[-1] + G / rb[-1] * tau / 60) / 2,
+            "%.0f min\nabsorbed" % (busy[-1] - G / rb[-1] * tau / 60),
+            fontsize=6, color=C_FOYER, ha="right", va="center", linespacing=1.25)
+    for r, x, y in zip(rows, rb, busy):
+        ax.annotate(r["run"].replace("_fixed", ""), (x, y), xytext=(3, 4),
+                    textcoords="offset points", fontsize=6, color="0.2")
+    ax.set_xlabel("mean running requests", labelpad=1)
+    ax.set_ylabel("busy time (min)")
+    ax.set_xlim(0.58, 1.78); ax.set_ylim(110, 370)
+    legend_below(ax, ncol=2, y=-0.24)
+    fig.savefig(os.path.join(HERE, "fig7_cancel.pdf"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     for fn in (fig_frontier, fig_decomp, fig_steptime, fig_idle_segments,
-               fig_loadtier, fig_horizon):
+               fig_loadtier, fig_horizon, fig_cancel):
         fn()
         print("ok", fn.__name__)

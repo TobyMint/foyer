@@ -96,12 +96,14 @@ configurations with the highest running counts behave differently:
 1.41 at 30.2\,ms. Running count sets a floor and a trend, not a value.
 
 This is still the crux of the paper, because the arithmetic of
-Eq.~\ref{eq:busy} is unforgiving. Take $\tau$ at its low end, 18.4\,ms, and
-\texttt{cap5}'s busy time would be 134 minutes instead of the measured 234.
-The rise in $\tau$ absorbs 100 minutes---more than half of what raising
-$\overline{R}$ from 0.64 to 1.62 buys. An admission policy can raise
-$\overline{R}$; it cannot raise it without raising $\tau$; and the second
-effect eats the first.
+Eq.~\ref{eq:busy} is unforgiving, and Fig.~\ref{fig:cancel} draws it. Hold
+$\tau$ at the lowest value we measured, 18.5\,ms, and busy time falls as
+$1/\overline{R}$: raising the running count from 0.64 to 1.62 should have cut
+busy time by a factor of 2.53, from 340 minutes to 134. The measured curve
+flattens instead and lands at 234 minutes. The rise in $\tau$ absorbs 100 of
+the 206 minutes that the extra concurrency would otherwise have bought---49\%
+of the gain. An admission policy can raise $\overline{R}$; it cannot raise it
+without raising $\tau$; and $\tau$ takes back about half of what it gives.
 
 \paragraph{What the engine is doing when it is not decoding.} SGLang exposes
 two counters that answer this directly: tokens evicted from the radix cache,
@@ -115,6 +117,17 @@ give a monotone relation between recomputation and $\tau$: 8.6\,M uncached
 tokens at 18.4\,ms, 9.2 at 22.4, 11.5 at 25.5, 15.4 at 29.0, 20.7 at 32.2.
 That is the mechanism, and on the device-only configurations it explains the
 $\tau$ trend completely.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\columnwidth]{figs/fig7_cancel.pdf}
+  \caption{Where the concurrency goes. Both curves are the same five static
+  caps without HiCache; the dashed one is what busy time would be if the
+  per-step cost stayed at its measured minimum. The measured curve flattens
+  because $\tau$ rises, and the gap at \texttt{cap5} is 100 of the 206
+  minutes that raising the running count would otherwise have bought.}
+  \label{fig:cancel}
+\end{figure}
 
 \paragraph{Where the mechanism stops.} With HiCache enabled the
 correspondence breaks---and it breaks in a way that confirms the mechanism

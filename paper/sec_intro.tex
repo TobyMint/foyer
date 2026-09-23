@@ -39,13 +39,10 @@ of them reaches the front and no further.
 
 We decompose the wall clock into \emph{busy} time, during which the engine has
 at least one request in flight, and \emph{idle} time, during which it has
-none. The busy component is governed by
-\begin{equation}
-  W_{\text{busy}} \;\approx\; \frac{\text{output tokens}}{\overline{R}}\; \times\; \tau,
-  \label{eq:model}
-\end{equation}
-where $\overline{R}$ is the mean number of running requests and $\tau$ is the
-per-step cost. An admission policy controls $\overline{R}$ and nothing else.
+none. The busy component is governed by $W_{\text{busy}} \approx
+(G/\overline{R})\,\tau$ (Eq.~\ref{eq:busy}), where $\overline{R}$ is the mean
+number of running requests, $G$ the generated tokens and $\tau$ the per-step
+cost. An admission policy controls $\overline{R}$ and nothing else.
 The difficulty is that $\tau$ is not constant in $\overline{R}$: it rises from
 18.4 to 32.2\,ms as $\overline{R}$ goes from 0.64 to 1.62, and that rise
 absorbs more than half of what the extra concurrency buys.

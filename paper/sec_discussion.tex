@@ -138,7 +138,11 @@ We offer this as the paper's constructive output, and we note it is testable
 in minutes on a system that already logs per-request timings.
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
-model and one trace family; generality is untested. Two specific boundaries
+model and one trace family; generality is untested. Only two configurations
+were repeated, twice and three times respectively, so the replicate spread we
+report in \S\ref{sec:results} is estimated from two degrees of freedom at
+best; a margin as small as the one that decides our verdict would need several
+more repeats per configuration to resolve, and we did not run them. Two specific boundaries
 matter. First, the pool holds about four median sessions, so concurrency is
 capacity-bound by construction; on a device with a much larger pool the
 premise may not hold and the conclusion may invert---we regard reproducing on
