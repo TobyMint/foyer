@@ -146,16 +146,18 @@ limitation these works would press on.
 
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
 an admission policy should use. In our workload it is not a policy variable:
-round-1+ hit rate tracks the trace's own planned value to within a few points
-across the admission policies that keep the pool from overflowing---80.6\%
-measured against 80.9\% planned on the \sys{} baseline, and 78.5\% against the
-same 80.9\% for \texttt{cap2}. The qualifier is load-bearing and we did not
-state it in an earlier draft: \texttt{cap5} admits five sessions to a pool that
-holds four, and its round-1+ hit rate is \textbf{32.8\%}, not within a few
-points of 80.9\%. So admission policy does move this quantity---it just does not
-move it for policies that stay under the pool's capacity. What is true is the
-narrower claim: among policies that do not oversubscribe, the prefix cache is
-not a lever they can pull. (Both numbers are the
+round-1+ hit rate is a function of the admission policy, and of the host tier,
+in a way an earlier draft of this paper got wrong in both directions. Without
+HiCache it collapses as the cap rises: 80.8\%, 78.5\%, 70.6\%, 56.0\%, 32.8\%
+for caps of one through five, against a planned 80.9\% for the trace. With
+HiCache it does not: 80.7\%, 79.6\%, 78.7\% for caps of two, three and four.
+Our controller sits at 80.6\%.
+So the honest statement is not that admission does not move this quantity---%
+\texttt{cap4} alone moves it 25 points---but that the host tier is what keeps
+it from moving, which is the same mechanism \S\ref{sec:model} and
+\S\ref{sec:criterion} keep running into. A configuration without a host tier
+that admits four sessions does not have the cache that a host-tier one at the
+same concurrency does. (Both numbers are the
 unweighted mean of the per-step planned hit rate over rounds 1 and later; the
 token-weighted figure for the same steps is 86.2\%, and the all-steps figure
 is 73.8\%. We use the unweighted round-1+ convention throughout, and flag it
@@ -304,11 +306,17 @@ respectively, and \S\ref{sec:criterion} is computed by
 guarded against a shrunken KV pool.
 
 One caveat about the controller artifact, which a reader with our code would
-otherwise hit. The copy that executed every run in this paper is not
-byte-identical to the copy in our repository: the running one is
-\texttt{f825bc768188} and the repository's is \texttt{a21bd2b63774}, and the
-difference is exactly the queue-scan fix described in
-\S\ref{sec:results:gate}---the repository has it, the running copy does not.
+otherwise hit. There is no single controller copy behind this paper: the runs
+record four different hashes of \texttt{controller\_budget3.py}
+(\texttt{2b573829083c} on 31 runs, \texttt{f825bc768188} on 19,
+\texttt{d692ab11f396} on 4 and \texttt{e1dd5ae78019} on 3), so the artifact
+evolved during the campaign and a reader cannot reproduce every number from
+one revision. None of the four matches the repository copy
+(\texttt{a21bd2b63774}), and the difference is not one hunk but several: the
+queue-scan fix described in \S\ref{sec:results:gate}, and a rename of the
+logging variable whose rebinding \S\ref{sec:results} identifies as the source
+of a retraction. The repository has both; none of the four running copies has
+either.
 The numbers in this paper therefore describe the pre-fix path. We report the
 divergence rather than reconcile it, because re-running under the fixed
 controller is an experiment we have not done, and it is the one we would do

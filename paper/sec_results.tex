@@ -178,11 +178,14 @@ controller is single-flight by default: it authorizes at most one session per
 two-second cycle and waits for that session to begin a round before authorizing
 the next. Whether that gate held or whether a candidate was tried and did not
 fit is \emph{not distinguishable from our logs}---the controller does not record
-it---so we do not attribute the bucket to either. One arm bounds it instead:
-\texttt{sf=0} disables single-flight, so the gate cannot be the cause there, and
-its unexplained remainder falls to 29.6\% against a median of 51.4\% across the
-eighteen single-flight arms. That puts the single-flight path at roughly twenty
-points and leaves the headroom estimate as the largest cause we can measure.
+it---so we do not attribute the bucket to either. We attempted to bound it with an arm that disables single-flight, but we do
+not report a number from it: the only such attempt we have was killed
+part-way through (\S\ref{sec:discussion} records why), and an earlier draft of
+this section quoted a statistic taken from that run while it was still
+running. We withdraw that number. What we can say is what the four readable
+buckets say: the headroom estimate is the largest cause we can measure, and
+how much of the remainder is the single-flight path is a question our data does
+not answer---the arm that would answer it is queued, not run.
 
 Across the eight \sys{} variants that left controller logs---the set is named in
 \texttt{gate\_attrib.csv}, and it is eight rather than nine because
