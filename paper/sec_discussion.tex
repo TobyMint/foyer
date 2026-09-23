@@ -154,6 +154,40 @@ constructive output: measure $\epsilon$ before building a controller, and
 build one only where it is small. We give both values rather than choosing,
 because the choice is the reader's measurement capability, not ours.
 
+\paragraph{The threshold decides the verdict, and we report that.} Every SLO
+number in this paper counts a request as good if its time-to-first-token is
+under 10\,s. That constant sets the whole vertical axis, so we re-derived the
+frontier at 5\,s and 20\,s as well, from the same per-request logs. The
+ordering of the static caps does not change. What changes is where the
+controllers sit relative to them, and at the loose end one of them crosses:
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrr}
+  \toprule
+  SLO threshold & 5\,s & 10\,s & 20\,s \\
+  \midrule
+  \texttt{horizon}=1        & $-0.5$ & $+0.2$ & $+2.7$ \\
+  \sys{} base               & $-2.1$ & $-1.1$ & $+0.7$ \\
+  \texttt{bres}             & $-11.9$ & $-7.8$ & $-4.3$ \\
+  Concur-style AIMD        & $-14.2$ & $-11.2$ & $-6.5$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Two readings, and we give both. The first is that our headline claim is
+conditional: at the strict threshold that interactive serving actually cares
+about, no controller reaches the static front; at a loose one, one does. The
+second is that the crossing is still not a win. $+2.7$\,pp at 20\,s is larger
+than the replicate spread of two of the three configurations we repeated
+(0.5 and 1.0\,pp of SLO) but smaller than the third's (12.2\,pp), so it is
+inside the noise we can measure. A margin that appears only at one threshold
+and only at a size we cannot resolve is not evidence that adaptive admission
+works; it is evidence that the question needs more runs than we have. We state
+the conditional version in the abstract, and we flag this as the second thing
+we would re-run with more GPU time.
+
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
 model and one trace family; generality is untested. Only two configurations
 were repeated, twice and three times respectively, so the replicate spread we
