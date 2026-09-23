@@ -97,10 +97,10 @@ exists in our data; instrumenting this is future work.
   \centering
   \includegraphics[width=\columnwidth]{figs/fig3_steptime.pdf}
   \caption{Per-step cost by two independent measurements, one run per row:
-  circles derive it from busy time, crosses from per-request decode intervals.
-  They agree to within 12\% and rank the runs nearly identically
-  ($\rho = 0.967$). The dotted line is the cost of reading the weights once;
-  every run sits above it.}
+  circles are model-consistent (all engine steps), crosses are the per-request
+  decode interval. They do not agree---$\tau_1$ exceeds $\tau_2$ by 8--40\%---
+  and the gap is the prefill share, not measurement error. The dotted line is
+  the cost of reading the weights once; every run sits above it.}
   \label{fig:steptime}
 \end{figure}
 
