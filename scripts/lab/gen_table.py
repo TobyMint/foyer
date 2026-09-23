@@ -20,7 +20,7 @@ LABEL = {
     "cap1": "cap1", "cap2": "cap2", "cap3_fixed": "cap3 (fixed)",
     "cap4": "cap4", "cap5": "cap5",
     "pairB_cap2hc": "cap2+HC", "cap3_hc": "cap3+HC", "cap4_hc": "cap4+HC",
-    "cap4_hc_r2": "cap4+HC (repeat)",
+    "cap4_hc_r2": "cap4+HC (repeat)", "cap3_hc_r2": "cap3+HC (repeat)",
     "foyer_hz1": "horizon$=$1",
     "foyer_hz1_r2": "horizon$=$1 (repeat)", "foyer_hc": "horizon$=$3 (base)",
     "foyer_hz2": "horizon$=$2", "foyer_bres": "resident base",
@@ -29,7 +29,7 @@ LABEL = {
     "foyfix_hc": "all throttles off",
     "aimd2": "AIMD, retuned", "aimd2_paper": "AIMD, paper params",
 }
-ENV_KEYS = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "pairB_cap2hc", "cap1"]  # 候选锚点（由上左包络自动筛）
+ENV_KEYS = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "cap3_hc_r2", "pairB_cap2hc", "cap1"]  # 候选锚点（由上左包络自动筛）
 
 
 def load(p):
@@ -78,7 +78,7 @@ def main():
     # 只把【真正落在上左包络上】的点标成 anchor —— 不能按 ENV_KEYS 一律标，
     # 因为 cap4_hc 已经被它自己的重复支配了，它不在前沿上。
     on_front = {n for _, _, n in _envelope(ENV_KEYS, runs)}
-    for k in ["pairB_cap2hc", "cap3_hc", "cap4_hc", "cap4_hc_r2"]:
+    for k in ["pairB_cap2hc", "cap3_hc", "cap3_hc_r2", "cap4_hc", "cap4_hc_r2"]:
         print(row(k, anchor=(k in on_front)))
     print("    \\midrule")
     print("    \\multicolumn{5}{l}{\\emph{\\sys{} controller variants}}\\\\")

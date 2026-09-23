@@ -9,10 +9,10 @@ gives the numbers and each controller's signed distance from that envelope.
 
 The result is unambiguous. Of nine controller variants, \emph{none} is above
 the envelope---not one, on any run. The closest is a growth-reserve setting of
-one round instead of the default three, and it lands $0.94$ percentage points
+one round instead of the default three, and it lands $0.92$ percentage points
 \emph{below} the line: inside our $\pm1.0$\,pp tie band, so we record it as
 \emph{on} the line rather than below it, but on the below side of it. We ran it
-again, and the repeat lands at $-5.59$. Same code, same trace, same pool,
+again, and the repeat lands at $-5.57$. Same code, same trace, same pool,
 guarded the same way: 260.8 minutes against 255.8, and 80.9\% SLO against
 84.8\%.
 
@@ -93,35 +93,35 @@ appearance of the mechanism that drives the whole frontier.
     Policy & Wall (min) & Conc. & SLO (\%) & $\Delta$ (pp) \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps}}\\
-    no control        & 288.6 & 1.69 & 3.0 & $-$87.45 \\
+    no control        & 288.6 & 1.69 & 3.0 & $-$87.64 \\
     cap1              & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
     cap2              & 304.2 & 1.99 & 89.5 & $-$2.23 \\
-    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$10.70 \\
-    cap4              & 249.9 & 3.94 & 55.7 & $-$27.82 \\
-    cap5              & 260.9 & 4.89 & 27.1 & $-$58.39 \\
+    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$11.76 \\
+    cap4              & 249.9 & 3.94 & 55.7 & $-$29.14 \\
+    cap5              & 260.9 & 4.89 & 27.1 & $-$59.39 \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps + HiCache}}\\
     cap2+HC           & 295.0 & 1.99 & 91.6 & \emph{anchor} \\
-    cap3+HC           & 236.4 & 2.93 & 81.1 & $-$1.74 \\
+    cap3+HC           & 236.4 & 2.93 & 81.1 & $-$1.71 \\
     cap3+HC (repeat)  & 230.3 & 2.97 & 81.9 & \emph{anchor} \\
-    cap4+HC           & 213.0 & 3.93 & 63.4 & $-$7.60 \\
+    cap4+HC           & 213.0 & 3.93 & 63.4 & $-$7.57 \\
     cap4+HC (repeat)  & 209.1 & 3.87 & 68.5 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
-    horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.94 \\
-    horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.14 \\
-    horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.59 \\
+    horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.92 \\
+    horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.25 \\
     horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
+    horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.57 \\
     resident base     & 295.5 & 2.40 & 83.8 & $-$7.81 \\
-    horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.50 \\
+    horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.65 \\
     horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.52 \\
-    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.93 \\
-    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.02 \\
+    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.60 \\
+    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.40 \\
     all throttles off & 415.0 & 2.58 & 46.1 & $-$47.15 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
     AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.15 \\
-    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$33.35 \\
+    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$34.24 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -403,7 +403,7 @@ The obstacle is granularity---\texttt{paused} takes effect at round
 boundaries, while pinning an instantaneous count requires control the
 permit mechanism does not have.
 
-The measured outcome matches: the gate drove running concurrency from 1.42 to
+The measured outcome matches: the gate moved running concurrency from 1.33 to
 1.30 and live sessions from 3.25 to 3.03. It tightened rather than pinned, and
 a tightening is another cap.
 
