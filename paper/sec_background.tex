@@ -3,7 +3,8 @@
 
 \subsection{Workload}
 
-We replay 200 coding-agent sessions drawn from real traces. Each session is a
+We replay 200 coding-agent sessions drawn from the {\sc TraceLab} corpus
+\cite{zhu2026tracelab}. Each session is a
 sequence of rounds; a round presents a prompt of median 23{,}187 tokens
 (p90 51{,}064; maximum 89{,}436, which alone is 88\% of the KV pool), and
 between rounds the session waits on a tool before returning with a longer
@@ -17,13 +18,15 @@ sessions never leave the engine. Its \emph{mean} is 16.85\,s, 22\% of waits
 exceed ten seconds, and the maximum is 300\,s. We verified that our replay
 harness honors the trace faithfully: across 799 round transitions the measured
 gap is 16.85\,s mean against a demanded 15.82\,s, a ratio of 1.001. This
-matches the source corpus's own reported mean tool time of 16.8\,s.
+matches the source corpus's own reported mean tool time of 16.8\,s
+\cite{zhu2026tracelab}.
 
 \subsection{Engine and the binding constraint}
 
-We use SGLang v0.5.10 with Qwen2.5-Coder-7B-Instruct extended to 96K context,
-on one RTX 3090 (24\,GB). At \texttt{mem-fraction-static} 0.85 the KV pool is
-101{,}432 tokens. Hierarchical caching (HiCache) is enabled throughout, with a
+We use SGLang v0.5.10 \cite{zheng2024sglang} with Qwen2.5-Coder-7B-Instruct
+\cite{qwen2coder} extended to 96K context,
+on one RTX 3090 (24\,GB). KV is paged \cite{kwon2023pagedattention}; at \texttt{mem-fraction-static} 0.85
+the pool is 101{,}432 tokens. Hierarchical caching (HiCache) is enabled throughout, with a
 host tier of twice the device pool. Every run is guarded: if the pool does not
 come out at $101{,}432 \pm 20$---which happens when another tenant holds
 memory on the card---the run is aborted rather than recorded, because SGLang

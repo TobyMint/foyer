@@ -50,9 +50,128 @@
   year    = {2026}
 }
 
-@article{mori,
-  title   = {{MORI}: State-Preserving Suspension for Agentic Serving},
-  author  = {{MORI authors}},
-  journal = {arXiv preprint arXiv:2606.00866},
-  year    = {2026}
+@misc{mori,
+  title         = {Idleness is Relative: Exploiting Tool-Call Idle Windows for Offloading in Agentic Systems with {MORI}},
+  author        = {Xia, Tian and Li, Hanchen and Li, Zhifei and Chen, Xiaokun and Kang, Hao and Qiao, Yifan and Xu, Yi and Stoica, Ion},
+  year          = {2026},
+  eprint        = {2606.00866},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.OS},
+  doi           = {10.48550/arXiv.2606.00866},
+  note          = {Preprint, no venue}
+}
+}
+
+% ---- 2026-09-23 核实补入（每个条目的标题/作者/页码经 arXiv abs 页与 USENIX/ACM 页面交叉核对）----
+
+@misc{zhu2026tracelab,
+  title         = {{TraceLab}: Characterizing Coding Agent Workloads for {LLM} Serving},
+  author        = {Zhu, Kan and Jacob, Mathew and Ma, Chenxi and Pan, Yi and Wang, Stephanie and Krishnamurthy, Arvind and Kasikci, Baris},
+  year          = {2026},
+  eprint        = {2606.30560},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.2606.30560},
+  note          = {Preprint; this paper's trace source}
+}
+
+@inproceedings{zheng2024sglang,
+  title     = {{SGLang}: Efficient Execution of Structured Language Model Programs},
+  author    = {Zheng, Lianmin and Yin, Liangsheng and Xie, Zhiqiang and Sun, Chuyue and Huang, Jeff and Yu, Cody Hao and Cao, Shiyi and Kozyrakis, Christos and Stoica, Ion and Gonzalez, Joseph E. and Barrett, Clark and Sheng, Ying},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024)},
+  year      = {2024},
+  pages     = {62557--62583},
+  note      = {arXiv:2312.07104; v1 title was ``Efficiently Programming Large Language Models using SGLang''}
+}
+
+@inproceedings{kwon2023pagedattention,
+  title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
+  author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
+  booktitle = {Proceedings of the 29th ACM Symposium on Operating Systems Principles (SOSP '23)},
+  year      = {2023},
+  pages     = {611--626},
+  doi       = {10.1145/3600006.3613165}
+}
+
+@inproceedings{yu2022orca,
+  title     = {{Orca}: A Distributed Serving System for Transformer-Based Generative Models},
+  author    = {Yu, Gyeong-In and Jeong, Joo Seong and Kim, Geon-Woo and Kim, Soojeong and Chun, Byung-Gon},
+  booktitle = {16th USENIX Symposium on Operating Systems Design and Implementation (OSDI '22)},
+  year      = {2022},
+  pages     = {521--538},
+  publisher = {USENIX Association}
+}
+
+@inproceedings{yu2025pensieve,
+  title     = {Stateful Large Language Model Serving with {Pensieve}},
+  author    = {Yu, Lingfan and Lin, Jinkun and Li, Jinyang},
+  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys '25)},
+  year      = {2025},
+  pages     = {144--158},
+  doi       = {10.1145/3689031.3696086}
+}
+
+@inproceedings{gao2024cachedattention,
+  title     = {Cost-Efficient Large Language Model Serving for Multi-turn Conversations with {CachedAttention}},
+  author    = {Gao, Bin and He, Zhuomin and Sharma, Puru and Kang, Qingxuan and Jevdjic, Djordje and Deng, Junbo and Yang, Xingkun and Yu, Zhou and Zuo, Pengfei},
+  booktitle = {2024 USENIX Annual Technical Conference (USENIX ATC '24)},
+  year      = {2024},
+  pages     = {111--126},
+  publisher = {USENIX Association}
+}
+
+@inproceedings{sun2024llumnix,
+  title     = {Llumnix: Dynamic Scheduling for Large Language Model Serving},
+  author    = {Sun, Biao and Huang, Ziming and Zhao, Hanyu and Xiao, Wencong and Zhang, Xinyi and Li, Yong and Lin, Wei},
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI '24)},
+  year      = {2024},
+  pages     = {173--191},
+  publisher = {USENIX Association}
+}
+
+@inproceedings{wu2026fastserve,
+  title     = {{FastServe}: Iteration-Level Preemptive Scheduling for Large Language Model Inference},
+  author    = {Wu, Bingyang and Zhong, Yinmin and Zhang, Zili and Liu, Shengyu and Liu, Fangyue and Sun, Yuanhang and Huang, Gang and Liu, Xuanzhe and Jin, Xin},
+  booktitle = {23rd USENIX Symposium on Networked Systems Design and Implementation (NSDI '26)},
+  year      = {2026},
+  pages     = {57--74},
+  publisher = {USENIX Association}
+}
+
+@inproceedings{lin2024parrot,
+  title     = {{Parrot}: Efficient Serving of {LLM}-based Applications with Semantic Variable},
+  author    = {Lin, Chaofan and Han, Zhenhua and Zhang, Chengruidong and Yang, Yuqing and Yang, Fan and Chen, Chen and Qiu, Lili},
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI '24)},
+  year      = {2024},
+  pages     = {929--945},
+  publisher = {USENIX Association}
+}
+
+@misc{wang2026xperf,
+  title         = {Benchmarking {LLM} Serving Systems for Agentic {AI} Workloads with {XPerf}},
+  author        = {Wang, Michael and Yue, Yikang and Li, Shaobo and Zhou, Yirui Eric and Wang, Chen and Huang, Jian},
+  year          = {2026},
+  eprint        = {2608.20370},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.DC},
+  doi           = {10.48550/arXiv.2608.20370},
+  note          = {Preprint}
+}
+
+@inproceedings{wang2025kvcachewild,
+  title     = {{KVCache} Cache in the Wild: Characterizing and Optimizing {KVCache} Cache at a Large Cloud Provider},
+  author    = {Wang, Jiahao and Han, Jinbo and Wei, Xingda and Shen, Sijie and Zhang, Dingyan and Fang, Chenguang and Chen, Rong and Yu, Wenyuan and Chen, Haibo},
+  booktitle = {2025 USENIX Annual Technical Conference (USENIX ATC '25)},
+  year      = {2025},
+  pages     = {465--482},
+  publisher = {USENIX Association}
+}
+
+@misc{qwen2coder,
+  title        = {Qwen2.5-Coder Technical Report},
+  author       = {{Qwen Team}},
+  year         = {2024},
+  eprint       = {2409.12186},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.CL}
 }

@@ -65,12 +65,31 @@ rather than in tension with it, and \S\ref{sec:discussion} explains why: the
 mechanism these systems add is one our controller already has.
 
 \paragraph{Engine-side techniques.} A separate line improves the engine
-rather than the admission decision: chunked prefill with stall-free batching
-\cite{sarathi}, prefill/decode disaggregation \cite{distserve}, and cache-centric
-scheduling \cite{mooncake}. Our \S\ref{sec:model} attributes 7--10\,ms of each
+rather than the admission decision. Iteration-level batching and paged KV
+\cite{yu2022orca,kwon2023pagedattention} are the substrate every policy here runs
+on; chunked prefill with stall-free batching \cite{sarathi}, prefill/decode
+disaggregation \cite{distserve}, and cache-centric scheduling
+\cite{mooncake} are the refinements. Our \S\ref{sec:model} attributes 7--10\,ms of each
 26\,ms step to non-decode work, which is exactly what this line attacks. We
 emphasise that these techniques raise the achievable rate for \emph{all}
 policies; they move the frontier rather than deciding who sits above it.
+
+\paragraph{State retention and preemption.} A third line keeps session state
+alive across the gaps we measure in \S\ref{sec:model}: keeping KV on cheaper
+storage across turns \cite{yu2025pensieve,gao2024cachedattention}, migrating it
+between instances \cite{sun2024llumnix}, and preempting at iteration granularity
+\cite{wu2026fastserve}. These systems exercise finer control than our 2\,s
+admission cycle, which is the boundary of our negative result: we falsify one
+control granularity, not the family. What they share with \sys{} is that the
+state is not discarded---which is why, as we argue below, adding admission
+intelligence on top buys nothing here.
+
+\paragraph{Application-level dependencies and replay.} Serving an LLM
+\emph{application} rather than a request means the scheduler sees dependencies
+between calls \cite{lin2024parrot}, and agentic traces have structure that
+request-level benchmarks do not capture \cite{wang2026xperf}. Our replay
+preserves that structure but fixes it in advance, which is exactly the
+limitation these works would press on.
 
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
 an admission policy should use. In our workload it is not a policy variable:
@@ -78,7 +97,8 @@ round-1+ hit rate equals the trace's own planned value (89.8\%) to within one
 percentage point across four different admission policies, so admission does
 not move it. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
-test.
+test, and production KV-cache traces show hit rate is sensitive to policy in
+ways a single trace family may not reveal \cite{wang2025kvcachewild}.
 
 \section{Discussion}
 \label{sec:discussion}
