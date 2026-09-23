@@ -127,16 +127,17 @@ Before the routes, one measurement that reframes all of them. Our controller
 keeps every session's permit for its lifetime, so its pool occupancy is a
 policy output, not a constraint. It runs at a median of 49.2\% of the pool on
 the base configuration, and the median number of sessions queueing for
-admission is 66. The configuration that finishes fastest, a static cap of four
-with the host tier, runs at 70.2\%. The ordering is the same across every arm
+admission is 66. The configuration that finishes fastest---the repeat of that same static cap
+of four, at 209.1 minutes---runs at 71.9\%, and its first run at 70.2\%. The ordering is the same across every arm
 we have: occupancy, then running requests, then wall clock.
 
 The controller believes it is nearly full. Its own decision log records the
 projection it admits against---the largest of measured occupancy and the summed
 contexts of live sessions, plus a reserve for their growth---at a median of
 89{,}073 tokens against a budget of 96{,}360, i.e.\ 7\% free. Its measured
-occupancy at the same instants is 49{,}905 tokens, i.e.\ 46\% free. The
-projection is 1.77$\times$ the truth. Two terms produce the gap: charging every
+occupancy at the same instants is 49{,}905 tokens: 48.2\% of that budget, or
+50.8\% of the pool, is idle. The
+projection is 1.79$\times$ the truth. Two terms produce the gap: charging every
 live session its full context, when a parked session's KV is evictable and
 therefore absent from the engine's count, and the growth reserve, which alone
 is 26{,}762 tokens, 28\% of the budget.
@@ -160,6 +161,45 @@ clock is where the per-step cost of \S\ref{sec:model} does its work. Both
 effects are real; on this workload the unused-memory one is larger for the arms
 that finish worst, and the step-cost one is what separates the arms that finish
 close together.
+
+\subsection{What the two mechanisms explain, arm by arm}
+\label{sec:results:attribution}
+
+We have offered two mechanisms, and the honest thing is to say what each one
+covers. For every controller arm we took the static cap closest to it in wall
+clock and compared their occupancy and their step cost. An arm is attributed to
+the unused-memory mechanism if it runs meaningfully fewer requests than its
+comparison, and to the step-cost mechanism if it runs a comparable number at a
+measurably higher cost. Everything else is a residual.
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrl}
+  \toprule
+  Arm & Occ. & $\overline{R}$ & $\tau_1$ & Attribution \\
+  \midrule
+  \texttt{horizon}=1   & 57.8 & 1.31 & 29.2 & residual \\
+  \sys{} base          & 49.2 & 1.14 & 28.7 & residual \\
+  \texttt{horizon}=2   & 54.7 & 1.25 & 33.6 & step cost \\
+  \texttt{bres}        & 56.9 & 1.33 & 34.1 & step cost \\
+  \texttt{breshz1}     & 61.4 & 1.34 & ---  & residual \\
+  no gate, no resv.    & 62.1 & 1.33 & ---  & unused mem. \\
+  running gate$=$4     & 62.3 & 1.30 & ---  & residual \\
+  all throttles off    & 39.2 & 0.97 & ---  & residual \\
+  AIMD, retuned        & 66.6 & 1.49 & ---  & unused memory \\
+  AIMD, paper params   & 40.3 & 1.03 & ---  & residual \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Four of the ten are attributed. Six are not: their occupancy and their step
+cost both sit close to their comparison cap's, and their shortfall is real but
+we cannot say from these measurements which mechanism produced it. We publish
+the table rather than a summary because a summary would claim more than we
+have---and because ``two mechanisms explain the negative result'' would be the
+wrong summary. Two mechanisms explain part of it, on four arms; the rest is a
+measurement we can make and cannot yet interpret.
 
 \subsection{Route 1: the accounting base}
 

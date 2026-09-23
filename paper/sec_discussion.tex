@@ -3,7 +3,9 @@
 
 A negative result about adaptivity invites the obvious objection: adaptivity
 pays when conditions \emph{change}, and a single stationary trace is the one
-case where a static cap should be near-optimal. We agree, and we test it.
+case where a static cap should be near-optimal. We agree. What we test here is a weaker thing---two
+separate constant-load tiers---and \S\ref{sec:discussion} says what that leaves
+open.
 
 We run the same controller and the same cap family on a 25-session tier. The
 throttle configuration is reversed: with all safety throttles disabled, the
@@ -195,8 +197,9 @@ conditional: at the strict threshold that interactive serving actually cares
 about, no controller reaches the static front; at a loose one, one does. The
 second is that the crossing is still not a win, though the reason is more
 awkward than we first wrote. $+2.7$\,pp at 20\,s is larger than the replicate
-SLO spread of the two controller-side configurations we repeated (1.0 and
-0.5\,pp) but smaller than that of an envelope anchor (5.1\,pp)---and it is the
+SLO spread of two of the three controller-side configurations we repeated
+(1.0 and 0.5\,pp) but smaller than the best arm's own (3.9\,pp) and smaller
+than an envelope anchor's (5.1\,pp)---and it is the
 anchors, not the controllers, that set the line the margin is measured
 against. A third pair
 exists---two runs of \texttt{cap3}+HiCache---but one of them exceeded its own
@@ -237,10 +240,10 @@ artifact of choosing an SLO definition that flatters controllers. If anything
 the flattering choice was the one that let our best arm sit above the line.
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
-model and one trace family; generality is untested. Only two configurations
-were repeated, twice and three times respectively, so the replicate spread we
-report in \S\ref{sec:results} is estimated from two degrees of freedom at
-best; a margin as small as the one that decides our verdict would need several
+model and one trace family; generality is untested. Only four configurations
+have been repeated---twice, twice, twice and three times---so the replicate
+spread we report in \S\ref{sec:results} is estimated from one to two degrees of
+freedom per configuration; a margin as small as the one that decides our verdict would need several
 more repeats per configuration to resolve, and we did not run them. Two specific boundaries
 matter. First, the pool holds about four median sessions, so concurrency is
 capacity-bound by construction; on a device with a much larger pool the

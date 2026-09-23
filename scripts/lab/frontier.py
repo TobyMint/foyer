@@ -9,7 +9,7 @@
 不算赢，因为静态方法按时间片混合就能逼近线上任一点（§二十七、§五十二）。
 
 前沿的三个锚点（全部 999 步、HiCache 开、同一代码代）：
-    cap4_hc  (213.0, 63.4)
+    cap4_hc_r2 (209.1, 68.5)   # 重复 run 支配了 cap4_hc，见 paper/data/runs.csv
     cap3_hc  (236.4, 81.1)
     cap2_hc  (295.0, 91.6)   <- pairB；pairA (304.5, 90.6) 被它支配，不入前沿
 低于 213 分钟没有任何静态点，落在那里是平凡获胜。
@@ -19,7 +19,7 @@ import json, os, statistics as st, sys
 RESULTS = "/data/xbw/turnstile/results/night"
 # 上左包络的锚点，按墙钟升序。cap1 没有 HiCache 版本，但它仍然是"静态 cap 能达到的点"，
 # 必须放进前沿——否则墙钟超过最右锚点的 run 会被误判成"越过前沿"（cap1 自己就撞过这个）。
-FRONT = [(213.0, 63.4, "cap4_hc"), (236.4, 81.1, "cap3_hc"),
+FRONT = [(209.1, 68.5, "cap4_hc_r2"), (236.4, 81.1, "cap3_hc"),
          (295.0, 91.6, "cap2_hc"), (527.4, 94.8, "cap1")]
 
 
