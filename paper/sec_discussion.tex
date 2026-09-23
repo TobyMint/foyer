@@ -286,7 +286,20 @@ the four runs shorter than 999 steps are computed by
 \texttt{scripts/lab/gen\_table.py} and \texttt{scripts/lab/run\_summary.py}
 respectively, and \S\ref{sec:criterion} is computed by
 \texttt{gen\_elasticity.py} and \texttt{gen\_elasticity\_hc.py}. Every run is
-guarded against a shrunken KV pool. We report six claims we retracted during
+guarded against a shrunken KV pool.
+
+One caveat about the controller artifact, which a reader with our code would
+otherwise hit. The copy that executed every run in this paper is not
+byte-identical to the copy in our repository: the running one is
+\texttt{f825bc768188} and the repository's is \texttt{a21bd2b63774}, and the
+difference is exactly the queue-scan fix described in
+\S\ref{sec:results:gate}---the repository has it, the running copy does not.
+The numbers in this paper therefore describe the pre-fix path. We report the
+divergence rather than reconcile it, because re-running under the fixed
+controller is an experiment we have not done, and it is the one we would do
+first with more GPU time: if the queue scan removes the stall windows, the
+stalls are a bug we fixed; if it does not, they are a property of admitting one
+session at a time. We report six claims we retracted during
 the work, because the retractions
 were the most informative events. In order of how much they cost us:
 

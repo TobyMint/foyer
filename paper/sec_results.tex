@@ -324,8 +324,11 @@ We traced one such window in a repeat of our best configuration and found a
 code path that explains it: single-flight admission considered only the head of
 the FIFO queue, and when the head was a session too large to fit the remaining
 budget it was never admitted, never left the queue, and blocked every smaller
-session behind it. We fixed that (scan the queue, still admit at most one per
-cycle), but we are explicit that this is \emph{a} path, not a proven cause:
+session behind it. That is the code every run in this paper executed. The fix
+in our repository---scan the queue, still admit at most one per cycle---is
+\emph{not} in the artifact that produced these results, so the numbers here
+predate it and we do not claim them for it. We are also explicit that this is
+\emph{a} path, not a proven cause:
 the audit is a log signature, and the same signature can be produced by other
 closed gates. What we can say is that the signature is present in a third of
 our \sys{} runs and absent from all of our static caps, which have no
