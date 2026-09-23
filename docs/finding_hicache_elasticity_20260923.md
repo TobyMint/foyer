@@ -78,3 +78,62 @@ foyer_hz1       1.52       36.7      225.2     255.8
   段弹性没有误差棒。
 - 控制器是否真的因 idle 而慢，需要在**全部**臂上验证 idle_pct 与 wall 的关系，
   不能只看 hz1/cap3_hc 这一对。
+
+---
+
+# 追加发现（同日）：变负载 trace 上控制器投影饱和
+
+在 `pois200_var_foyer`（控制器主臂 `budget3:hw=0;target=0.95`，跑变负载 trace
+`replay_varload_lo2hi.csv`）上观测到准入停滞。核实过程：
+
+```
+waiting_n   = 22 ~ 23     有会话在等
+resident    = 0           引擎占用的 token 数（设备侧）
+usage       = 0.0
+valve       = False        SLO 阀门【没有】关
+gate_full   = False        round gate 没开（默认 round_gate=0）
+candidate   = None
+n_admitted  = 0
+```
+
+引擎侧同时是空的：metrics.csv 里 `num_running_reqs=0`、`num_used_tokens=0`、
+`num_queue_reqs=0`，`generation_tokens_total` 冻结在 136501。
+
+## 根因
+
+`controller_budget3.py:321-326`：
+
+```
+ctx_sum    = 72100     # 【在跑的 2 个会话】的上下文之和，各约 36000 token
+growth_sum = 26737
+base       = max(resident, ctx_sum) = 72100
+projection = base + growth_sum = 98837
+budget     = 96360
+```
+
+判定是 `if projection + n <= budget`（:406）。**projection 本身已经超过 budget，
+所以对任何候选者都不成立**，`candidates` 恒为空 → 一个都不放行。
+
+`ctx_sum` 中位 47164、最大 123312；`base` 最大 103469，均可达/超过 budget 96360。
+
+唯一在推进的是 starve guard（:413-419），它 bypass 预算直接强推 `waiting[0]`，
+但有 `--starve-cooldown`（默认 300 秒）限速。实测 admit 间隔中位 87 秒，
+最后几次 199 / 278 / 343 / 302 秒 —— 就是 cooldown 的节拍。70 分钟里放了 35 个。
+
+## 为什么这不是 bug，而是论文机制的极端形态
+
+投影把**停在 tool_wait 里的会话按完整上下文计费**，而它们的 KV 是可驱逐的、
+并不在引擎的 resident 计数里。这正是 §V「控制器认为快满了，其实空着一半」
+（投影 1.79 倍于真值）描述的同一个量，只是在这条 trace 上被推到了极端：
+**只要有两个大上下文会话同时停在 tool wait，控制器就完全停止接纳，而引擎空转。**
+
+论文 §V 的 Route 1 已经测过：把这个 double charge 去掉（`base=resident`）反而
+更差（慢 4.2 分钟、SLO −6.0pp）。所以控制器是按设计行事。
+
+## 对变负载实验的影响（待定，取决于最终能否跑完）
+
+- 按当前速率，200 个会话约需 6.7 小时，可能落在 12h 超时内。
+- 若跑完：这是一个**可用但极端**的数据点 —— 控制器在变负载下不是"输一点"，
+  而是退化成每 5 分钟放一个。
+- 若跑不完：按项目规矩记为部分 run，不与 999 步的臂同表比较。
+- **需要在论文里如实报告这个机制**，否则审稿人会把它当成隐藏的 bug。
