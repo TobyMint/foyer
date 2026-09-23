@@ -23,6 +23,15 @@ the anchors by an order of magnitude. We record it as \emph{on} the line
 rather than above it, and we state plainly that resolving a margin this small
 would need several repeats per configuration, which we did not run.
 
+The same repeat moved the frontier and changed nothing. The leftmost anchor's
+second run came out both faster (209.1 against 213.0 minutes) and higher on SLO
+(68.5 against 63.4), so it displaces the first as the envelope's leftmost
+point. Not one controller verdict moves: every one of them finishes to the
+right of the next anchor at 236 minutes, so none of them is judged against the
+segment that changed. We report both runs rather than keeping the better one,
+because a frontier whose anchors are single measurements is the weakness this
+whole subsection is about.
+
 The other end of the front deserves its own sentence, because the rest of this
 paper is negative and a reader could close it thinking the answer is to do
 nothing. The run with \emph{no} admission control---every session admitted the
@@ -75,7 +84,8 @@ appearance of the mechanism that drives the whole frontier.
     \multicolumn{5}{l}{\emph{Static caps + HiCache}}\\
     cap2+HC           & 295.0 & 1.99 & 91.6 & \emph{anchor} \\
     cap3+HC           & 236.4 & 2.93 & 81.1 & \emph{anchor} \\
-    cap4+HC           & 213.0 & 3.93 & 63.4 & \emph{anchor} \\
+    cap4+HC           & 213.0 & 3.93 & 63.4 & $-$6.90 \\
+    cap4+HC (repeat)  & 209.1 & 3.87 & 68.5 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $+$0.22 \\
