@@ -88,7 +88,7 @@ def fig_frontier():
             ("cap4+HC",          (213.0, 63.4), (207, 49), "left"),
             ("cap3+HC",          (236.4, 81.1), (238, 71), "right"),
             # best Foyer 放到点的【正上方】：原来放在左下，与 cap3+HC 的引线交叉
-            ("best Foyer\n(on the line)", (255.8, 84.8), (262, 95), "center")]:
+            ("best Foyer\n(tie, below it)", (255.8, 84.8), (262, 95), "center")]:
         # cap4+HC 甩到右边：往左会让文字压住 y 轴的 "50" 刻度
         ax.annotate(txt, xy, xytext=xytext, ha=ha, va="center",
                     fontsize=6, color="0.15", linespacing=1.25,

@@ -203,8 +203,8 @@ controllers sit relative to them, and at the loose end one of them crosses:
   \toprule
   SLO threshold & 5\,s & 10\,s & 20\,s \\
   \midrule
-  \texttt{horizon}=1        & $-0.5$ & $+0.22$ & $+2.7$ \\
-  \sys{} base               & $-2.1$ & $-1.1$ & $+0.7$ \\
+  \texttt{horizon}=1        & $-2.9$ & $-0.9$ & $+1.5$ \\
+  \sys{} base               & $-2.3$ & $-1.3$ & $+0.6$ \\
   \texttt{bres}             & $-11.9$ & $-7.8$ & $-4.3$ \\
   Concur-style AIMD        & $-14.2$ & $-11.2$ & $-6.5$ \\
   \bottomrule
@@ -253,8 +253,13 @@ arms, nine move by no more than
 2.7\,pp and none crosses the $\pm1.0$\,pp band into a new verdict. Two move
 more: the all-throttles-off arm improves by 8.3\,pp and the retuned AIMD arm by
 2.8\,pp, both of which stay below the front either way. The one that decides our headline moves the wrong way for
-the controller---\texttt{horizon}=1 goes from $+0.22$ to $-0.68$\,pp, still a
-tie but now on the below side.
+the controller: on the ready clock \texttt{horizon}=1's own SLO falls from
+84.8\% to 68.2\% while the anchor it is measured against falls less, so the
+ready clock moves it further below the line rather than closer to it. We do not
+give a ready-clock distance for it, because the two anchor repeats that define
+the line are not in the set we could recompute (\S\ref{sec:discussion} says
+which runs are), and inventing a line for them would be the same error this
+subsection is about.
 
 The subset matters and we state its edge. The two configurations whose repeats
 decide how we read the verdict---\texttt{horizon}=1's repeat and the fastest

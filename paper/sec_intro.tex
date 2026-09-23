@@ -27,16 +27,20 @@ We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 (Qwen2.5-Coder-7B, 96K context, SGLang, a 101{,}432-token KV pool) and compare
 a family of admission policies against a sweep of static concurrency caps.
 Nine controller variants, spanning four mechanistically distinct ideas, all
-land on or below the static Pareto front, and so does a reimplementation of an
+land below the static Pareto front, and so does a reimplementation of an
 independent congestion-based controller from the literature
-(Fig.~\ref{fig:frontier}). The best of them reaches the front on one run and
-falls below it when we repeat that run.
+(Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
+$\pm1.0$\,pp band we call a tie, but on the below side of it---and its repeat
+misses by 5.6.
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig1_frontier.pdf}
   \caption{Every completed run on the (wall clock, SLO) plane. The grey line
-  is the upper-left envelope of the static points; a policy below or on it has
+  is the upper-left envelope of the static points---drawn from the data, so it
+  uses each configuration's \emph{better} run where a repeat exists, which is
+  why \texttt{cap3}+HiCache's 236-minute run sits below the line rather than on
+  it; a policy below or on it has
   not beaten a static cap, because time-slicing two caps approximates any
   point on the segment between them. Nine \sys{} variants plus a
   reimplementation of an independent controller, none above at the 10\,s
