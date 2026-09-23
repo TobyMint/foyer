@@ -1,7 +1,9 @@
 # 分段弹性 —— 由 scripts/lab/gen_elasticity.py 生成
 # epsilon = dln(tau1)/dln(R-bar) 在相邻两条静态 cap 之间
 # tau1 是模型自洽的（busy 条件均值反推），不是全时段均值口径
-# 低于 ~1.3 加并发几乎免费；高于它 epsilon 过 1，加并发反而更慢
+# 更正(2026-09-24)：本曲线仅描述【无 HiCache】配置。九条控制器臂全部开 HiCache，
+# 在它们自己的配置上 epsilon 全段 <1、无悬崖（见 gen_elasticity_hc.py），
+# 故本曲线不用于解释控制器失败。
 from,to,r0,r1,tau0_ms,tau1_ms,epsilon
 cap1,cap2,1.0,1.27,28.8,27.4,-0.21
 cap2,cap3_fixed,1.27,1.53,27.4,29.7,0.43

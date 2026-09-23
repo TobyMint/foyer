@@ -3,10 +3,14 @@
 
 为什么需要：论文原来只报一个全局 ε（0.38/0.61），读法「每加 10% 并发买 4~6%
 吞吐」。但那条曲线是凸的：低并发处 ε 接近 0 甚至为负，高并发处 ε 超过 1
-（加并发反而更慢）。而**九条控制器臂全部落在 ε>1 的那一段**。
+（加并发反而更慢）。
 
-所以真正的判据不是「这个工作负载上加并发多贵」，而是「这条策略运行在曲线的
-哪一段」，以及「它能不能往左移」。
+【已撤回的主张，2026-09-24】本文件产出的曲线是 **device-only（无 HiCache）** 配置上的。
+曾经用它解释控制器为什么输（「九条臂都落在 ε>1 的贵段」）—— 那是错的：九条控制器臂
+**全部开着 HiCache**。在它们自己的配置上 ε 全段 <1、没有悬崖（见 gen_elasticity_hc.py）。
+正文已按此改写：判据现在只用来【排除工作负载侧的解释】，不用来解释控制器失败。
+
+所以本文件回答的是「这个（配置, 负载）上加并发多贵」，不是「控制器输在哪」。
 
 ⚠ τ 必须用 busy 条件均值反推的 τ₁（decomp.csv 的 step_back_ms）。用全时段
 均值会得到一份被撤回过的数（低一个 busy 占比）。
@@ -54,7 +58,9 @@ def main():
         f.write("# 分段弹性 —— 由 scripts/lab/gen_elasticity.py 生成\n")
         f.write("# epsilon = dln(tau1)/dln(R-bar) 在相邻两条静态 cap 之间\n")
         f.write("# tau1 是模型自洽的（busy 条件均值反推），不是全时段均值口径\n")
-        f.write("# 低于 ~1.3 加并发几乎免费；高于它 epsilon 过 1，加并发反而更慢\n")
+        f.write("# 更正(2026-09-24)：本曲线仅描述【无 HiCache】配置。九条控制器臂全部开 HiCache，\n")
+        f.write("# 在它们自己的配置上 epsilon 全段 <1、无悬崖（见 gen_elasticity_hc.py），\n")
+        f.write("# 故本曲线不用于解释控制器失败。\n")
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
         f.write("# controller_arms_Rbar_min,%f\n" % min(cr))
