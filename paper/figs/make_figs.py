@@ -63,7 +63,9 @@ def fig_frontier():
     折线是静态点的上左包络；**落在折线下方或线上 = 没有越过**——因为按时间片
     混合两个 cap 就能逼近线上任一点。
     """
-    rows = [r for r in load("runs.csv") if r["tier"] == "200" and int(r["steps"]) >= 999]
+    # 阈值放到 995：hz0/hz2/rg4 分别少跑 4/2/1 步，是真实的测量点，
+    # 悄悄丢掉它们会让图 1 只有 6 条 Foyer 变体，而图注和正文都说 9 条。
+    rows = [r for r in load("runs.csv") if r["tier"] == "200" and int(r["steps"]) >= 995]
     fig, ax = plt.subplots(figsize=(3.5, 2.9))
     front = sorted([(float(r["wall_min"]), float(r["slo_pct"]))
                     for r in rows if r["family"].startswith("static")])
@@ -274,46 +276,56 @@ def fig_horizon():
 
 
 
-# ------------------------------------------------ 图 7：并发买来的时间去哪了
+# ------------------------------------------------ 图 7：步时间对并发的弹性
 def fig_cancel():
-    """论文核心主张的一图版：加并发买来的时间被 τ 的上升吃掉了。
+    """论文建设性贡献的一图版：ε = dlnτ/dlnR̄。
 
-    横轴在跑请求均值，纵轴 busy 时间。虚线是「τ 保持最低值不变」时的预测
-    （双曲线），点是实测。两条线之间的差就是抵消掉的量。
+    ⚠ 横轴必须用 busy 条件均值（decomp.csv 的 running），不能用全时段均值。
+    全时段均值含空转采样，等于 R̄_busy × busy 占比，会让 τ 系统性偏低一个
+    busy 占比 —— 那正是 2026-09-23 之前论文里的错误，它把 ε 从 0.38 抬到
+    0.57，看上去抵消得更厉害。
 
-    只用无 HiCache 的五条静态 cap：这一族的重算机制已由 eviction.csv 确证，
-    所以这里的差可以归因到 τ，而不是归因到一个说不清的混合效应。
+    两条测量都画：τ₁ 是模型自洽的（含 prefill 步），τ₂ 是逐请求 decode 间隔
+    （不含 prefill）。两者之差就是 prefill 所占的步时间比例。
+    只用无 HiCache 的五条静态 cap —— 这一族的重算机制已由 eviction.csv 确证。
     """
+    import math
     rows = [r for r in load("decomp.csv") if r["step_back_ms"]]
     ids = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
     rows = sorted([r for r in rows if r["run"] in ids],
                   key=lambda r: float(r["running"]))
-    G = 706010.0
     rb = [float(r["running"]) for r in rows]
-    busy = [float(r["busy_min"]) for r in rows]
-    tau = busy[0] * 60 * rb[0] / G            # 取最低那条的 τ 作基准
-    xs = [0.60 + i * 0.01 for i in range(105)]
-    ideal = [G / x * tau / 60 for x in xs]
+    t1 = [float(r["step_back_ms"]) for r in rows]
+    t2 = [float(r["step_perreq_ms"]) for r in rows]
+
+    def fit(xs, ys):
+        X = [math.log(a) for a in xs]; Y = [math.log(b) for b in ys]
+        mx, my = sum(X) / len(X), sum(Y) / len(Y)
+        sl = sum((a - mx) * (b - my) for a, b in zip(X, Y)) / sum((a - mx) ** 2 for a in X)
+        r2 = 1 - sum((b - (my + sl * (a - mx))) ** 2 for a, b in zip(X, Y)) / \
+            sum((b - my) ** 2 for b in Y)
+        return sl, r2
+    e2, r2v = fit(rb, t2)
+    e1, _ = fit(rb, t1)
 
     fig, ax = plt.subplots(figsize=(3.5, 2.6))
-    ax.plot(xs, ideal, "--", color="0.45", lw=1.0,
-            label="if $\\tau$ stayed at %.1f ms" % (tau * 1000))
-    ax.plot(rb, busy, "o-", color=C_STATIC, ms=4, lw=1.0, label="measured")
-    # 把 cap5 处的差标出来
-    ax.annotate("", xy=(rb[-1], busy[-1]), xytext=(rb[-1], G / rb[-1] * tau / 60),
-                arrowprops=dict(arrowstyle="<->", lw=0.7, color=C_FOYER))
-    ax.text(rb[-1] - 0.03, (busy[-1] + G / rb[-1] * tau / 60) / 2,
-            "%.0f min\nabsorbed" % (busy[-1] - G / rb[-1] * tau / 60),
-            fontsize=6, color=C_FOYER, ha="right", va="center", linespacing=1.25)
-    for r, x, y in zip(rows, rb, busy):
+    xs = [1.00 + i * 0.008 for i in range(110)]
+    ax.plot(xs, [t2[0] * (x / rb[0]) ** e2 for x in xs], "--", color="0.5", lw=0.9,
+            label="fit to $\\tau_2$: $\\varepsilon$=%.2f ($R^2$=%.2f)" % (e2, r2v))
+    ax.plot(rb, t1, "o-", color=C_FOYER, ms=4, lw=1.0,
+            label="model-consistent $\\tau_1$")
+    ax.plot(rb, t2, "s-", color=C_STATIC, ms=4, lw=1.0,
+            label="per-request $\\tau_2$")
+    for r, x, y in zip(rows, rb, t1):
         ax.annotate(r["run"].replace("_fixed", ""), (x, y), xytext=(3, 4),
                     textcoords="offset points", fontsize=6, color="0.2")
-    ax.set_xlabel("mean running requests", labelpad=1)
-    ax.set_ylabel("busy time (min)")
-    ax.set_xlim(0.58, 1.78); ax.set_ylim(110, 370)
-    legend_below(ax, ncol=2, y=-0.24)
-    fig.savefig(os.path.join(HERE, "fig7_cancel.pdf"))
+    ax.set_xlabel("mean running requests during busy time", labelpad=1)
+    ax.set_ylabel("step time (ms)")
+    ax.set_xlim(0.92, 1.98); ax.set_ylim(18, 40)
+    legend_below(ax, ncol=1, y=-0.18)
+    fig.savefig(os.path.join(HERE, "fig7_elasticity.pdf"))
     plt.close(fig)
+
 
 
 if __name__ == "__main__":

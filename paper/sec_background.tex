@@ -17,8 +17,11 @@ misread. Its \emph{median} is 0.35\,s, which invites the conclusion that
 sessions never leave the engine. Its \emph{mean} is 16.85\,s, 22\% of waits
 exceed ten seconds, and the maximum is 300\,s. We verified that our replay
 harness honors the trace faithfully: across 799 round transitions the measured
-gap is 16.85\,s mean against a demanded 15.82\,s, a ratio of 1.001. The
-corpus's own characterization makes the same point qualitatively---it reports
+gap is 16.85\,s mean against a demanded 15.82\,s. On a typical transition the
+harness adds nothing---the median of the per-transition measured/demanded
+ratios is 1.001---while the ratio of the two means is 1.065, the difference
+sitting in the tail. The corpus's own characterization makes the same point
+qualitatively---it reports
 ``diverse and heavily-tailed tool calls'' and calls these gaps
 ``human-paced''---but gives no numeric mean \cite{zhu2026tracelab}, so the
 16.85\,s above is our measurement over the released trace, not a figure we
@@ -29,8 +32,10 @@ quote from that paper.
 We use SGLang v0.5.10 \cite{zheng2024sglang} with Qwen2.5-Coder-7B-Instruct
 \cite{qwen2coder} extended to 96K context,
 on one RTX 3090 (24\,GB). KV is paged \cite{kwon2023pagedattention}; at \texttt{mem-fraction-static} 0.85
-the pool is 101{,}432 tokens. Hierarchical caching (HiCache) is enabled throughout, with a
-host tier of twice the device pool. Every run is guarded: if the pool does not
+the pool is 101{,}432 tokens. Hierarchical caching (HiCache), with a host tier of twice the device pool, is
+enabled on the configurations marked \emph{+HC} and on every \sys{} run; the
+five plain static caps run without it. We keep both because the host tier turns
+out to change the mechanism (\S\ref{sec:model}). Every run is guarded: if the pool does not
 come out at $101{,}432 \pm 20$---which happens when another tenant holds
 memory on the card---the run is aborted rather than recorded, because SGLang
 sizes the pool from free memory at startup and a shrunken pool silently

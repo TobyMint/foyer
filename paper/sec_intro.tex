@@ -74,6 +74,12 @@ leave and therefore that there is no idle time to recover. There is.
         with the two engine counters that refute it (\S\ref{sec:model}); the
         negative result does not rest on it, because the cancellation is
         measured rather than inferred.
+  \item We reduce the question to one measurable number, the elasticity of
+        per-step cost with respect to the running count (\S\ref{sec:discussion}),
+        and measure it at $0.57$ ($R^2=0.95$) on the configurations whose
+        mechanism we can account for token for token. This is the paper's
+        constructive output: it decides in minutes, from logs a serving system
+        already writes, whether admission control has room.
   \item We characterize when adaptivity \emph{could} have paid, and show that
         our workload is not that case: the same throttle configuration that is
         worth $+51\%$ at 25 sessions costs $-42\%$ at 200 (\S\ref{sec:load}).

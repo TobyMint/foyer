@@ -141,16 +141,18 @@ quantitative statement about how much room, and it is measurable in minutes
 from per-request logs a serving system already writes.
 
 On the five device-only configurations, where \S\ref{sec:model} establishes
-that the step cost is driven by recomputation, $\tau$ runs from 18.4 to
-32.2\,ms as $\overline{R}$ runs from 0.64 to 1.62. A least-squares fit of
-Eq.~\ref{eq:elasticity} over those five points gives
-$\epsilon = 0.57$ ($R^2 = 0.95$). The practical reading is that every 10\% of
-added concurrency buys 4.3\% of throughput---which is why nine controller
-variants
-and an independent AIMD controller all fail to move the frontier, and why the
-one that came closest landed on it rather than above. We offer this as the
-paper's constructive output: measure $\epsilon$ before building a controller,
-and build one only where it is small.
+that the step cost is driven by recomputation, $\overline{R}_{\text{busy}}$
+runs from 1.00 to 1.84. A least-squares fit of Eq.~\ref{eq:elasticity} over
+those five points gives $\epsilon = 0.61$ on the per-request measurement
+($R^2 = 0.89$), or $0.38$ on the model-consistent one
+(Fig.~\ref{fig:cancel}). The practical reading is that every 10\% of added
+concurrency buys roughly 4--6\% of throughput, depending on which step cost
+you can measure---which is why nine controller variants and an independent
+AIMD controller all fail to move the frontier, and why the one that came
+closest landed on it rather than above. We offer this as the paper's
+constructive output: measure $\epsilon$ before building a controller, and
+build one only where it is small. We give both values rather than choosing,
+because the choice is the reader's measurement capability, not ours.
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
 model and one trace family; generality is untested. Only two configurations

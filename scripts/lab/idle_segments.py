@@ -31,16 +31,20 @@ def segments(path):
         except ValueError:
             continue
         rows.append((ts, rn))
-    segs, start, prev = [], None, None
+    # 段的起点必须是【第一个为 0 的采样点】，不能取它前一个采样点。
+    # 取前一个会把该点之前那 5 秒的忙碌间隔也算进空闲，每段多 5 秒：
+    # cap1 因此报 228.0 分钟而正确值是 193.6，多出的 34.4 分钟 ≈ 411 段 × 5s。
+    # 这与 gen_decomp.py 的口径一致——那里也是按「前一个采样点的状态」
+    # 给区间归类，所以空闲区间的起点就是第一个零采样点。
+    segs, start = [], None
     for t, rn in rows:
         if rn == 0:
             if start is None:
-                start = prev if prev is not None else t
+                start = t
         else:
             if start is not None:
                 segs.append(t - start)
                 start = None
-        prev = t
     if start is not None:
         segs.append(rows[-1][0] - start)
     # 采样周期是 5s，单点空转记成 0 秒没有意义；合并相邻采样点时已经按真实

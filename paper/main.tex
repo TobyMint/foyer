@@ -49,8 +49,8 @@ contribution. We split the end-to-end wall clock into \emph{busy} and
 \emph{idle} time, and show that the busy component is governed by two
 quantities the admission decision does not control: the per-step cost and the
 number of requests actually in flight. Admission policy moves the
-second---but the first rises with it, and takes back about half of what the
-extra concurrency buys. On configurations without a host cache tier
+second---but the first rises with it, and takes back about a third of what
+the extra concurrency buys. On configurations without a host cache tier
 we can account for that rise token for token: evicted prefixes are recomputed
 at close to one for one, and the recomputation is charged to the decode step. The idle component (7.4--36.3\% of the wall clock) is structural: an
 agent session issues no request while waiting on a tool, and we measure that
@@ -59,10 +59,16 @@ trace suggests. We further show that the same throttle setting that is worth
 51\% at low load costs 42\% at high load---so no single scalar can be optimal
 across regimes, which is precisely the regime in which adaptive control could
 have paid. We report four mechanistically distinct policy routes we
-falsified, each with its measured reason, and we argue that prior systems'
-reported gains from state-preserving suspension are already realised by the
-permit-per-session design our controller inherits---which is why adding
-adaptivity on top of it yields nothing.
+falsified, each with its measured reason, and a reimplementation of an
+independent congestion-based controller that also lands below the front. The
+constructive output is a single measurable number: the elasticity of per-step
+cost with respect to the running count. On configurations where the mechanism
+is confirmed token for token it is 0.6, meaning every 10\% of added
+concurrency buys about 4\% of throughput---which is why no adaptive policy we
+built could move the frontier. We argue that prior systems' reported gains
+from state-preserving suspension are largely already realised by the
+permit-per-session design our controller inherits, and we state the boundary
+of that argument.
 \end{abstract}
 
 \begin{IEEEkeywords}

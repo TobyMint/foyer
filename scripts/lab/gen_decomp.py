@@ -16,7 +16,7 @@
 import csv, json, os, statistics, sys, glob
 
 HEADER = ["run", "wall_min", "span_min", "idle_min", "busy_min", "idle_pct",
-          "running", "step_back_ms", "step_perreq_ms"]
+          "running", "running_all", "step_back_ms", "step_perreq_ms"]
 
 # 采样周期。metrics.csv 每 5 秒一行。
 SAMPLE_S = 5.0
@@ -134,12 +134,17 @@ def main():
                             % (span_min, wall_min, span_min - wall_min)))
                 continue
 
-            running = statistics.mean(v for _, v in rows_m if v is not None)
-            # 方法一必须用【busy 时间】反推，不能用墙钟。
-            # 论文的式子是 W_busy ≈ G/R̄ · τ，取反得 τ = W_busy·R̄/G。
-            # 用墙钟会把这个 run 的空转也算进步时间：cap1 空转 36.3%，
-            # 用墙钟得 28.5ms、用 busy 得 18.4ms，而逐请求测量是 20.6ms——
-            # 前者偏离 +38%，后者偏离 -11%。用墙钟时 cap1 的排序也整个跑偏。
+            running_all = statistics.mean(v for _, v in rows_m if v is not None)
+            # τ 的分母必须是【busy 期间的条件均值】，不是全时段均值。
+            #
+            # 式子 W_busy ≈ G/R̄ · τ 里，R̄ 是「每一步在跑几个请求」；而全时段
+            # 采样均值把空转的那些 0 也算进去了，等于 R̄_busy × busy 占比。
+            # 拿它乘 busy 时间，得到的 τ 会系统性地【低】一个 busy 占比：
+            # cap1 空转 36.3%，于是 18.5ms 而不是真实的 ~28.9ms。
+            # 这个错误曾经让「两个测量相差 12% 以内」这句话成立 —— 其实是
+            # 两个错误互相抵消。
+            busy_frac = busy_min / span_min if span_min else 1.0
+            running = running_all / busy_frac if busy_frac > 0 else running_all
             step_back = (busy_min * 60 * running / tokens * 1000) if tokens else None
             rows.append({
                 "run": r.replace("pois200_", ""),
@@ -148,7 +153,7 @@ def main():
                 "idle_min": round(idle_min, 1),
                 "busy_min": round(busy_min, 1),
                 "idle_pct": round(idle_pct, 1),
-                "running": round(running, 2),
+                "running": round(running, 2), "running_all": round(running_all, 2),
                 "step_back_ms": round(step_back, 1) if step_back else "",
                 "step_perreq_ms": (round(step_perreq_ms(steps), 1)
                                    if step_perreq_ms(steps) else ""),
