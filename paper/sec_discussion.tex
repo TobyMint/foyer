@@ -256,9 +256,16 @@ change; a trace whose load moves during the run is the experiment that would
 settle it, and we did not run one. Multi-tenant and heterogeneous-SLO settings
 are where we would look next.
 
-\paragraph{Reproducibility.} Every verdict in this paper is produced by one
-script from the raw per-step logs, and every run is guarded against a shrunken
-KV pool. We report six claims we retracted during the work, because the retractions
+\paragraph{Reproducibility.}
+\label{sec:repro}
+The front and the signed distance of each controller are computed by
+\texttt{scripts/lab/frontier.py} from the raw per-step logs; the run tables and
+the four runs shorter than 999 steps are computed by
+\texttt{scripts/lab/gen\_table.py} and \texttt{scripts/lab/run\_summary.py}
+respectively, and \S\ref{sec:criterion} is computed by
+\texttt{gen\_elasticity.py} and \texttt{gen\_elasticity\_hc.py}. Every run is
+guarded against a shrunken KV pool. We report six claims we retracted during
+the work, because the retractions
 were the most informative events. In order of how much they cost us:
 
 \emph{The denominator of the step cost.} Our first \S\ref{sec:model} divided by

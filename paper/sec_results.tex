@@ -49,8 +49,10 @@ nothing. The run with \emph{no} admission control---every session admitted the
 moment it arrives---finishes in 288.6 minutes at 3.0\% SLO, $87.5$\,pp below
 the envelope and the worst SLO we report. Its median
 time-to-first-token is 1{,}774 seconds, its prefix cache hit rate collapses from
-the runner's reported planned 75.5\%---the all-steps figure, a different
-convention from the round-1+ numbers in \S\ref{sec:related}---to 1.6\%, and its segment SLO is 30\% in the first
+the planned 75.5\% the runner prints in its end-of-run summary (the all-steps
+convention, a different
+one from the round-1+ numbers in \S\ref{sec:related}---for the same trace
+\texttt{gen\_table.py} reports 73.8\% on that convention) to 1.6\%, and its segment SLO is 30\% in the first
 tenth of the run and exactly zero in each of the nine after that. Uncontrolled
 admission does not degrade gracefully; it destroys the cache and then serves
 almost nobody. The question this paper addresses is therefore not whether to
@@ -210,12 +212,12 @@ context even while it is parked in a tool wait, when its KV is evictable and
 therefore absent from the engine's reported occupancy. We argued this was a
 double charge and removed it, admitting on engine telemetry alone.
 
-The charge is not double. Removing it did admit more---engine occupancy rose
-from 41.0\% to 52.2\% of the pool---and the round-1+ prefix hit rate held at
+The charge is not double. Removing it did admit more---median engine occupancy
+rose from 49.2\% to 56.9\% of the pool---and the round-1+ prefix hit rate held at
 80.8\% against 80.6\%, so no eviction spiral occurred. But the run was
 4.2 minutes \emph{slower} and lost 6.0\,pp of SLO. Per \S\ref{sec:model}, the
-extra occupancy raised both $\overline{R}$ and $\tau$ (31.3\,ms against
-23.8\,ms), and the two cancelled.
+extra occupancy raised both $\overline{R}$ (1.35 to 1.48) and $\tau_2$
+(23.8\,ms to 31.3\,ms), and the two cancelled.
 
 We note that this claim had already been falsified once by source inspection:
 SGLang's \texttt{token\_usage} subtracts evictable blocks, so a parked

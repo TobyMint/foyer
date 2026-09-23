@@ -88,8 +88,13 @@ win: mixing cap-$N$ and cap-$M$ by time slice approximates any point on the
 line between them. We flag this segment argument as an argument, not a
 measurement---we did not run the time-sliced policies, and carrying queue state
 and cache contents across a switch could bend the line. It is the criterion we
-apply, and it is conservative in the direction that matters: it can only make
-our negative result harder to claim, never easier. So we take the upper-left
+apply, and it is the stricter of the two we could have used---stricter than
+comparing each controller against the discrete static points alone, because the
+line sits above them. We state the direction plainly rather than claim it as a
+caution: this choice makes our negative result \emph{easier} to reach, not
+harder. Our best arm is $+0.22$\,pp against the line and would be $+3.7$\,pp
+against the nearest static point below it in wall clock. So we take the
+upper-left
 envelope of the static points and report each controller's signed distance
 above or below it. We classify a signed distance of more than $+1.0$\,pp as
 above the front, less than $-1.0$\,pp as below it, and the band between the
@@ -111,8 +116,10 @@ envelope is drawn from the host-tier anchors alone, that segment does not exist
 and those four cannot be adjudicated at all; drawn from device-only anchors
 alone, they sit further below. We report the conservative reading and note that
 the honest statement about those four is \emph{below the front as we defined
-it}, not \emph{below every static configuration}. Every verdict in
-this paper is produced by one script from the raw logs, and the script's own
-first version was wrong---it extrapolated past the end of the envelope and
-declared the slowest static cap a winner. We fixed it and report the episode
-because it is the failure mode this criterion is most prone to.
+it}, not \emph{below every static configuration}. The front and every
+controller's signed distance are computed by one script from the raw per-step
+logs; the table generator computes the distance for the four runs that did not
+complete all 999 steps---both are named in \S\ref{sec:repro}---and that
+script's own first version was wrong: it extrapolated past the end of the
+envelope and declared the slowest static cap a winner. We fixed it and report
+the episode because it is the failure mode this criterion is most prone to.
