@@ -235,6 +235,33 @@ works; it is evidence that the question needs more runs than we have. We state
 the conditional version in the abstract, and we flag this as the second thing
 we would re-run with more GPU time.
 
+\paragraph{The SLO metric excludes the controller's own cost, and we checked.}
+Every SLO number above counts a request as good if its time-to-first-token is
+under 10\,s, and the runner measures that from the moment the request is
+\emph{submitted to the engine}. A session that waits for a permit has not been
+submitted yet, so the wait is invisible---and that wait is precisely the cost
+an admission controller imposes. We therefore recomputed every run on a
+ready-to-first-token basis, where a round's clock starts when the session is
+actually able to run (its arrival for round~0, the previous round's completion
+plus its tool wait otherwise).
+
+The correction is large. Every configuration loses 3--19\,pp of SLO, and the
+loss is systematic: tight caps queue the hardest, so \texttt{cap1} falls from
+94.8\% to 76.2\% while \texttt{cap5} falls only from 27.1\% to 24.2\%. A
+session admitted last under \texttt{cap1} can wait hours for its turn; its
+engine-side TTFT is still 1.6\,s.
+
+What does \emph{not} change is the verdict. The static envelope keeps the same
+four anchors, and of the eleven controller arms, nine move by less than
+2.7\,pp and none crosses the $\pm1.0$\,pp band in a new direction. Two move
+more: the all-throttles-off arm improves by 8.3\,pp and the running-gate arm
+worsens by 2.6\,pp. The one that decides our headline moves the wrong way for
+the controller---\texttt{horizon}=1 goes from $+0.22$ to $-0.68$\,pp, still a
+tie but now on the below side. We report this because a reviewer should ask it,
+and because the answer is the useful part: the negative result is not an
+artifact of choosing an SLO definition that flatters controllers. If anything
+the flattering choice was the one that let our best arm sit above the line.
+
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
 model and one trace family; generality is untested. Only two configurations
 were repeated, twice and three times respectively, so the replicate spread we
