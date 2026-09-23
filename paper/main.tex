@@ -40,9 +40,13 @@ footprint grows every round, and a single session can occupy most of a
 memory-constrained GPU's KV pool. A natural hypothesis follows---a controller
 that reads engine telemetry and admits on measured capacity should beat a
 static concurrency cap. We test that hypothesis directly and find that, on our
-workload and hardware, it is false: across nine controller variants, none
-lands above the static Pareto front, and a plain cap on resident sessions
-remains the fastest policy we measured.
+workload and hardware, it does not hold: across nine controller variants and a
+reimplementation of an independent congestion-based controller, none reaches
+the static Pareto front at the strict latency threshold interactive serving
+cares about, and a plain cap on resident sessions remains the fastest policy we
+measured. We report how far that verdict is conditional---at a loose threshold
+one variant crosses the front by a margin we cannot resolve against run-to-run
+noise---and we treat the conditional version as the claim.
 
 We give a decomposition that locates the reason, and the decomposition is the
 contribution. We split the end-to-end wall clock into \emph{busy} and
