@@ -9,12 +9,12 @@ gives the numbers and each controller's signed distance from that envelope.
 
 The result is unambiguous. Of nine controller variants, none is above the
 envelope. The best, a growth-reserve setting of one round instead of the
-default three, lands $+0.20$ percentage points above the line---and we
+default three, lands $+0.22$ percentage points above the line---and we
 measured how large a margin means nothing. Two configurations were run more
 than once: \texttt{cap2}+HiCache twice and the \sys{} base configuration
 three times. Their wall clocks have coefficients of variation of 1.6\% and
 1.8\% (ranges 3.2\% and 4.0\%), and their SLO has standard deviations of
-0.5\,pp and 0.2\,pp. A margin of 0.20\,pp is therefore at the replicate
+0.5\,pp and 0.2\,pp. A margin of 0.22\,pp is therefore at the replicate
 spread of the very configuration this paper is about. We record it as
 \emph{on} the line rather than above it, and we note that we would have needed
 more than two or three repeats per configuration to resolve a margin this
@@ -49,11 +49,11 @@ appearance of the mechanism that drives the whole frontier.
     Policy & Wall (min) & Conc. & SLO (\%) & $\Delta$ (pp) \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps}}\\
-    cap1              & 527.4 & 1.00 & 94.8 & --- \\
-    cap2              & 304.2 & 1.99 & 89.5 & $-$2.2 \\
-    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$10.7 \\
-    cap4              & 249.9 & 3.94 & 55.7 & $-$27.9 \\
-    cap5              & 260.9 & 4.89 & 27.1 & $-$58.4 \\
+    cap1              & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
+    cap2              & 304.2 & 1.99 & 89.5 & $-$2.23 \\
+    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$10.70 \\
+    cap4              & 249.9 & 3.94 & 55.7 & $-$27.82 \\
+    cap5              & 260.9 & 4.89 & 27.1 & $-$58.39 \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps + HiCache}}\\
     cap2+HC           & 295.0 & 1.99 & 91.6 & \emph{anchor} \\
@@ -61,19 +61,19 @@ appearance of the mechanism that drives the whole frontier.
     cap4+HC           & 213.0 & 3.93 & 63.4 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
-    horizon$=$1       & 255.8 & 2.58 & 84.8 & $+$0.20 \\
-    horizon$=$3 (base)& 291.3 & 2.06 & 89.8 & $-$1.14 \\
+    horizon$=$1       & 255.8 & 2.58 & 84.8 & $+$0.22 \\
+    horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.14 \\
     horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
-    resident base     & 295.5 & 2.40 & 83.8 & $-$7.82 \\
-    horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.5 \\
-    horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.6 \\
-    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.9 \\
-    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.0 \\
-    all throttles off & 415.0 & 2.58 & 46.1 & $-$47.2 \\
+    resident base     & 295.5 & 2.40 & 83.8 & $-$7.81 \\
+    horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.50 \\
+    horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.52 \\
+    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.93 \\
+    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.02 \\
+    all throttles off & 415.0 & 2.58 & 46.1 & $-$47.15 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
-    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$33.4 \\
-    AIMD, paper params& 364.3 & 1.91 & 81.4 & $-$11.2 \\
+    AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.15 \\
+    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$33.35 \\
     \bottomrule
   \end{tabular}
 \end{table}
