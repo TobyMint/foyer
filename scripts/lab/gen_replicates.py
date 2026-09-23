@@ -14,6 +14,7 @@ GROUPS = {
     "cap4+HiCache (frontier anchor)": ["cap4_hc", "cap4_hc_r2"],
     "cap2+HiCache (frontier anchor)": ["pairA_cap2hc", "pairB_cap2hc"],
     "Foyer base (hw=0,t=0.95,h=3)": ["pairA_foyerhc", "pairB_foyerhc", "foyer_hc"],
+    "horizon=1 (the best arm)": ["foyer_hz1", "foyer_hz1_r2"],
 }
 
 

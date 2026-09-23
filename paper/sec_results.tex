@@ -9,13 +9,22 @@ gives the numbers and each controller's signed distance from that envelope.
 
 The result is unambiguous. Of nine controller variants, none is above the
 envelope. The best, a growth-reserve setting of one round instead of the
-default three, lands $+0.22$ percentage points above the line---and we
-measured how large a margin means nothing. The answer is uncomfortable for our
-own method. Three configurations have been run more than once, and while their wall
-clocks are stable across repeats---coefficients of variation of 0.9\%, 1.6\%
-and 1.8\%---their SLO is not: the ranges are 5.1, 1.0 and 0.5\,pp. A fourth
-pair, two runs of \texttt{cap3}+HiCache, we do not use: one of them exceeded
-its own cap. The widest
+default three, lands $+0.22$ percentage points above the line. We ran it
+again, and the repeat lands at $-4.57$. Same code, same trace, same pool,
+guarded the same way: 260.8 minutes against 255.8, and 80.9\% SLO against
+84.8\%. \emph{The one arm that reached the front does not reproduce reaching it}, and
+the two runs of that single configuration differ in signed distance by
+4.8\,pp---one a tie, the other clearly below.
+
+That is not an isolated unlucky pair. Four configurations have been run more
+than once, and while their wall clocks are stable across repeats---coefficients
+of variation of 0.9\%, 1.0\%, 1.6\% and 1.8\%---their SLO is not: the
+ranges are 3.9, 5.1, 1.0 and 0.5\,pp. The two widest belong to configurations
+that \emph{decide} something---the leftmost envelope anchor and the best
+controller arm---so the front we compare against, and the best result we report
+against it, are both uncertain at a scale larger than the $\pm1.0$\,pp band
+we judge with. A fifth pair, two runs of \texttt{cap3}+HiCache, we do not use:
+one of them exceeded its own cap. The widest
 of those belongs to an \emph{envelope anchor}: \texttt{cap4}+HiCache scores
 63.4\% on one run and 68.5\% on its repeat. So the front we measure against
 is not a sharp line, and our $\pm1.0$\,pp verdict band is narrower than the
@@ -95,6 +104,7 @@ appearance of the mechanism that drives the whole frontier.
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $+$0.22 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.14 \\
+    horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$4.57 \\
     horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
     resident base     & 295.5 & 2.40 & 83.8 & $-$7.81 \\
     horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.50 \\
