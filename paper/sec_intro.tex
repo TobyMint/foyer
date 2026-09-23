@@ -98,6 +98,17 @@ leave and therefore that there is no idle time to recover. There is.
         report where that account stops: on host-tier configurations the
         recomputation count is flat while the step cost still moves, and we do
         not know why (\S\ref{sec:model}).
+  \item We identify the host KV tier as what decides whether the engine's step
+        cost bounds admission control at all---and this is the finding we would
+        carry to another system first. On the device-only configurations the
+        per-step elasticity passes one above $\overline{R}_{\text{busy}} \approx
+        1.5$ and the prefix cache collapses from 80.8\% to 32.8\% as the cap
+        rises; with a host tier neither happens---the elasticity stays below one
+        across the controllers' whole operating range, and the hit rate holds at
+        78.7--80.7\% (\S\ref{sec:model}, \S\ref{sec:criterion},
+        \S\ref{sec:related}). Two measurements that do not share a code path
+        give the same answer, which is why our criterion is a property of the
+        workload \emph{and} the configuration rather than of the workload alone.
   \item We reduce the question to one measurable number, the elasticity of
         per-step cost with respect to the running count (\S\ref{sec:criterion}),
         and measure it at $0.38$ on the model-consistent step cost and $0.61$
