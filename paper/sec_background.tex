@@ -91,7 +91,16 @@ and cache contents across a switch could bend the line. It is the criterion we
 apply, and it is conservative in the direction that matters: it can only make
 our negative result harder to claim, never easier. So we take the upper-left
 envelope of the static points and report each controller's signed distance
-above or below it. One property of that envelope deserves flagging, because
+above or below it. We classify a signed distance of more than $+1.0$\,pp as
+above the front, less than $-1.0$\,pp as below it, and the band between the
+two as \emph{on} it---a tie, not a win. The band is a convention we fixed
+before running anything, and we report it here because every verdict in this
+paper depends on it. Our later replicate measurements (\S\ref{sec:results})
+bracket it rather than justify it: the SLO spread of configurations we ran
+more than once ranges from 0.5\,pp to 12.2\,pp, so for some configurations
+the band is generous and for others it is far too narrow. We flag this as a
+weakness of the criterion, not a defence of it. One further property of the
+envelope deserves flagging, because
 five of our nine controller verdicts rest on it. Its right-hand segment runs
 from \texttt{cap2}+HiCache at 295 minutes to \texttt{cap1} at 527, and
 \texttt{cap1} is the only anchor past the left half that runs \emph{without}
