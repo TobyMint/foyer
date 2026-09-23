@@ -53,7 +53,11 @@ strength. Nine controller variants spanning four routes, plus a
 reimplementation of an independent congestion-based controller, all fail to
 reach the static Pareto front at the latency threshold interactive serving
 cares about; a plain cap on resident sessions remains the fastest policy we
-measured. The reason is a decomposition rather than a tuning failure. The wall
+measured. That is not an argument for admitting everything: with no control at
+all the median request waits 1{,}774 seconds for its first token, the prefix
+cache collapses from a 75\% planned hit rate to 1.6\%, and SLO falls to 3\%.
+The question is which selective rule, not whether to be selective. The reason
+our variants fail is a decomposition rather than a tuning failure. The wall
 clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the wall
 clock) is structural---an agent session issues no request while a tool runs,
