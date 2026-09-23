@@ -30,8 +30,12 @@ non-monotonicity in \S\ref{sec:model}, where it turns out to be the first
 appearance of the mechanism that drives the whole frontier.
 
 \begin{table}[tb]
-  \caption{All completed runs. $\Delta$ is the signed distance from the
-  static envelope at that wall clock; positive would mean a genuine win.
+  \caption{All completed runs. \emph{Conc.} is the time-weighted mean number
+  of \emph{live} sessions, which is not the running-request count $\overline{R}$
+  used in \S\ref{sec:model}---a live session is parked in a tool wait most of
+  the time, so \texttt{cap5} shows 4.89 live against 1.84 running. $\Delta$ is
+  the signed distance from the static envelope at that wall clock; positive
+  would mean a genuine win.
   Three controller runs stopped 1--4 steps short of 999 (\texttt{hz0} 995,
   \texttt{hz2} 997, \texttt{rg4} 998); they are listed with their measured
   values and not treated as full runs.}
@@ -63,8 +67,8 @@ appearance of the mechanism that drives the whole frontier.
     horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.5 \\
     horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.6 \\
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$20.9 \\
-    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$24.0 \\
-    all throttles off & 415.0 & 2.58 & 46.1 & $-$48.7 \\
+    running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.0 \\
+    all throttles off & 415.0 & 2.58 & 46.1 & $-$47.2 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
     AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$33.4 \\
