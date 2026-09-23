@@ -1,0 +1,38 @@
+\section{A Criterion for When Admission Control Can Pay}
+\label{sec:criterion}
+
+The decomposition turns the
+question into one number. Throughput during busy time is
+$\overline{R}/\tau$, so raising concurrency by a factor $f$ buys a factor
+$f^{1-\epsilon}$, where
+\begin{equation}
+  \epsilon \;=\; \frac{\mathrm{d}\ln \tau}{\mathrm{d}\ln \overline{R}}
+  \label{eq:elasticity}
+\end{equation}
+is the elasticity of per-step cost with respect to the running count. At
+$\epsilon = 0$ the step cost is flat, concurrency converts one for one into
+throughput, and an admission controller has room to work. At $\epsilon = 1$
+the two cancel exactly and it has none. Everything in between is a
+quantitative statement about how much room.
+
+On the five device-only configurations, where \S\ref{sec:model} establishes
+that the step cost is driven by recomputation, $\overline{R}_{\text{busy}}$
+runs from 1.00 to 1.84. A least-squares fit of Eq.~\ref{eq:elasticity} over
+those five points gives $\epsilon = 0.61$ on the per-request measurement
+($R^2 = 0.89$), or $0.38$ on the model-consistent one
+(Fig.~\ref{fig:cancel}). The practical reading is that every 10\% of added
+concurrency buys roughly 4--6\% of throughput, depending on which step cost
+you can measure---which is why nine controller variants and an independent
+AIMD controller all fail to move the frontier, and why the one that came
+closest landed on it rather than above. We offer $\epsilon$ as a diagnostic, with a caveat we would rather state
+than bury. On our data it is computed from the same wall clock the model then
+explains---$\tau_1$ is derived from $W_{\text{busy}}$, so using it to predict
+$W_{\text{busy}}$ restates rather than tests---and its five points are five
+different policies, so the slope is a cross-policy association, not a
+transportable causal derivative. $\tau_2$ is genuinely independent of the wall
+clock but measures only decode, so it cannot be dropped into a throughput
+equation that includes prefill. What survives is a comparison tool: the
+elasticity orders workloads by how quickly per-step cost eats added
+concurrency, and it can be computed from two runs before committing to a sweep.
+It is not, as an earlier draft of this paper claimed, something that decides
+the question in minutes before building anything.

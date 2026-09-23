@@ -38,7 +38,7 @@ Agentic LLM sessions are long, multi-round jobs whose KV footprint grows every
 round, and on a memory-constrained accelerator the pool is the binding
 resource. Admission control therefore looks like the obvious lever: a
 controller that reads engine telemetry and admits on measured capacity should
-beat a static cap. We give a way to decide, in minutes and before building
+beat a static cap. We give a way to decide, before building
 anything, whether it can. Throughput during busy time is
 $\overline{R}/\tau$---running requests over per-step cost---so raising
 concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
@@ -73,6 +73,7 @@ characterization, negative results
 \input{sec_intro}
 \input{sec_background}
 \input{sec_model}
+\input{sec_criterion}
 \input{sec_results}
 \input{sec_discussion}
 

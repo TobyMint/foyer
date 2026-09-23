@@ -87,7 +87,7 @@ leave and therefore that there is no idle time to recover. There is.
         recomputation count is flat while the step cost still moves, and we do
         not know why (\S\ref{sec:model}).
   \item We reduce the question to one measurable number, the elasticity of
-        per-step cost with respect to the running count (\S\ref{sec:discussion}),
+        per-step cost with respect to the running count (\S\ref{sec:criterion}),
         and measure it at $0.38$ on the model-consistent step cost and $0.61$
         on the per-request one, on the configurations whose mechanism we can
         account for token for token. This is the paper's
@@ -112,7 +112,7 @@ leave and therefore that there is no idle time to recover. There is.
 
 We do not claim that admission control is useless in general. We claim it does
 not pay \emph{here}, we show the measurement that decides it, and we argue
-(\S\ref{sec:discussion}) that the same measurement can be taken on another
-workload in minutes. We also do not claim our hardware and model are
+(\S\ref{sec:criterion}) that the same measurement can be taken on another
+workload before committing to a sweep. We also do not claim our hardware and model are
 representative; our results are from one 24\,GB accelerator and one 7B model,
 and extending them is future work.
