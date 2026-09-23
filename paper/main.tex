@@ -76,9 +76,11 @@ device-only caps does not survive on the host-tier configuration the
 controllers use. The wall
 clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the
-sampled span) is structural---an agent session issues no request while a tool runs,
+sampled span) comes from gaps the tool waits set---an agent session issues no
+request while a tool runs,
 and that wait averages 16.85\,s, not the sub-second figure the trace's median
-suggests. On device-only configurations we can account for the rise token for
+suggests---though how many such gaps a run collects is partly the policy's,
+since a policy sets how many sessions stay live. On device-only configurations we can account for the rise token for
 token; on host-tier ones we cannot, and we say so. We also report the six of
 our own claims we retracted along the way, and the boundary of the verdict: at
 a loose latency threshold one variant does cross the front, by a margin we

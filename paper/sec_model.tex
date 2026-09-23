@@ -198,13 +198,24 @@ identity.
 
 \subsection{Why idle time exists, and why recovering it does not pay}
 
-Idle time is a property of the workload, not of the controller. A session in a
+The length of an individual idle stretch is a property of the workload, not of
+the controller. A session in a
 tool wait holds its permit and its KV but issues no request; with only about
 two live sessions, the probability that all of them are simultaneously waiting
 is substantial. The direct evidence is the duration of the stretches
 themselves: they are of the same order as the tool waits, and an order of
-magnitude longer than the 2\,s control cycle (Fig.~\ref{fig:idle}). A
-controller cannot be blamed for a gap that is set by the tool.
+magnitude longer than the 2\,s control cycle (Fig.~\ref{fig:idle}). No
+controller can shorten a gap that the tool set.
+
+How much idle a \emph{run} accumulates is a different matter, and there the
+controller is not off the hook. Idle accumulates when every live session
+happens to be parked at once, and how many sessions are live is precisely what
+an admission policy sets. Two configurations with the same mean running count
+make this visible: \texttt{horizon}=1 (1.52) and \texttt{cap3}+HiCache (1.51)
+idle 36.7 and 24.1 minutes respectively---a 52\% difference at matched
+concurrency---and 12.6 of the 19.4-minute wall-clock gap between them is that
+idle difference rather than step cost. So the gap durations are the workload's,
+and the number of gaps is partly the policy's.
 
 We note one claim we had to drop here. An earlier draft reported that idle
 fraction falls monotonically with mean concurrency. With the full data it does

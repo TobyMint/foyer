@@ -151,38 +151,50 @@ the pool) with 66 sessions queued, because
 it believes it has 7\% free when it has 48\%. Any account of why it is slow
 that does not mention this is incomplete.
 
-We then asked which of the two it is---the estimate, or something else---by
-instrumenting the admission decision itself. The base run has 8{,}784
-controller cycles, and in 8{,}196 of them at least one session was waiting and
-none was admitted. Sorting those by cause: a projection already above budget
-accounts for 0.2\%, the round gate for none of them, and the SLO valve for
-6.8\%. The remaining 93\% are cycles where the controller selected no candidate
-at all---and for 98.3\% of those the projection sat below 90\% of the budget,
-at a median of 29\%. So the estimate is not what stops it: the controller
-believes most of the pool is free and admits nobody anyway. What stops it is
-its own admission path, which is single-flight---it authorizes at most one
-session per two-second cycle and then waits for that session to actually begin
-a round before authorizing the next, with a sixty-second escape.
+We then asked what actually stops it, by instrumenting the admission decision.
+The path is a conjunction: a session is authorized only if the SLO valve is
+open, the round gate is not full, and its projected footprint fits what remains
+of the budget. Over the base run's 8{,}196 blocked cycles---cycles with a
+session waiting and none admitted---the valve accounts for 6.8\%, the round gate
+for none, and a projection already above budget for 38.4\%.
 
-The split is not the same on every arm, and we give the range rather than the
-base case alone. Across the eighteen controller runs we instrumented, the
-blocked cycles are 23\% to 100\% unexplained by valve, gate and projection
-combined, with a median of 81\%; the projection accounts for at most 8.7\% on
-any arm, and the round gate for at most 0.6\%. The single-flight path is the
-largest cause on most of them---but not on all: on \texttt{nogate} and
-\texttt{rg4} the valve is, at 64\% and 68\% against residuals of 36\% and 32\%.
-We report this because it relocates the failure once more: not the engine's step
-cost, and not mainly the headroom estimate, but a choice about how many sessions
-to authorize at a time.
+The remaining 54.8\% are cycles where the controller selected no candidate at
+all, and here we are explicit about the limit of what we can resolve. The
+controller is single-flight by default: it authorizes at most one session per
+two-second cycle and waits for that session to begin a round before authorizing
+the next. Whether that gate held or whether a candidate was tried and did not
+fit is \emph{not distinguishable from our logs}---the controller does not record
+it---so we do not attribute the bucket to either. One arm bounds it instead:
+\texttt{sf=0} disables single-flight, so the gate cannot be the cause there, and
+its unexplained remainder falls to 29.6\% against a median of 51.4\% across the
+eighteen single-flight arms. That puts the single-flight path at roughly twenty
+points and leaves the headroom estimate as the largest cause we can measure.
+
+Across the nineteen controller runs we instrumented, the projection is over
+budget in a median 35.7\% of blocked cycles (10.7\% to 52.8\%) and the valve in
+a median 17.1\% (0.2\% to 67.9\%); the round gate never exceeds 0.6\% on any run.
+We also record what this accounting omits, because it changes the picture: the
+controller has a starvation guard that bypasses the budget entirely once the
+oldest waiter has waited 240\,s, cooling down for 300\,s. On the base run it
+accounts for 24.8\% of all admissions (51 of 206), and while the projection is
+over budget it is the \emph{only} way in---of 3{,}700 such cycles, nine admitted,
+and all nine were forced. It is therefore the guard, not the budget test, that
+sets the floor on how fast this controller can admit.
 
 The second is that under-use does \emph{not} order the outcomes, so it is not
 the whole explanation either. \texttt{horizon}=1 and \texttt{cap3}+HiCache sit
 at the same median occupancy (57.8\% of the pool) and the same mean running
-count (1.31 against 1.36), and the cap is 19 minutes faster. \texttt{hz0} runs
+count (1.52 against 1.51 on the busy-time measure of \S\ref{sec:model}), and
+the cap is 19 minutes faster. \texttt{hz0} runs
 at 64.1\%, higher than that cap, and is 54 minutes slower. Occupancy buys
 running requests reliably---the two columns in \texttt{occupancy.csv} track
 each other across all twenty arms---but converting running requests into wall
-clock is where the per-step cost of \S\ref{sec:model} does its work. Both
+clock is not simply the per-step cost of \S\ref{sec:model}. Decomposing that
+19 minutes into its idle and busy components, 12.6 of them are idle time---%
+65\%---and only 6.8 are busy; the two runs' step costs differ by 1.2\,ms
+(29.2 against 28.0), about 4\%. A parked session is one the controller has
+authorized but not yet released, so the same policy that sets the running count
+also sets a large part of the idle time. Both
 effects are real; on this workload the unused-memory one is larger for the arms
 that finish worst, and the step-cost one is what separates the arms that finish
 close together.
