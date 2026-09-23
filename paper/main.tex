@@ -34,46 +34,35 @@ Decomposing End-to-End Wall Clock in Memory-Bound Agentic LLM Serving}
 \maketitle
 
 \begin{abstract}
-Agentic LLM workloads differ from chat in a way that makes admission control
-look like the obvious lever: each session is a long, multi-round job whose KV
-footprint grows every round, and a single session can occupy most of a
-memory-constrained GPU's KV pool. A natural hypothesis follows---a controller
-that reads engine telemetry and admits on measured capacity should beat a
-static concurrency cap. We test that hypothesis directly and find that, on our
-workload and hardware, it does not hold: across nine controller variants and a
-reimplementation of an independent congestion-based controller, none reaches
-the static Pareto front at the strict latency threshold interactive serving
-cares about, and a plain cap on resident sessions remains the fastest policy we
-measured. We report how far that verdict is conditional---at a loose threshold
-one variant crosses the front by a margin we cannot resolve against run-to-run
-noise---and we treat the conditional version as the claim.
+Agentic LLM sessions are long, multi-round jobs whose KV footprint grows every
+round, and on a memory-constrained accelerator the pool is the binding
+resource. Admission control therefore looks like the obvious lever: a
+controller that reads engine telemetry and admits on measured capacity should
+beat a static cap. We give a way to decide, in minutes and before building
+anything, whether it can. Throughput during busy time is
+$\overline{R}/\tau$---running requests over per-step cost---so raising
+concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
+$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero,
+admission control has room; near one, it has none. We measure $\epsilon$ on a
+memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
+four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
+system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
 
-We give a decomposition that locates the reason, and the decomposition is the
-contribution. We split the end-to-end wall clock into \emph{busy} and
-\emph{idle} time, and show that the busy component is governed by two
-quantities the admission decision does not control: the per-step cost and the
-number of requests actually in flight. Admission policy moves the
-second---but the first rises with it, and takes back about a third of what
-the extra concurrency buys. On configurations without a host cache tier
-we can account for that rise token for token: evicted prefixes are recomputed
-at close to one for one, and the recomputation is charged to the decode step. The idle component (7.4--36.3\% of the wall clock) is structural: an
-agent session issues no request while waiting on a tool, and we measure that
-this wait averages 16.85\,s, not the sub-second figure a naive reading of the
-trace suggests. We further show that the same throttle setting that is worth
-51\% at low load costs 42\% at high load---so no single scalar can be optimal
-across regimes, which is precisely the regime in which adaptive control could
-have paid. We report four policy routes we tested, two of them
-falsified by measurement against criteria fixed in advance, and a
-reimplementation of an independent congestion-based controller that also lands
-below the front. The
-constructive output is a single measurable number: the elasticity of per-step
-cost with respect to the running count. On configurations where the mechanism
-is confirmed token for token it is 0.6, meaning every 10\% of added
-concurrency buys about 4\% of throughput---which is why no adaptive policy we
-built could move the frontier. We argue that prior systems' reported gains
-from state-preserving suspension are largely already realised by the
-permit-per-session design our controller inherits, and we state the boundary
-of that argument.
+The verdict that criterion returns here is negative, and we report it at that
+strength. Nine controller variants spanning four routes, plus a
+reimplementation of an independent congestion-based controller, all fail to
+reach the static Pareto front at the latency threshold interactive serving
+cares about; a plain cap on resident sessions remains the fastest policy we
+measured. The reason is a decomposition rather than a tuning failure. The wall
+clock splits into busy and idle time; admission policy moves only the running
+count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the wall
+clock) is structural---an agent session issues no request while a tool runs,
+and that wait averages 16.85\,s, not the sub-second figure the trace's median
+suggests. On device-only configurations we can account for the rise token for
+token; on host-tier ones we cannot, and we say so. We also report the six of
+our own claims we retracted along the way, and the boundary of the verdict: at
+a loose latency threshold one variant does cross the front, by a margin we
+cannot resolve against run-to-run noise.
 \end{abstract}
 
 \begin{IEEEkeywords}
