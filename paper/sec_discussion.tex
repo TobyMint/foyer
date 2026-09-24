@@ -84,31 +84,42 @@ where load is light and dominated where load is heavy is the pattern this
 paper set out to explain, and it is the pattern we measured.
 
 The second finding is the more useful one, and what it establishes is negative.
-A backlog signal exists---on the 200-session tier and on the same-generation 25-session
-arm alike the admission queue is non-empty in nearly every control cycle inside
-the run (97.7\% and 93.2\%). What it will not do is read as load. These two arms
-are not a controlled comparison. The 25-session trace carries no arrival times
-at all, so its twenty-five sessions are submitted together: its queue opens at
-24 of 25 and never returns to that depth, while the 200-session one peaks at 135
-of 200 a quarter of the way in. Normalised by each tier, the ordering reverses
----the 25-session controller withholds 72\% of its sessions against 33\%---and
-the medians are not stationary either: 21 against 21 over the first tenth of the
-run, 89 against 18 in the middle, 6 against 0 at the end. The number an earlier
-draft quoted, ``four times the backlog'', set a mid-run peak on one trace
-against an opening instant on another; we no longer quote a ratio between them.
-(\texttt{backlog.csv} carries both windows, both denominators, and the phase
-medians, so all of this is recomputable.)
+A backlog signal exists---on \texttt{foyer\_hc}, the 200-session baseline, and on
+\texttt{foyer\_push\_25}, the same-generation 25-session arm, the admission queue
+is non-empty in nearly every control cycle inside the run (97.7\% and 93.2\%).
+What we cannot do is read it as load, and the reason is that these two arms are
+not a controlled comparison. The 25-session trace carries no arrival times at
+all, so its twenty-five sessions are submitted together: its queue opens at 24
+of 25 and never returns to that depth, while the 200-session one peaks at 135 of
+200 a quarter of the way in. Normalised by each tier the ordering reverses---the
+25-session controller withholds 72\% of its sessions, the 200-session one 33\%,
+both at the median cycle---and the medians are not stationary either (200-session
+first, then 25): 21 against 21 over the first tenth of the run, 89 against 18 in
+the middle, 6 against 0 at the end. The number an earlier draft quoted, ``four
+times the backlog'', set a mid-run peak on one trace against an opening instant
+on another; we no longer quote a ratio between them. (\texttt{backlog.csv}
+carries both windows, both denominators, and the phase medians, so all of this
+is recomputable.)
 
-What does survive is the direction of the explanation, and it is the part that
-matters. At the 25-session tier the controller holds eighteen sessions waiting
----the median over the run---while the engine runs about one request. A queue
-that deep on a tier that small is manufactured by the throttling itself, not
-evidence that demand has slackened. Reading backlog correctly therefore requires
-combining it with progress through the run, which is a stateful computation a
-cap cannot perform. That is the most promising direction we did not finish, and
-we are explicit that we did not finish it. The earlier-harness 25-session arms
-of \S\ref{sec:load} run shallower still (11--13 over the same window), which is
-why we compare only the same-generation pair.
+What does survive is the direction of the explanation, and we can point at the
+measurement rather than infer it from the queue's depth. At the 25-session tier
+the controller holds eighteen sessions waiting at the median cycle; over the 739
+cycles in which a session waited and none was admitted, the safety valve
+accounts for 3.7\% of them and the round gate for 0.0\%, and the controller's
+own occupancy \emph{projection} sits at 87.4\% of its budget while the engine
+reports 43.6\%---a factor of two, and the same over-estimate \S\ref{sec:results}
+measures at 1.79 on the baseline arm. The queue is what the controller's own
+accounting produces. (Depth alone would not have shown this: the 200-session
+baseline runs at a mean of 1.137 requests against the 25-session tier's 1.136,
+so ``deep queue, one request in flight'' describes both.) Reading backlog
+correctly therefore requires combining it with progress through the run, which
+is a stateful computation a cap cannot perform. That is the most promising
+direction we did not finish, and we are explicit about how far we did not finish
+it: we never built or tested a backlog-based load estimator, so we do not claim
+to have shown that one cannot work---only that raw queue length does not order
+these two tiers and that the queue is the controller's own artifact. The
+earlier-harness 25-session arms of \S\ref{sec:load} run shallower still (11--13
+over the same window), which is why we compare only the same-generation pair.
 
 \begin{figure}[tb]
   \centering
@@ -465,32 +476,42 @@ landed under either since: \texttt{d692ab11f396} on 4 runs and
 \texttt{e1dd5ae78019} on 3. (These are snapshot counts too---a future run could
 in principle be launched from either copy---but none is planned, whereas the two
 workhorse copies are what the re-runs in this revision are using.) None of the four matches the repository copy
-(\texttt{a21bd2b63774}), and the difference is not one hunk but several: the
-queue-scan fix described in \S\ref{sec:results:gate}, and a rename of the
-logging variable whose rebinding \S\ref{sec:results} identifies as the source
-of a retraction. The repository has both; none of the four running copies has
-either.
+(\texttt{a21bd2b63774}); the one divergence we measured and wrote down while
+the copies still existed was 23 lines in \texttt{controller\_budget3.py},
+a charge-mode flag added on the machine and not in the repository. Two other
+files diverged by more (\texttt{controller\_foyer.py} by 108 lines,
+\texttt{run\_matrix.py} by 111), so the four copies are not the repository
+under another hash. What we can no longer do is say precisely how each of the
+four differed: they were read while they existed and only the repository
+revision survives on the machine, so that comparison cannot be re-derived from
+what we still have.
 
 One coincidence in those two small counts deserves stating rather than leaving
-for a reader to find. The arms the contention audit flags are not a scattered
-subset: they are \emph{all four} runs recorded under \texttt{d692ab11f396},
-a whole code copy. Those re-runs therefore changed two things at once---the
-contention window and the controller revision---and our data does not separate
-them. What argues against the revision being the cause is the other small copy:
-\texttt{e1dd5ae78019} was also used to launch arms---three start records, of
-which one completed---and that completed run, \texttt{horizon}=1, is clean
-($\tau_2$ 24.6\,ms, and only 14 minutes at four lanes against 282--296 for the
-four flagged runs). So a copy alone does not produce the signature. That is one
-completed run, not three, and we state it as one. The
-question cannot be closed from here: only the repository revision survives on
-the machine, so the four campaign copies can no longer be diffed.
+for a reader to find, and it is worse than a coincidence. The arms the
+contention audit flags are not a scattered subset: they are \emph{all four} runs
+recorded under \texttt{d692ab11f396}, a whole code copy---and that copy has no
+other run. So there is no run under it that escaped the window, and the two
+explanations, the revision and the co-tenancy, cannot be separated by any
+comparison in our data. The other small copy does not break the tie.
+\texttt{e1dd5ae78019} was used to launch three arms of which one completed, and
+that one, \texttt{horizon}=1, spent only 14 minutes at four lanes against
+282--296 for the four flagged runs: below the one-hour threshold the audit itself
+uses, so it was never exposed to the condition under test. Its being clean is
+what the flag's own definition predicts, whichever copy it ran. We therefore
+state the confound rather than a resolution. The re-runs changed the contention
+window and the controller revision together, and only the repository revision
+survives on the machine, so the campaign copies cannot be diffed after the fact.
 The numbers in this paper therefore describe the pre-fix path, with one
 partial exception we want to state precisely rather than let a reader assume
 the stronger thing. We did run the same configuration with \texttt{sf=0}
 (\S\ref{sec:results:idle-memory}), and on the running copy that changes two
 things at once: it scans the queue \emph{and} drops the one-per-cycle limit,
 because the \texttt{break} that enforces single-flight is inside the same
-conditional. The repository's fix keeps the limit and only adds the scan. So our
+conditional. That last sentence is a reading of the copy the run actually used,
+\texttt{f825bc768188}, taken while it was still on the machine; like the other
+three campaign copies it is not in the repository, so the reading cannot be
+re-checked from what we still have, and a reader should weigh it accordingly.
+The repository's fix keeps the limit and only adds the scan. So our
 run is not a test of the fix as written---it is a test of the fix plus a looser
 admission rate, and it moves the arm along the front rather than past it. The
 narrower experiment, scan-with-the-limit-kept, is the one we would do first with

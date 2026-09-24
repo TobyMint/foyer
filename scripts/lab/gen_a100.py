@@ -86,6 +86,59 @@ def one(d):
                 reuse_frac="%.4f" % ((prompt - unc) / prompt if prompt else 0))
 
 
+def crossing(points):
+    """兑现率【穿过 50%】时的 R̄ —— 分段线性插值。points = [(Rbar, realized_pct), ...] 按 R̄ 升序。
+
+    这是 A100 判据的**唯一判决轴**（docs/prereg_a100_addendum_20260925.md 第一节）。
+    只在相邻两点跨越 50% 时给值；全程高于 50% 或全程低于 50% 都返回 None，
+    两种情况由 verdict() 分开处理（前者是支持、后者是证伪，不能混）。
+    """
+    pts = sorted(points)
+    for (r0, y0), (r1, y1) in zip(pts, pts[1:]):
+        if (y0 - 50.0) * (y1 - 50.0) <= 0 and y0 != y1:
+            return r0 + (50.0 - y0) / (y1 - y0) * (r1 - r0)
+    return None
+
+
+def verdict(a100_pts, main_csv):
+    """按预注册补丁给判决。**判据写在代码里，不由人读表得出**（CLAUDE.md 纪律 4）。
+
+    3090 的交叉点从 reuse.csv 的 device-only 五点算（只算一次，作为常数对照），
+    A100 的从它自己的曲线算。判决表：
+      A100 交叉点 > 3090 交叉点            -> 支持
+      A100 交叉点 <= 3090 交叉点           -> 证伪
+      全程没到过 50% 以下 且 max R̄ >= 3090 交叉点 -> 支持（且必须满足那个 R̄ 条件）
+      全程没到过 50% 以上（即一直低于 50%）-> 证伪（更彻底的塌陷）
+      其余（没跨过、又没测到那个 R̄）      -> 「在 R̄ <= X 内未观察到塌点」
+    """
+    dev = []
+    with open(main_csv) as f:
+        for r in csv.DictReader(l for l in f if not l.startswith("#")):
+            if r["family"] == "device_only":
+                dev.append((float(r["Rbar_busy"]), float(r["realized_frac"]) * 100))
+    base = crossing(dev)
+    out = {"base_crossing": base, "a100_crossing": None, "verdict": ""}
+    if not a100_pts or base is None:
+        out["verdict"] = "A100 数据还没落地（或缺 3090 对照），不判决"
+        return out
+    a = crossing(a100_pts)
+    out["a100_crossing"] = a
+    lo = min(y for _, y in a100_pts)
+    hi = max(y for _, y in a100_pts)
+    mx = max(r for r, _ in a100_pts)
+    if a is not None:
+        out["verdict"] = ("支持（A100 交叉点 %.4f > 3090 的 %.4f）" % (a, base) if a > base
+                          else "证伪（A100 交叉点 %.4f <= 3090 的 %.4f）" % (a, base))
+    elif lo > 50.0:
+        out["verdict"] = (("支持（全程高于 50%%，且 max R̄ %.4f >= 3090 的 %.4f）" % (mx, base))
+                          if mx >= base else
+                          ("在 R̄ <= %.4f 内未观察到塌点 —— **不能判成支持**："
+                           "没测到 %.4f 那儿（中立子 agent 第 9 轮补的条件）" % (mx, base)))
+    else:
+        out["verdict"] = "证伪（全程低于 50%%，比 3090 更彻底）"
+    return out
+
+
 def main():
     trace_p, a100_root, main_root, out_p = sys.argv[1:5]
     runs = sys.argv[5:] or RUNS
@@ -141,6 +194,16 @@ def main():
         print("!! 未写入（缺 summary.json）：")
         for m in missing:
             print("   " + m)
+
+    # ---- 预注册判据（判据在代码里，不由人读表得出）----
+    ap = [(float(r["Rbar_busy"]), float(r["realized_frac"]) * 100)
+          for r in rows if r["machine"].startswith("A100")]
+    v = verdict(ap, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "..", "..", "paper", "data", "reuse.csv"))
+    print("\n预注册判据（docs/prereg_a100_addendum_20260925.md 第一节，唯一判决轴）")
+    print("  3090 的 50%% 交叉点 R̄ = %s" % ("%.4f" % v["base_crossing"] if v["base_crossing"] else "?"))
+    print("  A100 的 50%% 交叉点 R̄ = %s" % ("%.4f" % v["a100_crossing"] if v["a100_crossing"] else "（未跨越）"))
+    print("  判决：%s" % v["verdict"])
 
 
 if __name__ == "__main__":

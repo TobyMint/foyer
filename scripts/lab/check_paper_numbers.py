@@ -50,6 +50,16 @@ def has(text, v):
             or ("{:,}".format(n).replace(",", "{,}")) in text)
 
 
+
+def _import_running_all(run):
+    """从 metrics.csv 现算 sglang:num_running_reqs 的全时段均值 —— 与
+    gen_arm_running.py 的 running_all 同一个量（那边也从同一个列算）。"""
+    p = os.path.join(ROOT, "results/night", run, "metrics.csv")
+    v = [float(x["sglang:num_running_reqs"]) for x in csv.DictReader(open(p))
+         if x.get("sglang:num_running_reqs")]
+    return sum(v) / len(v)
+
+
 def main():
     P = paper_text()
     alltext = "\n".join(P.values())
@@ -301,6 +311,28 @@ def main():
             ck("§VI base 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
         if r.get("run") == "bres_r2":
             ck("§VI bres 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
+
+    # ---- §VII 重写后新引的机制读数（闸门归因 + 占用投影）----
+    # 2026-09-25 中立子 agent 第 9 轮指出：正文原来用「队列深 + 引擎只跑一个」
+    # 论证「队列是节流造出来的」，而那个并列在 200 档基线上【一模一样地成立】
+    # （foyer_hc 的 running 均值 1.137，push_25 是 1.136）—— 区分不了任何东西。
+    # 现在改成引闸门归因与占用投影。这几个数必须能从表里追到。
+    _ga = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/gate_attrib.csv"))}
+    _pj = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/projection.csv"))}
+    _k25 = "pois200_foyer_push_25"
+    if _k25 in _ga:
+        ck("§VII 25 档被挡周期数", _ga[_k25]["blocked_cycles"], "sec_discussion.tex")
+        ck("§VII 25 档安全阀占比", _ga[_k25]["valve_pct"], "sec_discussion.tex")
+        ck("§VII 25 档回合闸门占比", _ga[_k25]["round_gate_pct"], "sec_discussion.tex")
+    if _k25 in _pj:
+        ck("§VII 25 档投影占预算%", _pj[_k25]["proj_pct_of_budget"], "sec_discussion.tex")
+        ck("§VII 25 档引擎上报占预算%", _pj[_k25]["occ_pct_of_budget"], "sec_discussion.tex")
+    # 「两档的在跑数几乎一样」——这是那段论证的前提，钉住它
+    _ar = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arm_running.csv"))}
+    if "foyer_hc" in _ar:
+        ck("§VII 200 档基线在跑均值", "%.3f" % float(_ar["foyer_hc"]["running_all"]),
+           "sec_discussion.tex")
+    ck("§VII 25 档在跑均值", "%.3f" % float(_import_running_all(_k25)), "sec_discussion.tex")
 
     # ---- τ₂ 的三份实现必须逐 run 相同（共用定义的守护检查）----
     # `gen_concurrency.tau2()` 在实验机上跑、那边没有 scripts/lab/，所以它保留
