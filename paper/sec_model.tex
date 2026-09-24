@@ -284,14 +284,14 @@ therefore evicts the most (21.1\,M tokens, the largest in the table). The
 point (21.6--27.9\,M against 8.6--20.7\,M), because the host serves
 9.5--19.3\,M in front of the recomputation instead of letting the device keep
 it---so a reader watching only the device hit rate would conclude the host tier
-made things worse. That rule
-on its own selects \emph{twenty}, and we name the four runs it is not meant to
-catch, because a reader scanning the logs will find them: two that stopped at
-763 and 770 steps (they realize 70.7\% and 67.1\%, and we exclude them for not
-finishing rather than for their values), the variable-load family (a different
-trace, and short of the step count as well), and one whose engine
+made things worse. The rule is mechanical, and we state the two exclusions that are not, because a
+reader applying it will meet them: one run whose engine
 prompt-token counter reads $1.41\times$ the trace plan with zero retractions
-and no client-side retries, which we could not reconcile. (Two denominators appear here and we name them: the 75.5\%
+and no client-side retries, which we could not reconcile, and one superseded
+measurement that we re-ran clean (\S\ref{sec:repro}). The step condition is
+doing work of its own: two further runs on this trace with a host tier stopped
+at 763 and 770 steps, realize 70.7\% and 67.1\%, and are excluded for not
+finishing rather than for their values. (Two denominators appear here and we name them: the 75.5\%
 is the trace's bound as a share of the prompt, and 92.5\% is the best observed
 reuse as a share of \emph{that bound}---\texttt{cap1}, the run that realizes
 it, reuses 69.9\% of its prompt. \texttt{reuse.csv} carries \texttt{reuse\_frac} and
@@ -374,11 +374,12 @@ measured while three other engine instances shared the host, which inflates
 per-step cost by 24--41\% and leaves the volume columns untouched
 (\S\ref{sec:repro}); they are being re-measured and we do not use their
 timing. A fourth was re-measured clean and is in the set above with its new
-value. Across the remaining sixteen the $\tau_1$ spread does not sit
-unexplained at all: it tracks their recomputation closely (a straight line
-through the sixteen leaves every run within $1.5$\,ms, $r = +0.92$), which is
-the mechanism of this section holding inside the host tier rather than a
-residual. We report the association and not the line: the coefficients are
+value. Across the remaining sixteen the $\tau_1$ spread does not look
+like a residual: it tracks their recomputation closely (a straight line
+through the sixteen leaves every run within $1.5$\,ms, $r = +0.92$). That is a
+cross-policy association like every other fit in this section, not an
+intervention, and we read it as
+the mechanism of this section holding inside the host tier. We report the association and not the line: the coefficients are
 fitted to one configuration family and we have no derivation for them. We note that the negative
 result does not rest on it either way: the cancellation is measured directly,
 not inferred from the mechanism.

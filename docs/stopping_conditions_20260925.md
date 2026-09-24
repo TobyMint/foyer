@@ -43,6 +43,7 @@
 | 第 15 轮（codex + 子 agent 第 7 轮） | `docs/finding_review_r15_disposition_20260925.md` | 四条 major + 六条 minor 全部处置；codex 给 5–15%，主要驱动是 §III 一段残留 |
 | 第 16/17/18 轮（codex 复读） | `reviews/codex_r1[678]_20260925.md` | 逐轮核「九条判决」的限定是否到位；最后一轮 6 处里 5 处 RESOLVED、1 处 PARTIALLY，已再改 |
 | **第 19 轮（codex 全稿）** | `docs/finding_review_r19_disposition_20260925.md` | 5 条 major + 5 条 minor 全部处置；**其中两条 major 是我自己在这一轮引入的** |
+| **子 agent 第 8 轮（全稿）** | `docs/finding_review_r8sub_disposition_20260925.md` | 9 条「强于证据」+ 8 处矛盾全部处置；与 codex 第 19 轮几乎不重叠，两条线都要跑 |
 
 **本轮（bres_r2 落地）的处置**记在 `docs/finding_rerun_bres_20260925.md`，12 条连锁改动。
 

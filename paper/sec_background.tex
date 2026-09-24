@@ -14,20 +14,24 @@ cannot be co-resident: their combined contexts (89{,}436 and 87{,}821 tokens)
 exceed the pool by 75\%.
 
 The tool wait is the load's defining property and the one most easily
-misread. Its \emph{median} is 0.35\,s, which invites the conclusion that
-sessions never leave the engine. Its \emph{mean} is 16.85\,s measured and 15.82\,s
-demanded, and the maximum is 300\,s; 21.8\% of the
+misread. Its demanded \emph{median} is 0.34\,s, which invites the conclusion
+that
+sessions never leave the engine. Its demanded \emph{mean} is 15.82\,s, and the
+maximum is 300\,s; 21.8\% of the
 tool waits the trace specifies exceed ten seconds---18.0\% of the 799 round
-transitions, 14.4\% of its 999 steps---and 18.6\% of the measured gaps do. We verified that our replay
-harness honors the trace faithfully: across 799 round transitions the measured
-gap is 16.85\,s mean against a demanded 15.82\,s. On a typical transition the
-harness adds nothing---the median of the per-transition measured/demanded
-ratios is 1.001---while the ratio of the two means is 1.065, the difference
-sitting in the tail. The corpus's own characterization makes the same point
+transitions, 14.4\% of its 999 steps. We verified that our replay
+harness honors the trace faithfully on the run with no controller: across the
+799 round transitions of the static cap of one the measured
+gap is 15.82\,s mean against a demanded 15.82\,s, and the median of the
+per-transition measured/demanded ratios is 1.001. The
+controller's own run measures 16.85\,s against the same 15.82\,s demanded---a
+ratio of means of 1.065---and \S\ref{sec:model} attributes that 1.03\,s to the
+controller's admission delay rather than to the harness, because the harness is
+exact on the run where the controller is not in the path. The corpus's own characterization makes the same point
 qualitatively---it reports
 ``diverse and heavily-tailed tool calls'' and calls these gaps
 ``human-paced''---but gives no numeric mean \cite{zhu2026tracelab}, so the
-16.85\,s above is our measurement over the released trace, not a figure we
+15.82\,s above is our measurement of the released trace, not a figure we
 quote from that paper.
 
 \subsection{Engine and the binding constraint}
@@ -114,7 +118,9 @@ more than once ranges from 0.5\,pp to 5.1\,pp, so for some configurations
 the band is generous and for others it is far too narrow. We flag this as a
 weakness of the criterion, not a defence of it. One further property of the
 envelope deserves flagging, because
-three of the nine controller variants finish slower than 295 minutes. Its
+three of the rows in Table~\ref{tab:runs}'s controller section finish slower
+than 295 minutes---two of the nine variants plus the all-throttles-off arm,
+which runs a different controller. Its
 right-hand segment runs from \texttt{cap2}+HiCache at 295 minutes to
 \texttt{cap1} at 527, and \texttt{cap1} is the only anchor there that runs
 \emph{without} HiCache. Those three---\texttt{hz2},

@@ -12,8 +12,12 @@ entirely without a host tier}. Its static points, its envelope and its
 controller are all device-only. That makes the comparison internally fair---both
 sides of the front are the same configuration---but it means this workload
 tests the negative result and not the tier mechanism, and it leaves an
-alternative account of the controller's failure standing: it failed here on the
-configuration where \S\ref{sec:model} says added concurrency is expensive. The two workloads differ in ways that matter for
+alternative account of the controller's failure standing: it failed here under
+a configuration that \emph{cannot} separate the two, because there is no host
+tier to separate. (Its own elasticity does not supply the missing condition
+either---at the controller's operating point $\epsilon(\tau_1)$ is
+$-0.28$ over $\overline{R}$ 1.16--1.29, so added concurrency was still cheap
+there; \S\ref{sec:criterion}.) The two workloads differ in ways that matter for
 this paper, which is why we chose it. Its sessions are smaller (median prompt
 18{,}809 tokens against 23{,}187) and its tool waits are far longer at the
 median: over round transitions---same session,
@@ -144,15 +148,14 @@ separate this trace's own six static caps on that axis. That axis is
 threshold-dependent here, and in the opposite direction from the main trace's:
 at $5$\,s this trace's caps separate much more (the cap of eight scores
 $78.2$\% against the cap of two's $99.0$\%) and the controller sits
-$+1.87$\,pp above the envelope---outside the band, nominally a win on that
-axis, and the paragraph's last sentence takes it back---whereas
+$+1.87$\,pp above the envelope---outside the band---whereas
 on the main trace none of the cleanly measured controllers reaches the front at
 $5$\,s, and one appears above it at
 $20$\,s in a single measurement whose repeat lands below the line
 (\S\ref{sec:discussion}). We report both readings rather than the one
-that gives a single answer, and we report one more thing the repeat settled:
-\emph{that single crossing does not reproduce}. The same configuration run
-again reads $+0.86$\,pp at $5$\,s---inside the band---against the first run's
+that gives a single answer. The 5\,s win does not survive its repeat: the same
+configuration run
+again reads $+0.86$\,pp---inside the band---against the first run's
 $+1.87$, while at $10$\,s the two agree to three decimals ($+0.40$ each). So
 this trace's one crossing is also a place where a second run puts the
 controller back inside the tie band; \S\ref{sec:discussion} reports the same

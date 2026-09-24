@@ -82,8 +82,10 @@ runs $\tau_1$ spans 27.0--36.7\,ms, and on the device-only family, raising the
 busy-time running count from 1.00 to 1.84 absorbs a third of what the extra
 concurrency buys.
 
-The reason $\tau$ moves is recomputation, and whether recomputation happens is
-decided by the memory tier rather than by the policy. A session's prefix is
+The reason $\tau$ moves is recomputation, and in our data whether
+recomputation happens tracks the memory tier rather than the policy---an
+association across five policies, which \S\ref{sec:model} calls consistent
+rather than demonstrated. A session's prefix is
 worth reusing only while it is still resident, so prefix \emph{reuse} is
 bounded by the workload---in our trace, 75.5\% of the prompt tokens, a bound
 no configuration we ran reaches. How much of that bound is realized is where
@@ -113,7 +115,8 @@ of all idle \emph{time} sits in stretches over 20\,s, an order of magnitude
 above the 2\,s control cycle. (The median is not a good summary here: it moves
 between 5 and 10\,s depending on which runs are pooled, because one long run
 contributes a fifth of the stretches.) Crucially, the tool wait itself is much longer than
-the trace's median suggests: the median inter-round gap is 0.35\,s, but the
+the trace's median suggests: the demanded median inter-round gap is 0.34\,s,
+but the
 \emph{mean} is 15.8--16.9\,s with 22\% of gaps over ten seconds. A controller
 that
 reads only the median concludes, as we initially did, that sessions never
@@ -191,8 +194,14 @@ leave and therefore that there is no idle time to recover. There is.
         Put differently, no single scalar cap is optimal across both, which is
         the regime adaptive control exists for. On the low-load tier, where
         that argument bites hardest, the controller is \emph{not} worse---%
-        same-generation measurements put it on the front, $+0.9$\,pp above the
-        line and inside the noise. On the high-load tier it is dominated. That
+        same-generation measurements put it $+0.9$\,pp above the line, which is
+        about a replicate wide at the tightest replicate spread we have and
+        inside it at the widest---so we report it as \emph{not worse}, not as a
+        win. On the high-load tier it is below the line by 0.55\,pp at best.
+        (The stronger form of this---one throttle switch worth $+51\%$ on the
+        light tier and $-42\%$ on the heavy one---is measured across two
+        harness generations, and \S\ref{sec:load} says so.)
+        That
         asymmetry, not a blanket failure, is what this paper measures.
   \item We make the measurements reproducible: the front and each controller's
         signed distance are produced by one script from the raw per-step logs,

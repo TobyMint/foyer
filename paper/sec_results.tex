@@ -7,7 +7,7 @@ Fig.~\ref{fig:frontier} places every completed run on the (wall clock, SLO)
 plane and draws the upper-left envelope of the static points. Table~\ref{tab:runs}
 gives the numbers and each controller's signed distance from that envelope.
 
-The result is unambiguous for the arms we can compare, and we say which
+The result is consistent across every arm we can compare, and we say which
 those are before we lean on it. Of the nine controller variants, six are clean
 measurements; of those six, \emph{none} is above
 the envelope---not one, on any run, and the pair we repeated most tightly says
@@ -18,10 +18,12 @@ line rather than below it, but on the below side of it.
 
 The six, and why not the other three: those carry the co-tenancy flag of
 Table~\ref{tab:runs}, their wall clock, SLO and $\Delta$ are not comparable
-with the rest, and their verdict is \emph{provisional}. The direction of the
-correction is known and it runs our way---co-tenancy inflates the step cost,
-which pushes an arm \emph{down}, so their measured distances overstate how far
-below the line they are; the question is only by how much. A fourth variant
+with the rest, and their verdict is \emph{provisional}. The one re-measurement we have moved our way---co-tenancy
+inflates the step cost, which pushes an arm \emph{down}, so their measured
+distances overstate how far
+below the line they are---but that is one data point, and co-tenancy could in
+principle also reorder completions and change which prefixes survive, which
+need not push the same way. A fourth variant
 carried the flag and has been re-measured (\S\ref{sec:repro}): it moved from
 $7.81$\,pp below the front to $1.33$, still below and still outside the tie
 band. That 6.5\,pp is the largest correction the flag has produced so far, and
@@ -53,7 +55,7 @@ scales with the grid rather than with the run), while both HiCache runs peak at 
 repeat is also both faster and higher on SLO (230.3 minutes, 81.9\% against
 236.4 and 81.1\%), so by the same rule that displaced \texttt{cap4}+HiCache's
 first run it displaces this one---and moving that anchor is what puts our
-best arm below the line rather than on it.\footnote{The repeats are uneven, and
+best arm on the losing side of the band rather than inside it.\footnote{The repeats are uneven, and
 we do not want the tightest pair to stand for all of them. Five configurations
 have been run more than once; their SLO spreads are 0.5, 0.8, 1.0, 3.9 and
 5.1\,pp (\texttt{replicates.csv}). The two widest belong to the two arms that
@@ -77,8 +79,9 @@ leftmost anchor's second run came out both faster (209.1 against 213.0 minutes)
 and higher on SLO (68.5 against 63.4), displacing the first; no controller
 verdict moves, because every controller finishes to the right of the next
 anchor. The middle anchor's repeat moved it the other way for us: it is also
-faster and higher, and taking it moves our best arm from \emph{on} the line to
-\emph{on the line, below it}. We report every repeat we ran rather than keeping
+faster and higher, and taking it moves our best arm from \emph{inside the tie
+band} to \emph{just below the line}, on the losing side of the same
+$\pm1.0$\,pp band. We report every repeat we ran rather than keeping
 the better of each pair, because a frontier whose anchors are single
 measurements is the weakness this whole subsection is about---and here it is
 the weakness biting.
@@ -136,15 +139,17 @@ appearance of the mechanism that drives the whole frontier.
   window up to four steps shorter.
   $^\ddagger$ marks a run measured while three or more other engine
   instances shared the host for at least an hour. That is a risk flag, not a
-  measurement of damage, and the two come apart in our data. Four rows carried
-  the flag and three are damaged: \texttt{horizon}$=2$, \texttt{horizon}$=0$
+  measurement of damage, and the two come apart in our data. Six rows of this table carried the flag; five still do. Three of the six are
+  damaged: \texttt{horizon}$=2$, \texttt{horizon}$=0$
   and \texttt{horizon}$=1$ no hw are controller variants whose per-request
   decode interval is 30.9--33.3\,ms against 23.7--25.0 across the seven clean
   runs of the same controller family, so their wall clock, SLO and $\Delta$
-  are not comparable with the rest, and they are being re-measured. The fourth,
-  the resident base, has been: its row above carries the clean numbers
+  are not comparable with the rest, and they are being re-measured. A fourth,
+  the resident base, has been re-measured and its row above carries the clean
+  numbers
   (24.8\,ms $\tau_2$, 25.4 minutes earlier, $\Delta$ $-$1.33 against the
-  base configuration's $-$1.24). The two remaining flagged rows, \texttt{cap1}
+  base configuration's $-$1.24), which is why it no longer carries the mark.
+  The remaining two, \texttt{cap1}
   and the published-parameter AIMD row, show no aggregate inflation at all
   (20.6 and 24.4\,ms), so we keep their numbers and say why.
   \S\ref{sec:repro} gives the audit, the threshold and the evidence.}
@@ -417,7 +422,9 @@ earlier version came to mark two clean runs.
 Our controller's projection (Eq.~\ref{eq:proj}) charges a session for its full
 context even while it is parked in a tool wait, when its KV is evictable and
 therefore absent from the engine's reported occupancy. We argued this was a
-double charge and removed it, admitting on engine telemetry alone.
+double charge and removed it, admitting on engine telemetry alone. The arm that
+tests this is \texttt{bres} in the data files and \emph{resident base} in
+Table~\ref{tab:runs}; we use both names below.
 
 The charge is not double, and removing it does what the argument predicted on
 the engine side: median occupancy rises from 49.2\% to 56.2\% of the pool and

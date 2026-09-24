@@ -241,6 +241,13 @@ def main():
             ck("frontier_split 的 %s 混合判決与表 I 一致" % _k, "%.2f" % float(_tt[_k]),
                "frontier_split.csv", tier="S")
 
+    # ---- §III 的 host-tier 集合：判据 + 两条具名排除 必须正好等于 reuse.csv 的行数 ----
+    _ru = load(os.path.join(ROOT, "paper/data/reuse.csv"))
+    _hc = [r for r in _ru if r["family"] == "hicache"]
+    ck("host-tier 集合条数（正文说 nineteen）", str(len(_hc)), "sec_model.tex")
+    if "foyer_hz1_r2" in {r["run"] for r in _hc}:
+        ck("§III 被点名排除的 hz1_r2 混进了集合", "NOPE", "sec_model.tex")
+
     # ---- superseded.csv：§discussion 引的「污染 vs 干净」复用值 ----
     for r in load(os.path.join(ROOT, "paper/data/superseded.csv")):
         ck("superseded %s 复用占比" % r["run"], r["reuse_frac"], "sec_discussion.tex")
