@@ -305,9 +305,21 @@ a larger device as the single most important next experiment. Second, the
 load is stationary, single-tenant and single-SLO. The load-dependence result
 of \S\ref{sec:load} is measured on two \emph{separate} constant-load tiers, so
 it says what to expect when conditions differ, not what happens while they
-change; a trace whose load moves during the run is the experiment that would
-settle it, and we did not run one. Multi-tenant and heterogeneous-SLO settings
-are where we would look next.
+change. We did run the experiment that would settle that---a trace whose load
+moves mid-run, with a static cap on each tier and a switcher that changes its
+cap at the trace's designed switch point---and we cannot report a result from
+it, in either direction, because its static baselines were measured under
+host co-tenancy: \texttt{var\_cap3} spent 158 of its 266 minutes at four or
+more concurrent engine instances, and \texttt{var\_cap2} is flagged as a
+watch (\S\ref{sec:repro}). A first look at those runs has the switcher
+finishing 15 minutes ahead of the best static cap at an SLO inside the tie
+band, which would be the first evidence in this paper that adaptivity pays;
+we do not report it as a result, because the baseline it beats is precisely
+the one the audit flags, and a 60\%-contaminated baseline is inflated in
+exactly the direction that manufactures that finding. Clean re-runs of that
+family are in flight, and the honest position until they land is that the
+variable-load case is measured and unusable, not unmeasured. Multi-tenant and
+heterogeneous-SLO settings are where we would look next.
 
 \paragraph{Reproducibility.}
 \label{sec:repro}
