@@ -178,14 +178,23 @@ controller is single-flight by default: it authorizes at most one session per
 two-second cycle and waits for that session to begin a round before authorizing
 the next. Whether that gate held or whether a candidate was tried and did not
 fit is \emph{not distinguishable from our logs}---the controller does not record
-it---so we do not attribute the bucket to either. We attempted to bound it with an arm that disables single-flight, but we do
-not report a number from it: the only such attempt we have was killed
-part-way through (\S\ref{sec:discussion} records why), and an earlier draft of
-this section quoted a statistic taken from that run while it was still
-running. We withdraw that number. What we can say is what the four readable
-buckets say: the headroom estimate is the largest cause we can measure, and
-how much of the remainder is the single-flight path is a question our data does
-not answer---the arm that would answer it is queued, not run.
+it---so we do not attribute the bucket to either. We bounded it by running that arm: the same configuration with single-flight
+disabled. Two things came out of it, and the second is the one that matters.
+
+The bound first. With the gate off, the residual bucket---which can then only
+be \emph{candidates that did not fit}, since the gate cannot be holding---falls
+from 54.8\% of blocked cycles to 39.9\%, against 43.5\% that are over budget
+outright. So the single-flight path accounts for roughly fifteen points, and
+the headroom estimate remains the largest single cause.
+
+The second thing is that disabling it does not make the controller win.
+\texttt{sf=0} finishes in 263.3 minutes at 86.3\% SLO against the base run's
+291.3 and 89.8\%: it buys 28 minutes for 3.5\,pp, and its signed distance from
+the front moves from $-1.25$ to $-0.57$---onto the tie band from below it, not
+above it. Its admission rate is unchanged (2.5\% of cycles admit, against
+2.3\%). So the gate was a real cost and removing it moves the arm along the
+front rather than past it, which is the same trade every other route in this
+section makes.
 
 Across the eight \sys{} variants that left controller logs---the set is named in
 \texttt{gate\_attrib.csv}, and it is eight rather than nine because
