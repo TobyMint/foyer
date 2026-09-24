@@ -26,7 +26,7 @@ def load(n):
 dec = load("decomp.csv")
 
 # 控制器臂 -> 曲线族。HiCache 臂只对 HiCache 锚点 —— 跨配置外推正是 codex 抓到的错。
-CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
+CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
                "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
 HC_ANCHORS  = ["pairB_cap2hc", "cap3_hc", "cap4_hc"]
 DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]

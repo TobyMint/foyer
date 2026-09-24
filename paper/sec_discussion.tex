@@ -484,9 +484,11 @@ inspection and once by the end-to-end measurement here.
 \section{Conclusion}
 
 We asked whether an adaptive admission controller can beat a tuned static
-concurrency cap on a memory-bound agentic LLM workload, and found that on our
-system it cannot: nine variants, four routes tested, and of the six whose
-measurements are clean, none above the static front. (Four were measured while
+concurrency cap on a memory-bound agentic LLM workload. On our system we could
+not build one that does: nine variants, four routes tested, and of the six
+whose measurements are clean, none above the interpolated static front---which
+is the strictest of the two baselines we could have used (\S\ref{sec:bg}),
+since it sits above the discrete static points. (Four were measured while
 other jobs shared the host; we re-measured one, which moved 6.5\,pp closer
 without crossing, and the other three are still out.) We expected the reason to be a cancellation---admission policy controls
 how many requests are in flight, the per-step cost rises with that number, and
@@ -520,8 +522,10 @@ of four at $\overline{R}_{\text{busy}}$ 1.65, manages 60.7\%---while
 the device cache misses \emph{more}. Two configurations at the same running
 count and the same pool occupancy realize 79.0\% and 91.3\% of the bound,
 which is why we describe the tier rather than the occupancy as the variable.
-That claim is measured on one trace family and one card, its controlled
-version is still running, and we do not extend it past what we measured---but
+That claim is measured on one trace family, and the matched pair behind it ran
+on two cards a day apart; the controlled version---one card, back to
+back---is queued rather than done, and we do not extend the claim past what we
+measured---but
 it is the finding a system designer can act on, and it is the one we would
 test first on different hardware. Two boundaries come with it. On a second
 workload both of our measurements survive in direction and neither in level:

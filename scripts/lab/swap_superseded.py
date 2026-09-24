@@ -28,9 +28,20 @@ SCAN_DIRS = [HERE, os.path.join(HERE, "..", "..", "paper", "figs")]
 EXTS = (".py",)
 
 
+# 【只用于记录“谁被谁替代”的文件】—— 这些文件里的旧名是**定义**，不是 run 列表项，
+# 改名会把它们改成「自己替代自己」。2026-09-25 就拿这个脚本改坏了 gen_superseded.py
+# 的 PAIRS 与 gen_eviction.py 的 SUPERSEDED，是审查之外自己发现的。
+NEVER_TOUCH = {"gen_superseded.py", "swap_superseded.py"}
+# 同上，按【行内语境】判：SUPERSEDED 的定义块、以及注释。
+DEF_CONTEXT = ("SUPERSEDED = {", "SUPERSEDED=")
+
+
 def sites(old):
-    """列出所有含【完整旧名】的位置。用 \b 而不是子串：`_` 是词字符，
-    所以 `\bfoyer_hz0\b` 不会命中 `foyer_hz0_r2`。"""
+    """列出所有含【完整旧名】的位置，并把每一处标成 run / comment / definition。
+
+    用 \b 而不是子串：`_` 是词字符，所以 `\bfoyer_hz0\b` 不会命中 `foyer_hz0_r2`。
+    **只有 `kind == "run"` 的会被 --apply 改**，其余要显式 --force 才动。
+    """
     pat = re.compile(r"\b%s\b" % re.escape(old))
     out = []
     for d in SCAN_DIRS:
@@ -40,12 +51,24 @@ def sites(old):
         for name in sorted(os.listdir(d)):
             if not name.endswith(EXTS):
                 continue
-            if os.path.abspath(os.path.join(d, name)) == os.path.abspath(__file__):
-                continue   # 别改自己（docstring 里举例会命中）
             p = os.path.join(d, name)
-            for i, line in enumerate(open(p, encoding="utf-8"), 1):
-                if pat.search(line):
-                    out.append((p, i, line.rstrip()))
+            if name in NEVER_TOUCH:
+                for i, line in enumerate(open(p, encoding="utf-8"), 1):
+                    if pat.search(line):
+                        out.append((p, i, line.rstrip(), "definition"))
+                continue
+            lines = open(p, encoding="utf-8").read().split("\n")
+            for i, line in enumerate(lines, 1):
+                m = pat.search(line)
+                if not m:
+                    continue
+                if line.lstrip().startswith("#") or ("#" in line[:m.start()]):
+                    kind = "comment"
+                elif any(c in "\n".join(lines[max(0, i - 30):i]) for c in DEF_CONTEXT):
+                    kind = "definition"
+                else:
+                    kind = "run"
+                out.append((p, i, line.rstrip(), kind))
     return out
 
 
@@ -82,23 +105,50 @@ def main():
     ap.add_argument("new")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--force", action="store_true",
+                    help="连注释与 SUPERSEDED 定义行一起改（默认不改）")
     a = ap.parse_args()
     if not (a.dry_run ^ a.apply):
         sys.exit("必须二选一：--dry-run 或 --apply")
 
     hit = sites(a.old)
-    print("完整旧名 `%s` 出现在 %d 处：" % (a.old, len(hit)))
-    for p, i, line in hit:
-        print("  %-46s %4d  %s" % (os.path.relpath(p), i, line.strip()[:96]))
+    nrun = sum(1 for *_, k in hit if k == "run")
+    print("完整旧名 `%s` 出现在 %d 处（其中 run 列表 %d 处，其余是注释/定义）："
+          % (a.old, len(hit), nrun))
+    for p, i, line, kind in hit:
+        print("  [%-10s] %-40s %4d  %s" % (kind, os.path.relpath(p), i, line.strip()[:84]))
     if not hit:
         print("  （没有 —— 要么已经改过，要么名字写错了）")
+    if not a.force and any(k != "run" for *_, k in hit):
+        print("\n⚠ 上面标 comment/definition 的那些**不会**被改 —— 它们里的旧名是文档或"
+              "\n  「谁被谁替代」的定义，改了会变成自己替代自己。确实要改就加 --force。")
 
     if a.dry_run:
         print("\n--dry-run：什么都没改。")
     else:
         pat = re.compile(r"\b%s\b" % re.escape(a.old))
         changed = 0
-        for p in {p for p, _, _ in hit}:
+        if not a.force:
+            pat_line = pat
+            for p in {p for p, _, _, _ in hit}:
+                lines = open(p, encoding="utf-8").read().split("\n")
+                out, n = [], 0
+                for i, line in enumerate(lines, 1):
+                    if any(hp == p and hi == i and hk == "run"
+                           for hp, hi, _, hk in hit) and pat_line.search(line):
+                        out.append(pat_line.sub(a.new, line)); n += 1
+                    else:
+                        out.append(line)
+                if n:
+                    body = "\n".join(out)
+                    assert isinstance(body, str) and pat_line.search(body) is not None
+                    with open(p, "w", encoding="utf-8") as f:
+                        f.write(body)
+                    print("  改 %-46s %d 行（只动 run 列表）" % (os.path.relpath(p), n))
+            print("\n（未加 --force：注释与 definition 行原样保留）")
+            _report(a)
+            return
+        for p in {p for p, _, _, _ in hit}:
             s = open(p, encoding="utf-8").read()
             n = len(pat.findall(s))
             s2 = pat.sub(a.new, s)
@@ -110,6 +160,10 @@ def main():
             changed += n
         print("\n共改 %d 处。" % changed)
 
+    _report(a)
+
+
+def _report(a):
     print("\n接下来按依赖顺序重生成（本脚本不代跑）：")
     for name, cmd in REGEN:
         print("  %-22s %s" % (name, cmd))

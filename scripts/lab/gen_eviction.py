@@ -202,7 +202,7 @@ def main():
             # 于是 §III 的"八条 host-tier run"其实是九条，报的区间是从少一个
             # 成员的集合算的，而漏掉的那个恰是最极端的一点（2026-09-24 审稿人抓）。
             HC_FALLBACK = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
-                           "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
+                           "foyer_hz1", "foyer_hz2", "foyer_hz0",
                            "foyer_bres_r2", "foyer_breshz1"}
             _mj = os.path.join(d, "metadata.json")
             hc_flag = None

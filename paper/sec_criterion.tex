@@ -27,7 +27,11 @@ segment elasticities are $\epsilon = -0.21$ from \texttt{cap1} to
 \texttt{cap3} to \texttt{cap4}, and $+1.14$ from \texttt{cap4} to
 \texttt{cap5}. Below $\overline{R}_{\text{busy}} \approx 1.5$ added
 concurrency still buys something; above it, $\epsilon$ passes one, which means
-the engine gets \emph{slower} in wall clock as more requests run. The single
+busy-time throughput stops rising with the running count---the engine spends
+\emph{more} busy time per generated token. That is not the same as the run
+getting slower end to end: \texttt{cap4} is 8.8 minutes \emph{faster} than
+\texttt{cap3} in total wall clock even though its busy time is longer, because
+it collects less idle. The single
 number $0.38$ averages those regimes and describes none of them.
 
 The operating region is the one that matters, and it is not the region the

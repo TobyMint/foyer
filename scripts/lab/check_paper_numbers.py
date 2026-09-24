@@ -230,6 +230,17 @@ def main():
             if x["bucket_min"] == _m:
                 ck("%s 转折前桶（第 %s 分）" % (_key, _m), x["tau2_p50_ms"], "sec_discussion.tex")
 
+    # ---- frontier_split.csv：辅助表，但必须与表 I 的 Δ 一致 ----
+    # 它【不在正文里】，可是读者会打开 paper/data/ 逐个看。2026-09-25 codex 第 19 轮
+    # 就是因为这张表给 hz1 +0.22（正文 −0.93）而判「从 paper/data 能追到互相矛盾的答案」。
+    _fs = {r["arm"]: r["delta_pp"] for r in
+           load(os.path.join(ROOT, "paper/data/frontier_split.csv")) if r.get("front") == "mixed"}
+    _tt = {r["run"]: r["delta_pp"] for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
+    for _k, _v in _fs.items():
+        if _k in _tt:
+            ck("frontier_split 的 %s 混合判決与表 I 一致" % _k, "%.2f" % float(_tt[_k]),
+               "frontier_split.csv", tier="S")
+
     # ---- superseded.csv：§discussion 引的「污染 vs 干净」复用值 ----
     for r in load(os.path.join(ROOT, "paper/data/superseded.csv")):
         ck("superseded %s 复用占比" % r["run"], r["reuse_frac"], "sec_discussion.tex")

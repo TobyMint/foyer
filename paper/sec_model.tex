@@ -151,10 +151,11 @@ exists in our data; instrumenting this is future work.
   decode interval. They do not agree---$\tau_1$ exceeds $\tau_2$ by 8--40\%---
   and the gap is consistent with the prefill share, not measurement error;
   \S\ref{sec:model} bounds that share rather than identifying it. The dotted line is
-  the cost of reading the weights once; every run sits above it. The five rows
-  marked $^\ddagger$ were measured under host co-tenancy, which is why they
-  cluster at the high end---their step times are the inflated ones
-  (\S\ref{sec:repro}).}
+  the cost of reading the weights once; every run sits above it. Five rows are
+  marked $^\ddagger$---measured while other jobs shared the host
+  (\S\ref{sec:repro})---and three of the five have a measurably inflated step
+  cost, which is why the marked rows cluster at the high end; the other two
+  carry the flag without measurable damage.}
   \label{fig:steptime}
 \end{figure}
 
@@ -390,9 +391,9 @@ of recomputation. With a host tier the two come apart by design, and the
 of the evicted pool: those tokens were evicted and not recomputed, which is
 consistent with the host having served them and equally consistent with their
 never having been asked for again. We can bound it, not identify it
-(\texttt{eviction.csv}); the host serves 9.5--19.3\,M in total, so most of what
-it serves are prefixes that were still resident on the device when the
-session came back for them.
+(\texttt{eviction.csv}); the host serves 9.5--19.3\,M in total, and by the
+counter definitions those are tokens the \emph{device} did not have when the
+session came back---it had evicted them---and which were not recomputed.
 
 \paragraph{A refutation we had to withdraw.} An earlier revision withdrew this
 mechanism outright, on two checks that were both wrong. The first was that
@@ -453,6 +454,11 @@ earlier draft had idle falling while busy rose, leaving the run slower, and
 that shape came from a measurement we have since found was taken under host
 co-tenancy (\S\ref{sec:repro}). Idle is recoverable; it is recoverable at a
 price that does not move the verdict.
-The structural remedy would be to make the engine do work during a wait, but
-there is no work to do: the session's next round does not exist until its tool
-returns.
+The structural remedy would be to make the engine do work during a wait. For
+the session that is waiting there is none---its next round does not exist until
+its tool returns---but for the \emph{pool} there is: the admission queue holds a
+median of 66 sessions waiting to get in, and a policy could run one of those
+instead of holding a permit for a parked one. \S\ref{sec:results} measures
+what happens when it does: the charge-free base arm cuts total idle from 47.4
+to 37.9 minutes, and it does not move the verdict. Idle is recoverable in part;
+recovering it is not what pays.

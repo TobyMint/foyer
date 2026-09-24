@@ -22,12 +22,29 @@ BAND = 1.0
 def load(n):
     return [r for r in csv.DictReader(l for l in open(os.path.join(D, n)) if not l.startswith("#"))]
 
-runs = {r["run"]: r for r in load("runs.csv")}
-dec  = {r["run"]: r for r in load("decomp.csv")}
+# ⚠ 墙钟必须取【全精度】的 runs_precise.csv（frontier.py --csv 的产物），
+# 不能用 decomp.csv 的 1 位小数 —— 那会让同一个 Δ 在本表和表 I 里差 0.1pp
+# （foyer_hc 的混合前沿：−1.14 vs −1.24）。2026-09-25 自查发现，
+# 与 slo_sensitivity 那次是同一类（两条管线算同一个量必须共用定义）。
+runs = {r["run"].replace("pois200_", ""): {"wall_min": r["wall_min"], "slo_pct": r["slo_pct"]}
+        for r in load("runs_precise.csv")}
+dec  = runs
 
-HC_ANCHORS  = ["pairB_cap2hc", "cap3_hc", "cap4_hc"]
+# ⚠ 锚点集合要【完整】。原来 HC 那一侧只有三条、漏了两个重复 run
+# （cap3_hc_r2 / cap4_hc_r2），而论文的 FRONT 正是用重复顶掉首跑的 ——
+# 于是同一个 Δ 在本表和表 I 里差 0.1pp（foyer_hc：−1.13 vs −1.24）。
+# 2026-09-25 自查发现。envelope() 会自己挑上左包络，这里只负责把候选列全。
+# 三套候选。**"mixed" 必须与论文的 FRONT 逐字相同** —— 它就是这个脚本的对照组，
+# 从 frontier.py 直接 import FRONT 的锚点名字，不自己再写一份（写第二份就会漂）。
+# ⚠ 别把 cap2_hc 放进候选：那是 763 步被中止的 run。
+import importlib.util as _iu
+_sp = _iu.spec_from_file_location("_fr_fs", os.path.join(HERE, "frontier.py"))
+_FR = _iu.module_from_spec(_sp); _sp.loader.exec_module(_FR)
+MIXED_ANCHORS = [n for _, _, n in _FR.FRONT]
+HC_ANCHORS  = ["pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc",
+               "cap3_hc_r2", "cap4_hc_r2"]
 DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
-CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
+CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
                "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
 
 def envelope(anchors):
@@ -65,7 +82,7 @@ def judge(env, arm):
 
 env_hc  = envelope(HC_ANCHORS)
 env_dev = envelope(DEV_ANCHORS)
-env_mix = envelope(HC_ANCHORS + DEV_ANCHORS)
+env_mix = envelope(MIXED_ANCHORS)   # 论文的 FRONT，逐字相同
 
 def show(name, env):
     print("== %s 前沿 ==" % name)

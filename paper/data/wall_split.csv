@@ -3,7 +3,7 @@
 arm,anchor,d_span_min,d_idle_min,d_busy_min,frac_idle,tau_contrib_min,rbar_contrib_min,resid_min,dRbar
 foyer_hc,pairB_cap2hc,-5.8,-2.7,-3.1,0.466,14.8,-18.8,0.90,0.100
 foyer_hz1,cap3_hc,19.4,12.6,6.8,0.649,9.3,-1.4,-1.04,0.010
-foyer_bres,cap3_hc,59.0,6.4,52.6,0.108,48.5,4.4,-0.34,-0.030
+foyer_bres_r2,cap3_hc,30.0,13.8,16.2,0.460,11.9,4.4,-0.16,-0.030
 foyer_nogate,cap4_hc,59.4,41.4,18.1,0.697,11.9,6.0,0.14,-0.050
 foyer_rg4,cap4_hc,69.4,49.5,20.0,0.713,16.7,4.8,-1.45,-0.040
 foyer_hz2,cap3_hc,69.7,15.7,53.9,0.225,45.6,10.6,-2.26,-0.070

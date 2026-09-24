@@ -159,10 +159,11 @@ leave and therefore that there is no idle time to recover. There is.
         knob rather than a hypothesis, and we report it only because it slides
         the operating point along the front and adds no mechanism. The fourth,
         changing the execution granularity from session count to
-        running-request count, is falsified by measurement \emph{and} by an
-        argument about why the permit mechanism cannot express the control it
-        would need. We do not call the last two of these falsifications of a
-        stated hypothesis, because they were not.
+        running-request count, is falsified by an argument about why the permit
+        mechanism cannot express the control it would need; the one arm we got
+        to run does not test it, because its gate bound in 0.6\% of the cycles
+        where a session was waiting. We do not call the last two of these
+        falsifications of a stated hypothesis, because they were not.
   \item We give a two-part decomposition of the wall clock (\S\ref{sec:model})
         that locates the cancellation: admission policy moves the
         running-request count, and the per-step cost moves with it. On the
