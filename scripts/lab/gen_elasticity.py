@@ -60,7 +60,7 @@ def main():
                 cr.append(float(r["running_busy"]))
     assert cr, "读不到 arm_running.csv，先跑 gen_arm_running.py"
     # 正文 §IV 的「九条 Foyer 臂」—— 与打印段共用同一个列表，不另写一份
-    NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2",
+    NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
             "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
     nb = [float(r["running_busy"]) for r in csv.DictReader(
         l for l in open(arm_csv) if not l.startswith("#")) if r["run"] in NINE]

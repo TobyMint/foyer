@@ -24,7 +24,7 @@ LABEL = {
     "foyer_hc_r2": "horizon$=$3 (2nd run)", "foyer_sf0_r2": "single-flight off",
     "foyer_hz1": "horizon$=$1",
     "foyer_hz1_r2": "horizon$=$1 (repeat)", "foyer_hc": "horizon$=$3 (base)",
-    "foyer_hz2": "horizon$=$2", "foyer_bres_r2": "resident base",
+    "foyer_hz2_r2": "horizon$=$2", "foyer_bres_r2": "resident base",
     "foyer_hz0_r2": "horizon$=$0", "foyer_breshz1": "horizon$=$1, no hw",
     "foyer_nogate": "no gate, no resv.", "foyer_rg4": "running gate$=$4",
     "foyfix_hc": "all throttles off",

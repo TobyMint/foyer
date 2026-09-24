@@ -44,7 +44,7 @@ MIXED_ANCHORS = [n for _, _, n in _FR.FRONT]
 HC_ANCHORS  = ["pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc",
                "cap3_hc_r2", "cap4_hc_r2"]
 DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
-CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2",
+CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
                "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
 
 def envelope(anchors):

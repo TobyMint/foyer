@@ -1,9 +1,9 @@
 # 控制器占用投影 —— gen_projection.py 生成
 # projection = max(resident, ctx_sum) + growth_sum（绕开被候选循环重绑的 base 字段）
 # growth_p50 = 全部周期上 growth_sum 的中位（正文 §V 的 26,762 tokens 即 foyer_hc 的该列）
-# main_trace: n=18, min=1.32, max=1.96, upper_median=1.78
-# main_plus_second_trace_arm: n=19, min=1.32, max=4.11, upper_median=1.78
-# all_rows: n=43, min=1.01, max=4.13, upper_median=1.58
+# main_trace: n=19, min=1.32, max=1.96, upper_median=1.75
+# main_plus_second_trace_arm: n=20, min=1.32, max=4.11, upper_median=1.78
+# all_rows: n=44, min=1.01, max=4.13, upper_median=1.59
 #   main_trace = metadata.trace 是 replay_pois200_l04.csv 且已写出 summary.json 的 run（正文的「this trace」）
 #   另两条集合写在这里是因为正文引了它们的区间：只把「另一条 trace 的控制器臂」加进来是 main_plus_second_trace_arm，其余全部是 all_rows
 run,samples,budget,proj_p50,occ_p50,growth_p50,proj_pct_of_budget,occ_pct_of_budget,free_pct,ratio
@@ -27,7 +27,7 @@ pois200_foyer_hc,8784,96360,89073,49875,26762,92.4,51.8,7.6,1.79
 pois200_foyer_t90,9411,91289,85904,48310,26158,94.1,52.9,5.9,1.78
 pois200_pairB_foyerhc,8723,96360,88816,50806,27306,92.2,52.7,7.8,1.75
 thr25_nohw,1241,76074,63847,37318,14526,83.9,49.1,16.1,1.71
-pois200_foyer_hz2_r2,8002,96360,89125,53213,21387,92.5,55.2,7.5,1.67
+pois200_foyer_hz2_r2,8150,96360,89125,53339,21387,92.5,55.4,7.5,1.67
 load25c_budget3_oracle,2743,76074,55626,34228,13021,73.1,45.0,26.9,1.63
 pois200_foyer_hz1_r2,7837,96360,93828,58856,12762,97.4,61.1,2.6,1.59
 pois200_foyer_hz2,8968,96360,87905,55620,20656,91.2,57.7,8.8,1.58

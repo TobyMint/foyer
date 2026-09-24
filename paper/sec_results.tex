@@ -8,16 +8,18 @@ plane and draws the upper-left envelope of the static points. Table~\ref{tab:run
 gives the numbers and each controller's signed distance from that envelope.
 
 The result is consistent across every arm we can compare, and we say which
-those are before we lean on it. Of the nine controller variants, six are clean
-measurements; of those six, \emph{none} is above
+those are before we lean on it. Of the nine controller variants, eight are clean
+measurements; of those eight, \emph{none} is above
 the envelope---not one, on any run, and the pair we repeated most tightly says
-so at a resolution the others do not. The closest arm of all is the one with
-single-flight admission disabled, at $0.55$ percentage points \emph{below} the
+so at a resolution the others do not. The closest arm of all is
+\texttt{horizon}=2 as re-measured, at $0.30$ percentage points \emph{below} the
 line---inside our $\pm1.0$\,pp tie band, so we record it as \emph{on} the
 line rather than below it, but on the below side of it. On the other reading of
 the same table---against the discrete static points rather than the envelope
 between them---that arm is \emph{not dominated}: every static configuration
 faster than it scores lower on SLO, and every one that scores higher is slower.
+(The arm this one displaced as the closest, \texttt{sf=0} at $0.55$\,pp below,
+is not dominated either.)
 We take the envelope as the baseline because it is the stricter of the two
 readings, and \S\ref{sec:bg} states what that choice costs us.
 
@@ -190,7 +192,7 @@ appearance of the mechanism that drives the whole frontier.
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.93 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.24 \\
     horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.73 \\
-    horizon$=$2$^\ddagger$ & 306.1 & 2.22 & 86.9 & $-$4.81 \\
+    horizon$=$2 & 271.0 & 2.28 & 87.7 & $-$0.30 \\
     horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.58 \\
     resident base      & 265.9 & 2.41 & 85.9 & $-$1.33 \\
     horizon$=$0 & 264.2 & 2.64 & 79.8 & $-$7.19 \\
@@ -308,7 +310,7 @@ and because \texttt{foyfix} and the two AIMD arms run a different controller and
 log no gate state---the projection is over budget in a median 32.2\% of blocked
 cycles (19.5\% to 53.6\%) and the valve in a median 34.3\% (6.8\% to 67.9\%).
 Both medians move with the set, which is why we name it: over every completed
-run in that file---forty-three of them---they are 29.4\% and 5.3\%. One
+run in that file---forty-four of them---they are 30.6\% and 5.4\%. One
 convention note, because it moves
 these numbers: we take the median as the upper of the two middle values when
 the count is even (\texttt{v[len(v)//2]}, which is what
@@ -375,7 +377,7 @@ step-cost purely because $\tau$ rises with the running count.
   single-flight off   &  54.5 & 1.455 & 28.9  & unused mem. \\
   \texttt{horizon}=1  &  57.8 & 1.523 & 29.2  & residual \\
   \sys{} base         &  49.2 & 1.353 & 28.7  & residual \\
-  \texttt{horizon}=2  &  54.7 & 1.435 & 33.6  & $\tau$ high, not matched$^\ddagger$ \\
+  \texttt{horizon}=2  &  52.4 & 1.390 & 28.4  & unused mem. \\
   \texttt{horizon}=0  &  58.1 & 1.579 & 30.2  & unused mem. \\
   \texttt{bres}       &  56.2 & 1.481 & 29.5  & unused mem. \\
   \texttt{breshz1}    &  61.4 & 1.626 & 36.2  & $\tau$ high, not matched$^\ddagger$ \\
@@ -391,7 +393,7 @@ step-cost purely because $\tau$ rises with the running count.
 $^\ddagger$ marks runs measured while three or more other engine instances shared
 the host for at least an hour (\S\ref{sec:repro}). In this table the flag bites
 harder than in Table~\ref{tab:runs}, because the classification is made on
-$\tau_1$, which is exactly the column co-tenancy inflates. Two of the four
+$\tau_1$, which is exactly the column co-tenancy inflates. Two of the three
 $\tau$-high rows carry it, and so does the one step-cost attribution the
 procedure makes---AIMD at its published parameters. That row is flagged by the
 window but not measurably damaged: its $\tau_2$, which does not touch the
@@ -401,9 +403,10 @@ and the absence of damage is an inference from a different column. The two
 $\tau$-high rows that are not flagged (\texttt{running gate}=4 is a watch,
 all-throttles-off is clean) are the ones whose elevation no window explains.
 
-5 of the 12 rows are attributed: four to unused memory (\texttt{single-flight
+6 of the 12 rows are attributed: five to unused memory (\texttt{single-flight
 off}, the charge-free base, no-gate-no-reservation, and \texttt{horizon}=0
-once re-measured---\S\ref{sec:repro}), one to step cost, four
+and \texttt{horizon}=2 once re-measured---\S\ref{sec:repro}), one to step
+cost, three
 have a $\tau$ no
 matched comparison can confirm, and three are residuals---their occupancy and
 their step cost both sit close to their comparison cap's, and their shortfall

@@ -65,6 +65,7 @@ EXCLUDED = {"foyer_hz1_r2": "引擎侧 prompt token 计数 1.41x 计划、τ₁ 
 SUPERSEDED = {
     "foyer_bres": "争用污染（τ₂ 31.3ms vs 干净 24.8ms），已由 foyer_bres_r2 替代（2026-09-25）",
     "foyer_hz0": "争用污染（τ₂ 33.1ms vs 干净 25.5ms），已由 foyer_hz0_r2 替代（2026-09-25）",
+    "foyer_hz2": "争用污染（τ₂ 30.9ms vs 干净 24.0ms），已由 foyer_hz2_r2 替代（2026-09-25）",
 }
 
 
@@ -99,7 +100,7 @@ def _derive(root):
 # 24 行（上一次是用命令行传的 24 条），裸跑一次就会静默把文件砍掉一半。
 RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
         "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_hc_r2", "cap4_hc", "cap4_hc_r2",
-        "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2",
+        "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
         "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2", "foyfix_hc",
         "pairA_foyerhc", "pairB_foyerhc"]
 
@@ -203,7 +204,7 @@ def main():
             # 于是 §III 的"八条 host-tier run"其实是九条，报的区间是从少一个
             # 成员的集合算的，而漏掉的那个恰是最极端的一点（2026-09-24 审稿人抓）。
             HC_FALLBACK = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
-                           "foyer_hz1", "foyer_hz2", "foyer_hz0_r2",
+                           "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2",
                            "foyer_bres_r2", "foyer_breshz1"}
             _mj = os.path.join(d, "metadata.json")
             hc_flag = None

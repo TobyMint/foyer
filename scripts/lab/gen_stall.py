@@ -21,7 +21,7 @@ import bisect, csv, json, os, statistics as st, sys
 
 # 论文 §V 说的「11 条 Foyer 臂」：八条非重复臂 + 两条重复（hc_r2、sf0_r2）+ foyfix
 RUNS = ["pois200_foyer_hc", "pois200_foyer_hc_r2", "pois200_foyer_sf0_r2",
-        "pois200_foyer_hz0_r2", "pois200_foyer_hz1", "pois200_foyer_hz2",
+        "pois200_foyer_hz0_r2", "pois200_foyer_hz1", "pois200_foyer_hz2_r2",
         "pois200_foyer_bres_r2", "pois200_foyer_breshz1", "pois200_foyer_nogate",
         "pois200_foyer_rg4", "pois200_foyfix_hc"]
 MIN_WAIT = 85        # 队列里等待准入的会话数下限

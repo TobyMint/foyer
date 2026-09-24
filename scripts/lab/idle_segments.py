@@ -12,7 +12,7 @@ import csv, os, statistics, sys
 SAMPLE_S = 5.0
 # foyer_bres 是争用作废的那条，已由 foyer_bres_r2 替代（2026-09-25）。
 RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
-        "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2"]
+        "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2"]
 
 
 def segments(path):

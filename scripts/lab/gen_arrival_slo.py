@@ -31,7 +31,7 @@ cap4_hc_r2 与 cap3_hc_r2 两条重复没有做过就绪时钟重算（见 §讨
 import csv, json, os, statistics, sys
 
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap4_hc",
-        "foyer_hc","foyer_hz1","foyer_hz2","foyer_hz0_r2","foyer_bres_r2","foyer_breshz1",
+        "foyer_hc","foyer_hz1","foyer_hz2_r2","foyer_hz0_r2","foyer_bres_r2","foyer_breshz1",
         "foyer_nogate","foyer_rg4","foyfix_hc","aimd2","aimd2_paper"]
 THRESH = 10000.0
 

@@ -39,7 +39,7 @@ TOL = 1e-3
 SLO_MS = 10000.0
 STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
           "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
-ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0_r2",
+ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2_r2", "foyer_hz0_r2",
         "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
 
 

@@ -28,14 +28,14 @@ We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 a family of admission policies against a sweep of static concurrency caps.
 Nine controller variants span four mechanistically distinct ideas, and a
 reimplementation of an independent congestion-based controller from the
-literature runs alongside them. Seven of the nine have measurements we can
-compare, and none of those seven is above the static Pareto front
+literature runs alongside them. Eight of the nine have measurements we can
+compare, and none of those eight is above the static Pareto front
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
 $\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
 arm we repeated misses by 0.9 with its repeat at 5.6. Four of the nine were
-measured while other jobs shared the host; we have re-measured two, which moved
-6.5 and 6.4 points closer to the front without crossing it, and
-\S\ref{sec:results} says what the verdict rests on until the other two land.
+measured while other jobs shared the host; we have re-measured three, which
+moved 6.5, 6.4 and 4.5 points closer to the front without crossing it, and
+\S\ref{sec:results} says what the verdict rests on until the last one lands.
 
 \begin{figure}[tb]
   \centering
@@ -53,7 +53,7 @@ measured while other jobs shared the host; we have re-measured two, which moved
   interpolation, and we do not have the switching policy that would turn it
   into a measurement; \S\ref{sec:bg} states the limit and names the arm that
   beats the nearest measured static point on SLO while losing on wall clock. Nine \sys{} variants plus a
-  reimplementation of an independent controller, and of the seven \sys{} variants
+  reimplementation of an independent controller, and of the eight \sys{} variants
   whose measurements are clean, none is above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
   that verdict is conditional on the threshold. The four points drawn with a
@@ -198,7 +198,7 @@ leave and therefore that there is no idle time to recover. There is.
         same-generation measurements put it $+0.9$\,pp above the line, which is
         about a replicate wide at the tightest replicate spread we have and
         inside it at the widest---so we report it as \emph{not worse}, not as a
-        win. On the high-load tier it is below the line by 0.55\,pp at best.
+        win. On the high-load tier it is below the line by 0.30\,pp at best.
         (The stronger form of this---one throttle switch worth $+51\%$ on the
         light tier and $-42\%$ on the heavy one---is measured across two
         harness generations, and \S\ref{sec:load} says so.)

@@ -10,7 +10,7 @@ import json, os, statistics, sys, glob
 THRESH = [5.0, 10.0, 20.0]
 # cap3_hc_r2 / cap4_hc_r2 是重复 run，2026-09-24 起按其重复顶掉首次的规矩一并纳入
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap3_hc_r2","cap4_hc","cap4_hc_r2",
-        "foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz1_r2","foyer_sf0_r2","foyer_hz2","foyer_hz0_r2","foyer_bres_r2","foyer_breshz1",
+        "foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz1_r2","foyer_sf0_r2","foyer_hz2_r2","foyer_hz0_r2","foyer_bres_r2","foyer_breshz1",
         "foyer_nogate","foyer_rg4","foyfix_hc","aimd2","aimd2_paper"]
 
 

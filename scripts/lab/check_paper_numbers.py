@@ -490,15 +490,18 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
-    # ---- §II 的两条「对最近静态锚点」的数（2026-09-25 补：此前 0.93 是旧值）----
+    # ---- §II 的「最佳臂对最近静态锚点」的数 ----
+    # 2026-09-25：最佳臂在 hz2_r2 落地后【换人了】—— 原来是 sf0_r2（−0.55），
+    # 现在是 hz2_r2（−0.30）。§II 那句跟着换，检查也跟着换；
+    # sf0_r2 的那两个差值正文不再引，降为次要档（它还留在表 I 与 §V 里）。
     _t1 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
-    if {"foyer_sf0_r2", "cap3_hc_r2", "cap3_hc", "foyer_hz1"} <= set(_t1):
-        ck("§II sf0_r2 对 cap3_hc_r2",
-           "%.1f" % (float(_t1["foyer_sf0_r2"]["slo_pct"]) - float(_t1["cap3_hc_r2"]["slo_pct"])),
-           "sec_background.tex")
-        ck("§II sf0_r2 对 cap3_hc",
-           "%.1f" % (float(_t1["foyer_sf0_r2"]["slo_pct"]) - float(_t1["cap3_hc"]["slo_pct"])),
-           "sec_background.tex")
+    if {"foyer_sf0_r2", "foyer_hz2_r2", "cap3_hc_r2", "cap3_hc", "foyer_hz1"} <= set(_t1):
+        for _best in ("foyer_hz2_r2", "foyer_sf0_r2"):
+            _tier = "P" if _best == "foyer_hz2_r2" else "S"
+            for _anch in ("cap3_hc_r2", "cap3_hc"):
+                ck("§II %s 对 %s" % (_best, _anch),
+                   "%.1f" % (float(_t1[_best]["slo_pct"]) - float(_t1[_anch]["slo_pct"])),
+                   "sec_background.tex", tier=_tier)
         ck("§II hz1 对 cap3_hc",
            "%.1f" % (float(_t1["foyer_hz1"]["slo_pct"]) - float(_t1["cap3_hc"]["slo_pct"])),
            "sec_background.tex")
@@ -695,7 +698,7 @@ def main():
     # ---- decomp.csv：三个区间 ----
     d = load(os.path.join(ROOT, "paper/data/decomp.csv"))
     T13 = {"cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
-           "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2"}
+           "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2"}
     d13 = [r for r in d if r["run"] in T13]
     for desc, vals in (
             ("τ₁ 上界", [float(r["step_back_ms"]) for r in d13 if r["step_back_ms"]]),
