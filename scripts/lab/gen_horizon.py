@@ -45,7 +45,9 @@ def main():
 
     with open(out_p, "w", newline="") as f:
         f.write("# growth reserve 的 horizon 扫描 —— gen_horizon.py 生成，勿手改\n")
-        f.write("# 四个点只改 horizon= 这一个参数；数据源是 table1.csv（已含重跑后的值）。\n")
+        f.write("# 四个点在【策略配置】上只差 horizon= 这一个参数；数据源是 table1.csv。\n")
+        f.write("# ⚠ 只对策略参数成立 —— 四次执行用的 controller_budget3.py 指纹并不相同\n")
+        f.write("#   （这正是 §repro 记的那件事），所以别把它读成「四次执行环境完全相同」。\n")
         f.write("# ⚠ 这张表原来【没有生成器】、是手维护的，于是重跑落地后它和图 6 都留着旧读数，\n")
         f.write("#   图注里「两轮比三轮慢 15 分钟」在新数据下是反的（2026-09-25 codex 第 23 轮）。\n")
         f.write("# conc 列与表 I 同一口径（live 会话数，不是 sglang:num_running_reqs）。\n")
