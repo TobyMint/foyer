@@ -490,6 +490,25 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- 表 I 脚注的「本 trace 跑完但不在表里」的条数 ----
+    # 2026-09-25 中立子 agent 第 10 轮说这个「十」拼不出来、且被重跑替代的三条
+    # 不在理由枚举里 —— 复核确认：实为【十一】条，且确实漏了「被替代」这一类。
+    # ⚠ 这个数**会随新 run 落地而变**（本地镜像是部分快照），所以它是一条
+    # 【会漂的检查】：漂了就照实改正文，不要反过来去改判据。
+    _listed = {r["run"] for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
+    _done = set()
+    for _d in glob.glob(os.path.join(ROOT, "results/night", "*")):
+        if not os.path.isdir(_d) or not os.path.exists(os.path.join(_d, "summary.json")):
+            continue
+        try:
+            _j = json.load(open(os.path.join(_d, "metadata.json")))
+        except Exception:
+            continue
+        _tr = (_j.get("build") or {}).get("TURNSTILE_TRACE") or ""
+        if "replay_pois200_l04" in str(_tr):
+            _done.add(os.path.basename(_d).replace("pois200_", ""))
+    ck("表 I 脚注：本 trace 跑完但不在表里的条数", len(_done - _listed), "sec_results.tex")
+
     # ---- §III 的 13 条拟合集（重测后上界换过）----
     # 2026-09-25 中立子 agent 第 10 轮：τ₂ 的 **33.1 已无源** —— 那是被撤下的
     # `foyer_hz0` 的值。集合是「五个 device-only cap + 三个 host-tier cap +
