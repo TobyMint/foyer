@@ -45,7 +45,11 @@ misses by 5.6.
   point on the segment between them. Nine \sys{} variants plus a
   reimplementation of an independent controller, none above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
-  that verdict is conditional on the threshold.}
+  that verdict is conditional on the threshold. The four points drawn with a
+  hollow ring were measured while three other engine instances shared the
+  host, which inflates per-step cost and makes them incomparable with the
+  rest (\S\ref{sec:repro}); they are plotted for completeness and are being
+  re-measured.}
   \label{fig:frontier}
 \end{figure}
 

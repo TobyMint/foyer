@@ -75,14 +75,32 @@ def fig_frontier():
         if s > best:
             env.append((w, s)); best = s
     ax.plot(*zip(*env), "-", color="0.35", lw=1.0, zorder=1, label="static envelope")
+    # 同机争用作废的 run 画成【空心】点：它们的墙钟/SLO 与其余各行不可比
+    # （同机 >=4 条车道把逐请求 decode 间隔抬高 25~40%，见 paper/data/concurrency.csv
+    # 与 §repro）。不标出来会让图 1 看上去比实际更干净 —— 审稿人 2026-09-24 指出。
+    try:
+        import csv, os as _os
+        _cp = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "data", "concurrency.csv")
+        bad = {r[list(r)[0]].replace("pois200_", "")
+               for r in csv.DictReader(l for l in open(_cp) if not l.startswith("#"))
+               if r["verdict"] == "CONTESTED"}
+    except Exception:
+        bad = set()
     for fam, c, mk, lab in [("static", C_STATIC, "s", "static cap"),
                             ("static_hc", C_STATIC_HC, "^", "static cap + HiCache"),
                             ("foyer", C_FOYER, "o", "Foyer"),
                             ("aimd", C_AIMD, "D", "Concur-style AIMD")]:
-        xs = [float(r["wall_min"]) for r in rows if r["family"] == fam]
-        ys = [float(r["slo_pct"]) for r in rows if r["family"] == fam]
+        sel = [r for r in rows if r["family"] == fam]
+        xs = [float(r["wall_min"]) for r in sel]
+        ys = [float(r["slo_pct"]) for r in sel]
         ax.scatter(xs, ys, c=c, marker=mk, s=24, zorder=3, label=lab,
                    edgecolors="white", linewidths=0.45)
+        # 受污染的点再叠一层空心圈，颜色同族，只把填充挖掉
+        bx = [float(r["wall_min"]) for r in sel if r["run"].replace("pois200_", "") in bad]
+        by = [float(r["slo_pct"]) for r in sel if r["run"].replace("pois200_", "") in bad]
+        if bx:
+            ax.scatter(bx, by, facecolors="none", edgecolors=c, marker=mk, s=46,
+                       zorder=4, linewidths=0.9)
     # 标注一律甩到点的外侧，引线短而直，不横穿别的点
     for txt, xy, xytext, ha in [
             ("cap4+HC",          (213.0, 63.4), (207, 49), "left"),
