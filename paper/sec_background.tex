@@ -120,7 +120,11 @@ envelope is drawn from the host-tier anchors alone, that segment does not exist
 and those four cannot be adjudicated at all; drawn from device-only anchors
 alone, they sit further below. We report the conservative reading and note that
 the honest statement about those four is \emph{below the front as we defined
-it}, not \emph{below every static configuration}. The front and every
+it}, not \emph{below every static configuration}. Three of the four
+(\texttt{hz2}, \texttt{bres}, \texttt{breshz1}) were also measured under host
+co-tenancy and are marked $^\ddagger$ in Table~\ref{tab:runs}; whether they
+are slower than 295 minutes at all is one of the things the re-runs will
+settle. The front and every
 controller's signed distance are computed by one script from the raw per-step
 logs; the table generator computes the distance for the four runs that did not
 complete all 999 steps---both are named in \S\ref{sec:repro}---and that

@@ -35,7 +35,14 @@ Second, the two components move independently. \texttt{bres}
 (\S\ref{sec:results}) reduces idle from 15.9\% to 10.1\%, recovering about 17
 minutes---and is nonetheless \emph{slower} than its own baseline, because its
 busy time grows by 21 minutes. Any account that treats ``more concurrency'' as
-one thing will get this wrong.
+one thing will get this wrong. We flag one caveat on the numbers in this
+paragraph: \texttt{bres} is one of the runs measured under host co-tenancy
+(\S\ref{sec:repro}), and co-tenancy inflates $\tau$, which lengthens busy
+time---so the 21-minute growth is an upper bound on the real one. The
+qualitative point, that the two components move in opposite directions, is not
+affected: idle falls by construction under a policy that keeps more sessions
+live, and the run is slower overall, which is where the comparison starts. The
+re-run (\S\ref{sec:repro}) will give the corrected split.
 
 \begin{figure}[tb]
   \centering
@@ -382,7 +389,8 @@ The obvious remedy---keep more sessions live so that someone is always
 ready---is what \texttt{bres} does. It works in the narrow sense: \texttt{bres}
 recovers about 17 of the minutes that its own baseline spends idle. It is
 still slower overall, because the sessions it keeps live raise the step cost
-by more than the recovered idle is worth. Idle is not unrecoverable; it is
+by more than the recovered idle is worth---and, as above, that step-cost rise
+is measured under co-tenancy and is therefore an upper bound. Idle is not unrecoverable; it is
 recoverable at a price that is not worth paying here.
 The structural remedy would be to make the engine do work during a wait, but
 there is no work to do: the session's next round does not exist until its tool
