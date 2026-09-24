@@ -105,11 +105,19 @@ def fig_frontier():
                if r["verdict"] == "CONTESTED"}
     except Exception:
         bad = set()
+    # ⚠ `default`（不设任何准入控制）在 runs.csv 里也归在 static 族，但它**不是**
+    # 一个静态 cap：画成方框会让读者以为那是一个 cap。单独画成叉，图注里已单说。
+    NOCTRL = {"default"}   # runs.csv 里的 run 名
     for fam, c, mk, lab in [("static", C_STATIC, "s", "static cap"),
                             ("static_hc", C_STATIC_HC, "^", "static cap + HiCache"),
                             ("foyer", C_FOYER, "o", "Foyer"),
-                            ("aimd", C_AIMD, "D", "Concur-style AIMD")]:
-        sel = [r for r in rows if r["family"] == fam]
+                            ("aimd", C_AIMD, "D", "Concur-style AIMD"),
+                            ("noctrl", "0.25", "x", "no control")]:
+        if fam == "noctrl":
+            sel = [r for r in rows if r["run"].replace("pois200_", "") in NOCTRL]
+        else:
+            sel = [r for r in rows if r["family"] == fam
+                   and r["run"].replace("pois200_", "") not in NOCTRL]
         xs = [float(r["wall_min"]) for r in sel]
         ys = [float(r["slo_pct"]) for r in sel]
         ax.scatter(xs, ys, c=c, marker=mk, s=24, zorder=3, label=lab,
