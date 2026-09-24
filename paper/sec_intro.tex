@@ -78,8 +78,9 @@ though the \emph{device} misses more. Two configurations at the same running
 count and the same pool occupancy realize 78.9\% and 91.1\% of the bound
 respectively (\S\ref{sec:model}); what separates them is not how full the pool
 is but what happens when it overflows. That pair also differs in date and in
-GPU, so \S\ref{sec:results} reports a controlled version that changes the
-pool size alone on one card.
+GPU, so we also run a version that changes the pool size alone on one card;
+it is queued behind the re-runs and \S\ref{sec:results} reports it when it
+lands.
 That is the finding we would carry to another system first, and it is why this
 paper's answer to its own title is a property of the deployment rather than of
 the controller.
@@ -112,8 +113,8 @@ leave and therefore that there is no idle time to recover. There is.
         the same pool occupancy realize 78.9\% and 91.1\% of the bound, so it
         is not how full the pool is but what happens when it overflows; that
         pair differs in date and GPU as well, so we also vary the pool alone
-        on one card and report that as the controlled version
-        (\S\ref{sec:results}). The per-step elasticity follows the same line:
+        on one card; that run is queued and \S\ref{sec:results} reports it when
+        it lands. The per-step elasticity follows the same line:
         it passes one above $\overline{R}_{\text{busy}} \approx 1.5$
         device-only and stays below one across the controllers' whole
         operating range with a host tier (\S\ref{sec:criterion}). Two

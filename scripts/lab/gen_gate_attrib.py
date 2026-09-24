@@ -59,9 +59,15 @@ def proj(d):
 # 这是 Table I 的控制器段（九条 Foyer 变体 + 两个 AIMD 设置）。
 # 九条 Foyer 变体里，有八条留了 controller.jsonl；foyfix_hc 与两个 AIMD 没有
 # （AIMD 走另一套控制器），所以它们不在本表里 —— 正文必须按这八条写。
+# 论文里引用的臂，显式列出（避免"十八条"这种不可复现的口径）。
+# ⚠ foyer_sf0_r2 必须在里面：§V 用它的 remainder/projection-over 两个数论证
+# 单飞闸门占约十五个点，而那两个数曾经【只存在于正文里、不在任何 CSV 里】，
+# 且与仓库脚本复算的值对不上（正文 39.9/43.5，复算 39.7/44.0）——
+# 2026-09-24 审稿人抓到的。纳进来之后正文只能引用 CSV。
 PAPER_SET = ["pois200_foyer_hz0", "pois200_foyer_hz1", "pois200_foyer_hz2",
              "pois200_foyer_hc", "pois200_foyer_bres", "pois200_foyer_breshz1",
-             "pois200_foyer_nogate", "pois200_foyer_rg4"]
+             "pois200_foyer_nogate", "pois200_foyer_rg4",
+             "pois200_foyer_sf0_r2", "pois200_foyer_hc_r2"]
 
 
 def main():

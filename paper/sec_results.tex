@@ -10,7 +10,7 @@ gives the numbers and each controller's signed distance from that envelope.
 The result is unambiguous. Of nine controller variants, \emph{none} is above
 the envelope---not one, on any run, and the pair we repeated most tightly says
 so at a resolution the others do not. The closest arm of all is the one with
-single-flight admission disabled, at $0.55$ percentage points \emph{below} the
+single-flight admission disabled, at $0.57$ percentage points \emph{below} the
 line---inside our $\pm1.0$\,pp tie band, so we record it as \emph{on} the
 line rather than below it, but on the below side of it.
 
@@ -105,35 +105,35 @@ appearance of the mechanism that drives the whole frontier.
     \multicolumn{5}{l}{\emph{Static caps}}\\
     no control        & 288.6 & 1.69 & 3.0 & $-$87.64 \\
     cap1              & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
-    cap2              & 304.2 & 1.99 & 89.5 & $-$2.23 \\
-    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$11.76 \\
-    cap4              & 249.9 & 3.94 & 55.7 & $-$29.14 \\
-    cap5              & 260.9 & 4.89 & 27.1 & $-$59.39 \\
+    cap2              & 304.2 & 1.99 & 89.5 & $-$2.24 \\
+    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$11.78 \\
+    cap4              & 249.9 & 3.94 & 55.7 & $-$29.19 \\
+    cap5              & 260.9 & 4.89 & 27.1 & $-$59.36 \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps + HiCache}}\\
     cap2+HC           & 295.0 & 1.99 & 91.6 & \emph{anchor} \\
-    cap3+HC           & 236.4 & 2.93 & 81.1 & $-$1.71 \\
+    cap3+HC           & 236.4 & 2.93 & 81.1 & $-$1.74 \\
     cap3+HC (repeat)  & 230.3 & 2.97 & 81.9 & \emph{anchor} \\
-    cap4+HC           & 213.0 & 3.93 & 63.4 & $-$7.57 \\
+    cap4+HC           & 213.0 & 3.93 & 63.4 & $-$7.60 \\
     cap4+HC (repeat)  & 209.1 & 3.87 & 68.5 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
-    single-flight off & 263.3 & 2.43 & 86.3 & $-$0.55 \\
-    horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.92 \\
+    single-flight off & 263.3 & 2.43 & 86.3 & $-$0.57 \\
+    horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.94 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.25 \\
-    horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.73 \\
+    horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.74 \\
     horizon$=$2$^\ddagger$ & 306.1 & 2.22 & 86.9 & $-$4.85 \\
-    horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.57 \\
-    resident base$^\ddagger$ & 295.5 & 2.40 & 83.8 & $-$7.81 \\
+    horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.59 \\
+    resident base$^\ddagger$ & 295.5 & 2.40 & 83.8 & $-$7.82 \\
     horizon$=$0$^\ddagger$ & 290.0 & 2.69 & 77.2 & $-$13.65 \\
-    horizon$=$1, no hw$^\ddagger$ & 310.9 & 2.77 & 72.3 & $-$19.52 \\
-    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.60 \\
+    horizon$=$1, no hw$^\ddagger$ & 310.9 & 2.77 & 72.3 & $-$19.55 \\
+    no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.63 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.40 \\
-    all throttles off & 415.0 & 2.58 & 46.1 & $-$47.15 \\
+    all throttles off & 415.0 & 2.58 & 46.1 & $-$47.11 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
-    AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.15 \\
-    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$34.24 \\
+    AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.17 \\
+    AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$34.29 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -195,9 +195,12 @@ disabled. Two things came out of it, and the second is the one that matters.
 
 The bound first. With the gate off, the residual bucket---which can then only
 be \emph{candidates that did not fit}, since the gate cannot be holding---falls
-from 54.8\% of blocked cycles to 39.9\%, against 43.5\% that are over budget
+from 54.8\% of blocked cycles to 39.7\%, against 44.0\% that are over budget
 outright. So the single-flight path accounts for roughly fifteen points, and
-the headroom estimate remains the largest single cause.
+the headroom estimate remains the largest single cause. (Both arms' numbers
+are rows of \texttt{gate\_attrib.csv}, which now includes the \texttt{sf=0}
+arm; an earlier revision quoted 39.9 and 43.5 for the second pair, values that
+appeared in no data file.)
 
 The second thing is that disabling it does not make the controller win.
 \texttt{sf=0} finishes in 263.3 minutes at 86.3\% SLO against the base run's
@@ -250,9 +253,13 @@ close together.
 We have offered two mechanisms, and the honest thing is to say what each one
 covers. For every controller arm we took the static cap closest to it in wall
 clock and compared their occupancy and their step cost. An arm is attributed to
-the unused-memory mechanism if it runs meaningfully fewer requests than its
-comparison, and to the step-cost mechanism if it runs a comparable number at a
-measurably higher cost. Everything else is a residual.
+the unused-memory mechanism if it runs fewer than 92\% of its comparison's
+requests, and to the step-cost mechanism if it runs a comparable number---%
+within 8\%---at a measurably higher cost (more than 8\% higher $\tau_1$).
+Everything else is a residual. The comparability clause is load-bearing and we
+state it because an earlier version of this table did not enforce it, which
+classified every arm that ran \emph{more} requests than its comparison as
+step-cost purely because $\tau$ rises with the running count.
 
 \begin{center}
 \small
@@ -261,41 +268,46 @@ measurably higher cost. Everything else is a residual.
   \toprule
   Arm & Occ. & $\overline{R}$ & $\tau_1$ & Attribution \\
   \midrule
-  \texttt{horizon}=1  & 57.8 & 1.524 & 29.2 & residual \\
-  \sys{} base         & 49.2 & 1.353 & 28.7 & residual \\
-  \texttt{horizon}=2  & 54.7 & 1.439 & 33.6 & step cost$^\ddagger$ \\
-  \texttt{horizon}=0  & 64.1 & 1.666 & 35.7 & step cost$^\ddagger$ \\
-  \texttt{bres}       & 56.9 & 1.481 & 34.1 & step cost$^\ddagger$ \\
-  \texttt{breshz1}    & 61.4 & 1.632 &  --- & residual$^\ddagger$ \\
-  no gate, no resv.   & 62.1 & 1.678 &  --- & unused mem. \\
-  running gate$=$4    & 62.3 & 1.689 &  --- & residual \\
-  all throttles off   & 39.2 & 1.675 &  --- & residual \\
-  AIMD, retuned       & 66.6 & 1.706 &  --- & residual \\
-  AIMD, paper params  & 40.3 & 1.357 &  --- & residual \\
+  single-flight off   &  54.5 & 1.26 & 28.9  & unused mem. \\
+  \texttt{horizon}=1  &  57.8 & 1.524 & 29.2  & residual \\
+  \sys{} base         &  49.2 & 1.353 & 28.7  & residual \\
+  \texttt{horizon}=2  &  54.7 & 1.439 & 33.6  & $\tau$ high, not matched$^\ddagger$ \\
+  \texttt{horizon}=0  &  64.1 & 1.666 & 35.7  & $\tau$ high, not matched$^\ddagger$ \\
+  \texttt{bres}       &  56.9 & 1.481 & 34.1  & $\tau$ high, not matched$^\ddagger$ \\
+  \texttt{breshz1}    &  61.4 & 1.632 & 36.2  & $\tau$ high, not matched$^\ddagger$ \\
+  no gate, no resv.   &  62.1 & 1.678 & 31.5  & unused mem. \\
+  running gate$=$4    &  62.3 & 1.689 & 32.2  & $\tau$ high, not matched$^\ddagger$ \\
+  all throttles off   &  39.2 & 1.675 & 34.8  & $\tau$ high, not matched$^\ddagger$ \\
+  AIMD, retuned       &  66.6 & 1.706 & 34.3  & residual \\
+  AIMD, paper params  &  40.3 & 1.357 & 32.4  & step cost \\
   \bottomrule
 \end{tabular}
 \end{center}
 
-$^\ddagger$ marks the arms measured under host co-tenancy
-(Table~\ref{tab:runs}, \S\ref{sec:repro}). This matters more here than
-anywhere else in the paper, and we state it plainly: \emph{every} arm this
-procedure attributes to the step-cost mechanism is one of them, and the
-attribution is made on $\tau_1$, which is exactly the column co-tenancy
-inflates. So the step-cost category currently has no uncontaminated support,
-and we do not claim it has. What survives the flag is the unused-memory
-attribution (\texttt{no gate, no resv.}), which is made on occupancy rather
-than on $\tau$, and the residuals, which claim nothing. The re-runs
-(\S\ref{sec:repro}) are what will decide whether the step-cost category is
-populated at all.
+$^\ddagger$ marks arms measured under host co-tenancy (Table~\ref{tab:runs},
+\S\ref{sec:repro}). Five of the six ``$\tau$ high, not matched'' rows carry the
+flag, so for those we cannot tell an inflated step cost from an elevated one.
+The sixth and seventh of that group (	exttt{running gate}=4 and all-throttles-off)
+are clean runs, and their $\tau$ elevation is real and unexplained. The single
+step-cost attribution the procedure does make---AIMD with its published
+parameters---is on a clean run, which is the one row in this table that
+attributes a mechanism to a measurement we trust.
 
-Four of the eleven are attributed. Seven are not: their occupancy and their step
+Two of the twelve are attributed to unused memory (	exttt{single-flight off}
+and no-gate-no-reservation), one to step cost, six have a $\tau$ no matched
+comparison can confirm, and three are residuals: their occupancy and their step
 cost both sit close to their comparison cap's, and their shortfall is real but
 we cannot say from these measurements which mechanism produced it. We publish
 the table rather than a summary because a summary would claim more than we
 have---and because ``two mechanisms explain the negative result'' would be the
-wrong summary. Two mechanisms explain part of it, on four of the eleven arms,
-and on at most one of those four without a co-tenancy caveat; the rest is a
-measurement we can make and cannot yet interpret.
+wrong summary. Two mechanisms explain part of it, on three of the twelve arms;
+the rest is a measurement we can make and cannot yet interpret. We also flag
+what changed here: an earlier version of this table claimed four attributions
+from eleven rows, and that was an artifact of two errors at once---the
+comparability clause above was not enforced, and six arms had no $\tau_1$
+because the run list behind this table was incomplete. The generator is now the
+only source for these rows (\texttt{attribution.csv}), and it enforces the
+clause.
 
 \subsection{Route 1: the accounting base}
 
@@ -338,7 +350,7 @@ $\{0,1,2,3\}$ and the reserve is not a free parameter to be minimised:
 Fig.~\ref{fig:horizon} shows the response is non-monotone. Removing the
 reserve entirely costs 12.6\,pp of SLO, and a reserve of two rounds is
 15 minutes \emph{slower} than three. The optimum is at one round, and there it comes closest to the
-static front---0.92\,pp below it, inside the tie band---and that single point is
+static front---0.94\,pp below it, inside the tie band---and that single point is
 the one this paper spends the most words on, because it does not reproduce: the
 repeat of this configuration lands 5.6\,pp below the line
 (\S\ref{sec:results}). Read the sweep as a shape, not as a result at its

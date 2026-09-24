@@ -15,7 +15,9 @@ import csv, os, sys
 
 # 九条 Foyer 变体 + 两个 AIMD 设置。hz0 原来漏在这里，导致正文说「九条变体」
 # 而表里只有八条 —— codex 抓到的。
-ARMS = ["foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0", "foyer_bres",
+# sf0_r2 必须在里面：它是全表最接近前沿的臂（Δ −0.57），论文反复引用它，
+# 归因表却没有它，正文也没解释为什么不在（2026-09-24 审稿人指出）。
+ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0", "foyer_bres",
         "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc",
         "aimd2", "aimd2_paper"]
 STATIC = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "pairB_cap2hc", "cap1",
@@ -55,11 +57,19 @@ def main():
         t_a = float(dec[a]["step_back_ms"]) if a in dec else None
         t_n = float(dec[near]["step_back_ms"]) if near in dec else None
 
-        # 分类
+        # 分类。判据照抄正文：「在跑数明显低于对照」→ 内存没用满；
+        # 「在跑数【相当】但步成本更高」→ 步成本。第二个条件必须带可比性约束 ——
+        # 原实现只查 t_a > t_n*1.08，于是任何跑得更多的臂都会因为 τ 更高而被归成
+        # 「步成本」，而那只是 τ 随 R̄ 的常规趋势，不是机制。2026-09-24 修：
+        # foyfix_hc（R̄ 1.675）对着 cap2（R̄ 1.271）被误归，就是这条漏掉的。
+        COMPARABLE = 0.08      # 在跑数相差 8% 以内才算"相当"
         if o_a is not None and r_a is not None and r_a < r_n * 0.92:
             cls = "内存没用满"
-        elif t_a and t_n and t_a > t_n * 1.08:
+        elif (t_a and t_n and t_a > t_n * 1.08
+              and r_a is not None and abs(r_a - r_n) <= COMPARABLE * r_n):
             cls = "步成本更高"
+        elif t_a and t_n and t_a > t_n * 1.08:
+            cls = "步成本更高（但对照的在跑数不可比）"
         else:
             cls = "残差（只能报观测）"
         rows.append({"arm": a, "wall_min": wall, "nearest_static": near,

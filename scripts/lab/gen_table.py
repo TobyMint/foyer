@@ -38,7 +38,11 @@ def load(p):
 
 
 def _envelope(keys, runs):
-    """候选锚点的上左包络：按墙钟升序扫，SLO 破纪录的才留在前沿上。"""
+    """候选锚点的上左包络：按墙钟升序扫，SLO 破纪录的才留在前沿上。
+
+    本函数仍用来决定【谁在前沿上】（表里标 anchor 用），但 Δ 的插值不自己算 ——
+    见 main() 里对 frontier.py 的调用。
+    """
     out, best = [], -1
     for k in sorted(keys, key=lambda k: float(runs[k]["wall_min"])):
         s = float(runs[k]["slo_pct"])
@@ -47,8 +51,42 @@ def _envelope(keys, runs):
     return out
 
 
+def _frontier_mod():
+    """把 frontier.py 作为唯一的前沿定义与插值来源 import 进来。
+
+    为什么必须共用：frontier.py 的 FRONT 锚点写死到 1 位小数（230.3 / 81.9），
+    而本脚本原来从 runs.csv 自己推包络再自己插值。两条各算各的，同一条臂
+    两边能差 0.02pp —— 表 I 写 -0.55、正文写 -0.57 就是这么来的
+    （2026-09-24 被审稿人抓到）。§repro 同时点名两个脚本，它们必须给同一个数。
+    """
+    import importlib.util
+    fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontier.py")
+    spec = importlib.util.spec_from_file_location("_frontier", fp)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def main():
     runs = {r["run"]: r for r in load(sys.argv[1]) if r["tier"] == "200"}
+
+    # 全精度覆盖：runs.csv 是手抄 run_summary.py 的 1 位小数表，而 frontier.py
+    # 从原始日志算全精度（263.340318 vs 263.3）。同一条插值公式喂不同精度会差
+    # 0.02pp —— 表 I 写 -0.55、正文写 -0.57 就是这么来的（2026-09-24 被审稿人抓到）。
+    # 有 runs_precise.csv 就以它为准，两条管线共用一个来源。
+    cand_p = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "runs_precise.csv")
+    n_ov = 0
+    if os.path.exists(cand_p):
+        for r in load(cand_p):
+            k = r["run"].replace("pois200_", "")
+            if k in runs:
+                runs[k]["wall_min"] = r["wall_min"]
+                runs[k]["slo_pct"] = r["slo_pct"]
+                n_ov += 1
+        assert n_ov > 15, "runs_precise.csv 只覆盖了 %d 行，路径或前缀不对" % n_ov
+    else:
+        print("%% 警告：没有 runs_precise.csv，用 1 位小数的 runs.csv（delta 会与 frontier.py 差 ~0.02pp）",
+              file=sys.stderr)
     env = [(w, s) for w, s, _ in _envelope(ENV_KEYS, runs)]
 
     # 同机争用标记：读 concurrency.csv，被标 CONTESTED 的臂在表里加 \ddagger，
@@ -64,11 +102,10 @@ def main():
     def dagger(k):
         return "$^\\ddagger$" if conc.get(k) == "CONTESTED" else ""
 
+    FR = _frontier_mod()          # 唯一的前沿定义与插值（见 _frontier_mod 的注释）
+
     def front_slo(w):
-        for (w0, s0), (w1, s1) in zip(env, env[1:]):
-            if w0 <= w <= w1:
-                return s0 + (w - w0) / (w1 - w0) * (s1 - s0)
-        return None
+        return FR.front_slo(w)
 
     def delta(k):
         r = runs[k]
@@ -81,8 +118,10 @@ def main():
         ds = "\\emph{anchor}" if anchor else ("$+$%.2f" % d if d > 0 else "$-$%.2f" % -d)
         if anchor:
             ds = "\\emph{anchor}"
-        return "    %-17s & %s & %s & %s & %s \\\\" % (
-            LABEL[k] + dagger(k), r["wall_min"], r["conc"], r["slo_pct"], ds)
+        # 显示回 1 位小数（表里就是这样印的），但 ds 是用全精度算出来的
+        return "    %-17s & %.1f & %s & %.1f & %s \\\\" % (
+            LABEL[k] + dagger(k), float(r["wall_min"]), r["conc"],
+            float(r["slo_pct"]), ds)
 
     print("    \\multicolumn{5}{l}{\\emph{Static caps}}\\\\")
     for k in ["default", "cap1", "cap2", "cap3_fixed", "cap4", "cap5"]:

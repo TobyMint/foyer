@@ -64,15 +64,17 @@ def main():
         prompt = int(e["prompt_tok"])
         reuse = int(e["reuse_tok"])
         unc = int(e["uncached_tok"])
-        dev_miss = int(round(float(e["dev_miss_M"]) * 1e6))
-        host_hit = int(round(float(e["host_hit_M"]) * 1e6))
+        # 用精确列，不用 0.1M 取整列 —— 同表的教训（算比例必须走未取整值）
+        dev_miss = int(e["dev_miss_tok"])
+        host_hit = int(e["host_hit_tok"])
 
         # 断言 1：设备未命中 = host 接住 + 真正重算（这套记账的定义式；
         # 挡住的是从 eviction.csv 抄错列——抄错不会有这个性质）
-        assert abs(dev_miss - (host_hit + unc)) < 2e5, \
-            "%s: dev_miss %d != host_hit %d + uncached %d" % (run, dev_miss, host_hit, unc)
+        assert dev_miss == host_hit + unc, \
+            "%s: dev_miss %d != host_hit %d + uncached %d（精确列必须严格相等）" % (
+                run, dev_miss, host_hit, unc)
         # 断言 2：复用 + 重算 = 总 prompt
-        assert abs((reuse + unc) - prompt) < 2e3, \
+        assert (reuse + unc) == prompt, \
             "%s: reuse %d + uncached %d != prompt %d" % (run, reuse, unc, prompt)
         # 断言 3：实测复用不得超过 trace 上界 —— 这是本表的核心不等式，
         # 若它被违反，说明口径搞错了（而不是发现了超光速）

@@ -223,14 +223,14 @@ Two readings, and we give both. The first is that our headline claim is
 conditional: at the strict threshold that interactive serving actually cares
 about, no controller reaches the static front; at a loose one, one does. The
 second is that the crossing is still not a win, though the reason is more
-awkward than we first wrote. $+2.7$\,pp at 20\,s is larger than the replicate
-SLO spread of the two tightest pairs we have---0.5\,pp for the base controller
-and 0.8\,pp for \texttt{cap3}+HiCache---but smaller than three others: 1.0\,pp
-for \texttt{cap2}+HiCache, 3.9\,pp for the best arm's own repeat, and 5.1\,pp
-for \texttt{cap4}+HiCache. Two of those three are anchors, and it is the
-anchors, not the controllers, that set the line the margin is measured
-against, so the comparison that matters is the one against the loose
-anchors---where the margin is not resolvable. (An earlier revision discarded
+awkward than we first wrote. $+1.5$\,pp at 20\,s is larger than the replicate
+SLO spread of the three tightest pairs we have---0.5\,pp for the base
+controller, 0.8\,pp for \texttt{cap3}+HiCache and 1.0\,pp for
+\texttt{cap2}+HiCache---but smaller than the two widest, 3.9\,pp for the best
+arm's own repeat and 5.1\,pp for \texttt{cap4}+HiCache, and those two are
+anchors. It is the anchors, not the controllers, that set the line the margin
+is measured against, so the comparison that matters is the one against the
+widest anchor---where the margin is not resolvable. (An earlier revision discarded
 the \texttt{cap3}+HiCache pair on the ground that one run had exceeded its
 cap. That was wrong: the over-cap run is the \emph{device-only}
 \texttt{cap3} repeat, and both HiCache runs peak at three with none over. The
@@ -249,12 +249,12 @@ submitted yet, so the wait is invisible---and that wait is precisely the cost
 an admission controller imposes. We therefore recomputed the runs we have per-step
 logs for on a ready-to-first-token basis, where a round's clock starts when the
 session is actually able to run (its arrival for round~0, the previous round's
-completion plus its tool wait otherwise). That is nineteen of the twenty-three
-200-session runs in Table~\ref{tab:runs}; the no-control baseline and the two runs whose
-per-step logs we did not recompute are absent, and we do not extend the claim
-to them.
+completion plus its tool wait otherwise). That is nineteen of the twenty-five
+200-session runs in Table~\ref{tab:runs}; absent are the no-control baseline,
+the two HiCache anchor repeats and three controller repeats, and we do not
+extend the claim to them.
 
-The correction is large. Every configuration loses 3--19\,pp of SLO, and the
+The correction is large. Every configuration loses 2.9--19.3\,pp of SLO, and the
 loss is systematic: tight caps queue the hardest, so \texttt{cap1} falls from
 94.8\% to 76.2\% while \texttt{cap5} falls only from 27.1\% to 24.2\%. A
 session admitted last under \texttt{cap1} can wait hours for its turn; its
@@ -288,8 +288,9 @@ We report this because a reviewer should ask it,
 and because the answer is the useful part: the negative result is not an
 artifact of choosing an SLO definition that flatters controllers. If anything
 the flattering choice was the one that moved our best arm's distance from
-$-0.92$ to $+0.22$---that is, from just below the line to just above it, with
-neither number outside the tie band.
+$-0.9$ to $+1.5$---that is, from just below the line to just above the tie
+band's upper edge, by a margin of the same order as that pair's own replicate
+spread (3.9\,pp).
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
 model and one trace family; generality is untested. Only four configurations
@@ -353,8 +354,8 @@ Two things we can already say. First, the failure is silent: the engine-side
 counters---running count, pool occupancy, evictions, recomputation---are
 indistinguishable between the affected runs and the clean ones, so nothing in
 the ordinary telemetry would have caught this. Second, the affected runs'
-\emph{volume} columns look untouched: the four affected host-tier arms reuse
-0.6937--0.6950 of the prompt against 0.6813--0.6988 for the clean host-tier
+\emph{volume} columns look untouched: the affected host-tier arms reuse
+0.6917--0.6950 of the prompt against 0.6813--0.6975 for the clean host-tier
 arms, a range overlap that is suggestive but not proof---co-tenancy could in
 principle also reorder completions and change eviction order. The re-runs will
 settle it, since they are the same policies measured clean, and we compare
@@ -363,7 +364,7 @@ reuse per round and per session between the pairs rather than only the totals.
 One caveat about the controller artifact, which a reader with our code would
 otherwise hit. There is no single controller copy behind this paper: the runs
 record four different hashes of \texttt{controller\_budget3.py}
-(\texttt{2b573829083c} on 31 runs, \texttt{f825bc768188} on 19,
+(\texttt{2b573829083c} on 31 runs, \texttt{f825bc768188} on 24,
 \texttt{d692ab11f396} on 4 and \texttt{e1dd5ae78019} on 3), so the artifact
 evolved during the campaign and a reader cannot reproduce every number from
 one revision. None of the four matches the repository copy

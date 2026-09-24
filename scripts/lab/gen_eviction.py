@@ -30,7 +30,8 @@ HEADER = ["run", "hicache", "prompt_M", "dev_miss_M", "host_hit_M", "uncached_M"
           # 为什么必须单列：曾经让下游拿舍入到 0.1M 的列去算百分比，cap1 于是印成
           # 69.8% 而真值是 19,934,847/28,526,871 = 69.9%（2026-09-24 审稿人从原始
           # 日志独立求和抓到的）。凡是要算比例的，一律走这三列。
-          "prompt_tok", "reuse_tok", "uncached_tok"]
+          "prompt_tok", "reuse_tok", "uncached_tok",
+          "dev_miss_tok", "host_hit_tok"]
 SAMPLE_S = 5.0
 
 RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
@@ -75,13 +76,13 @@ def col(path, name):
 def main():
     root, out_path = sys.argv[1], sys.argv[2]
     runs = sys.argv[3:] or RUNS
-    rows, bad = [], []
+    rows, bad, missing = [], [], []
     for r in runs:
         d = os.path.join(root, "pois200_" + r)
         mp = os.path.join(d, "metrics.csv")
         sp = os.path.join(d, "steps.jsonl")
         if not (os.path.exists(mp) and os.path.exists(sp)):
-            bad.append((r, "缺 metrics.csv 或 steps.jsonl"))
+            missing.append(r)
             continue
         try:
             prompt = last_value(mp, "sglang:prompt_tokens_total")
@@ -127,10 +128,17 @@ def main():
                 "prompt_tok": int(prompt),
                 "reuse_tok": int(prompt - uncached),
                 "uncached_tok": int(uncached),
+                "dev_miss_tok": int(dev_miss),
+                "host_hit_tok": int(dev_miss - uncached),
             })
         except Exception as e:
             bad.append((r, str(e)))
 
+    if missing:
+        print("!! 以下 run 在 %s 下不存在（镜像不全？）—— 静默丢掉会让数据文件的集合" % root)
+        print("!! 与正文引用的集合不一致（2026-09-24 就这样漏掉过 foyer_hz1）：")
+        for r in missing:
+            print("   %s" % r)
     if bad:
         print("!! 未通过校验：")
         for r, why in bad:

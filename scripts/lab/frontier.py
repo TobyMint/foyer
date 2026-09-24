@@ -84,8 +84,32 @@ def verdict(d):
     return d
 
 
+def emit_csv():
+    """全精度导出 —— 给 gen_table.py 用。
+
+    为什么需要：runs.csv 是手抄 run_summary.py 打印的【1 位小数】表得来的，
+    而本脚本从原始日志算的是全精度。同一条插值公式，输入 263.3/86.3 与
+    263.340318/86.286286 会给出差 0.02pp 的 delta —— 于是表 I 写 -0.55、
+    正文写 -0.57（2026-09-24 审稿人抓到的对不上）。让两条管线共用这一个
+    全精度来源，而不是各自去读不同精度的表。
+    """
+    import csv as _csv
+    w = _csv.writer(sys.stdout)
+    w.writerow(["run", "wall_min", "slo_pct"])
+    for nm in sorted(os.listdir(RESULTS)):
+        if not nm.startswith("pois200_"):
+            continue
+        d = summarise(nm)
+        if not d or d["steps"] < 999:
+            continue
+        w.writerow([nm, "%.6f" % d["wall"], "%.6f" % d["slo"]])
+
+
 def main():
     runs = sys.argv[1:]
+    if runs == ["--csv"]:
+        emit_csv()
+        return 0
     if runs == ["--all-foyer"]:
         runs = sorted(r for r in os.listdir(RESULTS)
                       if r.startswith("pois200_foyer") or r.startswith("pois200_cap"))

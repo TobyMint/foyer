@@ -259,18 +259,19 @@ back. The pool is the binding resource, the tier sets the pool, and the tier
 therefore sets whether added concurrency is paid for in recomputation. The
 caveat is that this pair is two runs on two different days and two different
 GPUs, not a paired experiment; \S\ref{sec:repro} states what we did to rule
-out co-tenancy and \S\ref{sec:results} reports the capacity-controlled
-version, which holds the card fixed and varies only the pool.
+out co-tenancy. A capacity-controlled version---same card, same trace, only
+the pool size changed---is queued behind the re-runs and we report it in
+\S\ref{sec:results} when it lands; we do not use it here.
 
 That gives the criterion of \S\ref{sec:criterion} a mechanism rather than a
-correlation, and it suggests a prediction we test in \S\ref{sec:results}:
+correlation, and it suggests a prediction we are testing:
 if the tier acts by multiplying usable capacity (the host pool is twice the
 device pool, so three times in total), then shrinking the device pool alone
 should move the collapse point even with no host tier involved. We do not
 treat the arithmetic as a result---it assumes KV demand grows linearly in the
 running count, which heterogeneous sessions need not satisfy---and the
-\S\ref{sec:results} experiment measures the collapse point directly rather
-than predicting it.
+queued experiment measures the collapse point directly rather than predicting
+it, and \S\ref{sec:results} reports it once it has run.
 
 \paragraph{What is left unexplained.} Not everything here is accounted for.
 The host-tier runs sit at a flat 8.6--9.1\,M recomputed tokens \emph{and} a
@@ -280,7 +281,7 @@ Part of that is now explained and part is not. Three of those runs
 measured while three other engine instances shared the host, which inflates
 per-step cost by 25--40\% and leaves the volume columns untouched
 (\S\ref{sec:repro}); they are being re-measured and we do not use their
-timing. Excluding them the remaining five span 27.0--29.2\,ms at flat
+timing. Excluding them the remaining five span 27.0--29.8\,ms at flat
 recomputation. That residual is small but it is not zero, and we do not
 attribute it. We note that the negative result does not rest on it: the
 cancellation is measured directly, not inferred from the mechanism.
