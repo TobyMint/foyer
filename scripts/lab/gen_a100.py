@@ -28,7 +28,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gen_decomp as _GD  # noqa: E402
 import gen_reuse as _GR   # noqa: E402
 
-RUNS = ["a100_cap2", "a100_cap3", "a100_cap4", "a100_cap5"]
+# cap1 是补跑的：预注册判据列了五个 cap，而最初的车道只排了 cap2~cap5，
+# 表里会有一行 3090 的 cap1 没有 A100 对应点（codex 第 22 轮指出）。
+# 它由 scripts/chain_a100.sh 在当前车道跑完后自动接上。
+RUNS = ["a100_cap1", "a100_cap2", "a100_cap3", "a100_cap4", "a100_cap5"]
 # 3090 的 device-only 对照点（与主表同族：无 HiCache、同 memfrac、同 trace）
 MAIN = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
 

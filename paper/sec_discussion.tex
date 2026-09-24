@@ -395,8 +395,9 @@ Table~\ref{tab:runs} against 23.7--25.0\,ms across the seven clean runs of the
 same controller family. That is an inflation of 24 to 41\% \emph{across arms},
 which compares the extremes of two ranges and is therefore wider than any
 single correction; the one arm we have measured both ways, contaminated and
-clean, moved 31.3 to 24.8\,ms, a 26\% correction
-(\texttt{superseded.csv}), and that arm is now inside the clean range. Two
+clean, moved 31.3 to 24.8\,ms---a 26\% excess in the contaminated reading
+over the clean one, or a 21\% reduction the other way
+(\texttt{superseded.csv})---and that arm is now inside the clean range. Two
 controls pin the cause to co-tenancy rather than to the configuration, and both
 are within-run---the same run, the same policy, the same trace, with the only
 change being who else was on the machine. One run (\texttt{cap1}) reads a
@@ -459,8 +460,11 @@ evolved during the campaign and a reader cannot reproduce every number from one
 revision. Two of the four are the campaign's workhorses---the artifact was
 revised mid-campaign and both revisions account for a large share of the runs,
 so we do not quote those two counts, which grow as runs land. The other two are
-historical and fixed: \texttt{d692ab11f396} on 4 runs and
-\texttt{e1dd5ae78019} on 3. None of the four matches the repository copy
+counts we can state without qualification, because nothing has
+landed under either since: \texttt{d692ab11f396} on 4 runs and
+\texttt{e1dd5ae78019} on 3. (These are snapshot counts too---a future run could
+in principle be launched from either copy---but none is planned, whereas the two
+workhorse copies are what the re-runs in this revision are using.) None of the four matches the repository copy
 (\texttt{a21bd2b63774}), and the difference is not one hunk but several: the
 queue-scan fix described in \S\ref{sec:results:gate}, and a rename of the
 logging variable whose rebinding \S\ref{sec:results} identifies as the source
@@ -473,9 +477,11 @@ subset: they are \emph{all four} runs recorded under \texttt{d692ab11f396},
 a whole code copy. Those re-runs therefore changed two things at once---the
 contention window and the controller revision---and our data does not separate
 them. What argues against the revision being the cause is the other small copy:
-\texttt{e1dd5ae78019} also ran three arms, and its \texttt{horizon}=1 run is
-clean ($\tau_2$ 24.6\,ms, and only 14 minutes at four lanes against 282--296
-for the four flagged runs), so a copy alone does not produce the signature. The
+\texttt{e1dd5ae78019} was also used to launch arms---three start records, of
+which one completed---and that completed run, \texttt{horizon}=1, is clean
+($\tau_2$ 24.6\,ms, and only 14 minutes at four lanes against 282--296 for the
+four flagged runs). So a copy alone does not produce the signature. That is one
+completed run, not three, and we state it as one. The
 question cannot be closed from here: only the repository revision survives on
 the machine, so the four campaign copies can no longer be diffed.
 The numbers in this paper therefore describe the pre-fix path, with one
