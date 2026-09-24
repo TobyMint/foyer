@@ -17,7 +17,7 @@ import csv, os, statistics, sys
 # 这张表、也不在 decomp.csv，导致「九臂归因」那一节没有它（2026-09-24 审稿人指出）
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap4_hc",
         "cap4_hc_r2","cap3_hc_r2","foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz2",
-        "foyer_hz0","foyer_bres_r2","foyer_breshz1","foyer_nogate","foyer_rg4",
+        "foyer_hz0_r2","foyer_bres_r2","foyer_breshz1","foyer_nogate","foyer_rg4",
         "foyfix_hc","aimd2","aimd2_paper","foyer_sf0_r2"]
 
 

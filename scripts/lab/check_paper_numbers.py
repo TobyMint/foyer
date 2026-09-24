@@ -277,7 +277,7 @@ def main():
     # wall clock」。逐条查 0.9 / 1.0 / 1.08 这种短值会撞车（--audit: "0.9" 出现 15 次），
     # 所以照正文那句的形态拼一下再查。
     _st = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/stall.csv"))}
-    _three = [r for r in ("foyer_hz0", "foyer_breshz1", "foyer_rg4") if r in _st]
+    _three = [r for r in ("foyer_hz0_r2", "foyer_breshz1", "foyer_rg4") if r in _st]
     if len(_three) == 3:
         _s = sorted((float(_st[k]["max_s"]), float(_st[k]["pct_wall"])) for k in _three)
         _e = sorted(float(_st[k]["pct_wall"]) for k in _three)
@@ -695,7 +695,7 @@ def main():
     # ---- decomp.csv：三个区间 ----
     d = load(os.path.join(ROOT, "paper/data/decomp.csv"))
     T13 = {"cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
-           "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2"}
+           "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2"}
     d13 = [r for r in d if r["run"] in T13]
     for desc, vals in (
             ("τ₁ 上界", [float(r["step_back_ms"]) for r in d13 if r["step_back_ms"]]),

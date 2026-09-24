@@ -64,7 +64,7 @@ def proj(d):
 # 单飞闸门占约十五个点，而那两个数曾经【只存在于正文里、不在任何 CSV 里】，
 # 且与仓库脚本复算的值对不上（正文 39.9/43.5，复算 39.7/44.0）——
 # 2026-09-24 审稿人抓到的。纳进来之后正文只能引用 CSV。
-PAPER_SET = ["pois200_foyer_hz0", "pois200_foyer_hz1", "pois200_foyer_hz2",
+PAPER_SET = ["pois200_foyer_hz0_r2", "pois200_foyer_hz1", "pois200_foyer_hz2",
              "pois200_foyer_hc", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
              "pois200_foyer_nogate", "pois200_foyer_rg4",
              "pois200_foyer_sf0_r2", "pois200_foyer_hc_r2"]
@@ -168,7 +168,7 @@ def main():
         # 「八条」中位数在文件里查不到，而 PAPER_SET 的中位数又对不上正文
         # （2026-09-24 审稿人抓：正文把投影中位 32.7 写进了阀门那一格）。
         eight = {"foyer_bres_r2", "foyer_hc", "foyer_hz2", "foyer_hz1",
-                 "foyer_breshz1", "foyer_nogate", "foyer_hz0", "foyer_rg4"}
+                 "foyer_breshz1", "foyer_nogate", "foyer_hz0_r2", "foyer_rg4"}
         s8 = [r for r in rows if r["run"].replace("pois200_", "") in eight]
         k8 = lambda key: sorted(100.0 * r[key] / r["blocked"] for r in s8)
         v8, p8 = k8("valve"), k8("over")

@@ -17,7 +17,7 @@ import csv, os, sys
 # 而表里只有八条 —— codex 抓到的。
 # sf0_r2 必须在里面：它是全表最接近前沿的臂（Δ −0.57），论文反复引用它，
 # 归因表却没有它，正文也没解释为什么不在（2026-09-24 审稿人指出）。
-ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
+ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2",
         "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc",
         "aimd2", "aimd2_paper"]
 STATIC = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "pairB_cap2hc", "cap1",

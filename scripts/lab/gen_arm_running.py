@@ -24,7 +24,7 @@ import gen_decomp as _GD  # noqa: E402  busy 占比的共用定义
 # §model 的「host tier 兑现区间」要把它们算进去 —— 少一条就会让区间说错
 # （2026-09-24 第 12 轮审稿人：foyfix_hc 的 72.8% 被排除在「84.2–92.4%」之外）。
 ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz1_r2", "foyer_hz2",
-        "foyer_hz0", "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
+        "foyer_hz0_r2", "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
         "foyfix_hc", "pairA_foyerhc", "pairB_foyerhc", "aimd2", "aimd2_paper"]
 STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
           "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
@@ -77,7 +77,7 @@ def main():
         # 论文 §IV/§VI 引用的「控制器运行区间 1.35~1.69」是【九条 Foyer 臂】的区间
         # （不含 AIMD、不含 pairA/pairB_foyerhc、不含 foyfix）。两个都报，
         # 免得看汇总的人以为正文的区间写错了。
-        NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
+        NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0_r2", "foyer_bres_r2",
                 "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
         nb = [r["running_busy"] for r in rows if r["run"] in NINE]
         if nb:

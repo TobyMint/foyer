@@ -28,18 +28,20 @@ inflates the step cost, which pushes an arm \emph{down}, so their measured
 distances overstate how far
 below the line they are---but that is one data point, and co-tenancy could in
 principle also reorder completions and change which prefixes survive, which
-need not push the same way. A fourth variant
-carried the flag and has been re-measured (\S\ref{sec:repro}): it moved from
-$7.81$\,pp below the front to $1.33$, still below and still outside the tie
-band. That 6.5\,pp is the largest correction the flag has produced so far, and
-it is a warning about extrapolating from it rather than a reassurance: applied
-unchanged to the other three as they stand, it would take
-\texttt{horizon}$=2$ from $-4.81$ to $+1.7$---above the line---while leaving
-the other two below. One re-measurement is one data point, and the three differ
-in how long they overlapped and in what else was running, so we are not
-predicting that. We are saying that the correction \emph{could} cross the line,
-and that we cannot rule it out from what we have. If one of them does, the
-headline weakens to ``six of nine, one win'', and this paper will say so.
+need not push the same way. Two variants
+carried the flag and have been re-measured (\S\ref{sec:repro}): the resident
+base moved from $7.81$\,pp below the front to $1.33$, and
+\texttt{horizon}$=0$ from $13.60$ to $7.19$. Both are still below and still
+outside the tie band, and the two corrections---$6.5$ and $6.4$\,pp---agree
+with each other, which makes them a warning about extrapolating rather than a
+reassurance: applied unchanged to the other two as they stand, $6.5$\,pp would
+take \texttt{horizon}$=2$ from $-4.81$ to $+1.7$---above the line---while
+leaving \texttt{breshz1} at $-13.0$. Two re-measurements are two data points,
+and the four differ in how long they overlapped and in what else was running,
+so we are not predicting that. We are saying that the correction \emph{could}
+cross the line, and that we cannot rule it out from what we have. If one of
+them does, the headline weakens to ``eight of nine, one win'', and this paper
+will say so.
 
 The base configuration is the one whose repeats we can trust, and they are
 tight: four runs spanning 0.5\,pp of SLO (89.5\% mean; 279.8, 289.6, 291.3
@@ -144,16 +146,18 @@ appearance of the mechanism that drives the whole frontier.
   window up to four steps shorter.
   $^\ddagger$ marks a run measured while three or more other engine
   instances shared the host for at least an hour. That is a risk flag, not a
-  measurement of damage, and the two come apart in our data. Six rows of this table carried the flag; five still do. Three of the six are
-  damaged: \texttt{horizon}$=2$, \texttt{horizon}$=0$
-  and \texttt{horizon}$=1$ no hw are controller variants whose per-request
-  decode interval is 30.9--33.3\,ms against 23.7--25.0 across the seven clean
-  runs of the same controller family, so their wall clock, SLO and $\Delta$
-  are not comparable with the rest, and they are being re-measured. A fourth,
-  the resident base, has been re-measured and its row above carries the clean
-  numbers
-  (24.8\,ms $\tau_2$, 25.4 minutes earlier, $\Delta$ $-$1.33 against the
-  base configuration's $-$1.24), which is why it no longer carries the mark.
+  measurement of damage, and the two come apart in our data. Six rows of this
+  table carried the flag; four still do. Four of the six were
+  damaged---\texttt{horizon}$=2$, \texttt{horizon}$=0$,
+  \texttt{horizon}$=1$ no hw and the resident base---controller variants whose
+  per-request decode interval ran 30.9--33.3\,ms against 23.7--25.0 across the
+  seven clean runs of the same controller family, so their wall clock, SLO and
+  $\Delta$ are not comparable with the rest. Two of those four have since been
+  re-measured alone and their rows above carry the clean numbers; the other two
+  are still out. The resident base moved to 24.8\,ms $\tau_2$, 25.4 minutes
+  earlier, $\Delta$ $-$1.33 against the base configuration's $-$1.24;
+  \texttt{horizon}$=0$ moved to 25.5\,ms, 25.8 minutes earlier, $\Delta$
+  $-$7.19. Neither carries the mark now.
   The remaining two, \texttt{cap1}
   and the published-parameter AIMD row, show no aggregate inflation at all
   (20.6 and 24.4\,ms), so we keep their numbers and say why.
@@ -189,7 +193,7 @@ appearance of the mechanism that drives the whole frontier.
     horizon$=$2$^\ddagger$ & 306.1 & 2.22 & 86.9 & $-$4.81 \\
     horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.58 \\
     resident base      & 265.9 & 2.41 & 85.9 & $-$1.33 \\
-    horizon$=$0$^\ddagger$ & 290.0 & 2.69 & 77.2 & $-$13.60 \\
+    horizon$=$0 & 264.2 & 2.64 & 79.8 & $-$7.19 \\
     horizon$=$1, no hw$^\ddagger$ & 310.9 & 2.77 & 72.3 & $-$19.54 \\
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.62 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.39 \\
@@ -302,15 +306,15 @@ set is named in \texttt{gate\_attrib.csv}, and it is eight rather than nine
 because the ninth, \texttt{sf=0}, is the probe we report separately just above,
 and because \texttt{foyfix} and the two AIMD arms run a different controller and
 log no gate state---the projection is over budget in a median 32.2\% of blocked
-cycles (19.5\% to 53.6\%) and the valve in a median 32.7\% (6.8\% to 67.9\%).
+cycles (19.5\% to 53.6\%) and the valve in a median 34.3\% (6.8\% to 67.9\%).
 Both medians move with the set, which is why we name it: over every completed
-run in that file---forty-two of them---they are 30.6\% and 5.3\%. One
+run in that file---forty-three of them---they are 29.4\% and 5.3\%. One
 convention note, because it moves
 these numbers: we take the median as the upper of the two middle values when
 the count is even (\texttt{v[len(v)//2]}, which is what
 \texttt{gen\_gate\_attrib.py} computes and what the file's
 \texttt{eight\_median} line records), not the mean of the two; on eight arms
-that difference is 0.4\,pp on the projection and 6.7\,pp on the valve. The round gate is
+that difference is 0.4\,pp on the projection and 7.5\,pp on the valve. The round gate is
 off by default and binds in only two of the three arms that turn it
 on---\texttt{rg2} at 29.3\% and \texttt{rg3} at 18.0\% of blocked cycles,
 while \texttt{rg4}, the loosest of the three, stays at 0.6\% like every arm
@@ -372,7 +376,7 @@ step-cost purely because $\tau$ rises with the running count.
   \texttt{horizon}=1  &  57.8 & 1.523 & 29.2  & residual \\
   \sys{} base         &  49.2 & 1.353 & 28.7  & residual \\
   \texttt{horizon}=2  &  54.7 & 1.435 & 33.6  & $\tau$ high, not matched$^\ddagger$ \\
-  \texttt{horizon}=0  &  64.1 & 1.661 & 35.7  & $\tau$ high, not matched$^\ddagger$ \\
+  \texttt{horizon}=0  &  58.1 & 1.579 & 30.2  & unused mem. \\
   \texttt{bres}       &  56.2 & 1.481 & 29.5  & unused mem. \\
   \texttt{breshz1}    &  61.4 & 1.626 & 36.2  & $\tau$ high, not matched$^\ddagger$ \\
   no gate, no resv.   &  62.1 & 1.677 & 31.5  & unused mem. \\
@@ -387,7 +391,7 @@ step-cost purely because $\tau$ rises with the running count.
 $^\ddagger$ marks runs measured while three or more other engine instances shared
 the host for at least an hour (\S\ref{sec:repro}). In this table the flag bites
 harder than in Table~\ref{tab:runs}, because the classification is made on
-$\tau_1$, which is exactly the column co-tenancy inflates. Three of the five
+$\tau_1$, which is exactly the column co-tenancy inflates. Two of the four
 $\tau$-high rows carry it, and so does the one step-cost attribution the
 procedure makes---AIMD at its published parameters. That row is flagged by the
 window but not measurably damaged: its $\tau_2$, which does not touch the
@@ -397,8 +401,9 @@ and the absence of damage is an inference from a different column. The two
 $\tau$-high rows that are not flagged (\texttt{running gate}=4 is a watch,
 all-throttles-off is clean) are the ones whose elevation no window explains.
 
-4 of the 12 rows are attributed: three to unused memory (\texttt{single-flight
-off}, the charge-free base, and no-gate-no-reservation), one to step cost, five
+5 of the 12 rows are attributed: four to unused memory (\texttt{single-flight
+off}, the charge-free base, no-gate-no-reservation, and \texttt{horizon}=0
+once re-measured---\S\ref{sec:repro}), one to step cost, four
 have a $\tau$ no
 matched comparison can confirm, and three are residuals---their occupancy and
 their step cost both sit close to their comparison cap's, and their shortfall

@@ -37,7 +37,7 @@ foyer_hc 200 foyer
 foyer_hz1 200 foyer
 foyer_hz1_r2 200 foyer
 foyer_hz2 200 foyer
-foyer_hz0 200 foyer
+foyer_hz0_r2 200 foyer
 foyer_bres_r2 200 foyer
 foyer_breshz1 200 foyer
 foyer_nogate 200 foyer

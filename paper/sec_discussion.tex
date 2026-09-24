@@ -420,23 +420,25 @@ in the half-hour before to 22.3--22.6 in the four after, \texttt{F:rl99} from
 one that resolves the transition and still puts at least twenty steps in every
 bucket quoted; the finer series is noisier and does not support a
 minute-resolution claim, so we do not make one.
-(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; five of them are rows of
-Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:hz0},
-\texttt{F:hz2}, \texttt{F:breshz1}, and the published-parameter AIMD row) and
-nine are arms we do not report here. The flag is a window, and only three of
-those five are actually damaged---the controller variants whose $\tau_2$
+(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; four of them are rows of
+Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:hz2}, \texttt{F:breshz1}, and
+the published-parameter AIMD row) and
+ten are arms we do not report here. The flag is a window, and only two of
+those four are actually damaged---the controller variants whose $\tau_2$
 is 30.9--33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
 inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
-A sixth row carried the flag and the damage, and has been re-measured alone
-under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
-$\tau_2$ is 24.8\,ms. Its row in Table~\ref{tab:runs} now carries the clean
-numbers, and the two conclusions that rested on it---its step-cost
-attribution in \S\ref{sec:results:attribution} and the route-1 comparison of
-\S\ref{sec:results}---are restated in that section rather than left
-provisional. The remaining three damaged rows are still being re-measured,
+Two further rows carried the flag and the damage, and have been re-measured
+alone under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
+$\tau_2$ is 24.8\,ms, and \texttt{horizon}=0 at 25.5\,ms. Their rows in
+Table~\ref{tab:runs} now carry the clean numbers, and the conclusions that
+rested on them---\texttt{bres}'s step-cost attribution and the route-1
+comparison of \S\ref{sec:results}, and \texttt{horizon}=0's move out of the
+$\tau$-high column into \texttt{unused mem.} in
+\S\ref{sec:results:attribution}---are restated in those sections rather than
+left provisional. The remaining two damaged rows are still being re-measured,
 and until those runs land we treat their wall-clock, SLO and step-cost
 columns as unusable: the signed distances in Table~\ref{tab:runs} for those
-three rows and the $\tau$-high attributions of
+two rows and the $\tau$-high attributions of
 \S\ref{sec:results:attribution} where it names them. We flag them rather than
 quietly dropping the rows so that a reader can see which conclusions are still
 standing on which measurements.
@@ -460,7 +462,7 @@ alone reuses 0.6904, a 0.39-point difference, while its per-request decode
 interval moves 31.3 to 24.8\,ms and its wall clock by 10\%. The volume columns
 therefore carry no signature of the contamination that we can detect---one arm
 is one comparison, and we are not claiming more than that---which is why the
-audit had to run on the client-side clock. For the three arms still
+audit had to run on the client-side clock. For the two arms still
 outstanding, the re-runs will confirm it policy by policy, and we compare
 reuse per round and per session between the pairs rather than only the totals.
 
@@ -541,12 +543,12 @@ inspection and once by the end-to-end measurement here.
 
 We asked whether an adaptive admission controller can beat a tuned static
 concurrency cap on a memory-bound agentic LLM workload. On our system we could
-not build one that does: nine variants, four routes tested, and of the six
+not build one that does: nine variants, four routes tested, and of the seven
 whose measurements are clean, none above the interpolated static front---which
 is the strictest of the two baselines we could have used (\S\ref{sec:bg}),
 since it sits above the discrete static points. (Four were measured while
-other jobs shared the host; we re-measured one, which moved 6.5\,pp closer
-without crossing, and the other three are still out.) We expected the reason to be a cancellation---admission policy controls
+other jobs shared the host; we have re-measured two of them, which moved 6.5
+and 6.4\,pp closer without crossing, and the other two are still out.) We expected the reason to be a cancellation---admission policy controls
 how many requests are in flight, the per-step cost rises with that number, and
 the product is what the wall clock sees---and we built a two-part decomposition
 of the wall clock that makes the cancellation measurable. That decomposition

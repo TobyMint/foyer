@@ -3,7 +3,7 @@
 # 论文 §VI 引的上限（跨配置与档位）就是本表的 max；全表 21 组，min 0.0%、max 21.96%。
 # 分组键 = policy + trace + HiCache，只算【跑完的】run；same_code_gen 标注该组是否同代码代
 #   （代码在两次之间会变，所以精确同代的分组太稀疏 —— 上界因此含少量代码漂移）。
-# 不进表：被争用作废的旧测量（pois200_foyer_bres）—— 它与 _r2 同 policy 但不同类，
+# 不进表：被争用作废的旧测量（pois200_foyer_bres pois200_foyer_hz0）—— 它与 _r2 同 policy 但不同类，
 policy,trace,n,same_code_gen,wall_min_min,wall_min_max,spread_pct,runs
 budget3,replay_night200_clean.csv,3,N,540.07,669.25,21.96,"budget200c_budget3 budget200c_budget3_r2 budget200c_budget3_r3"
 static=6,replay_night25.csv,3,N,22.81,27.91,19.68,"load25_cap6 load25c_cap6 load25c_cap6_hc"

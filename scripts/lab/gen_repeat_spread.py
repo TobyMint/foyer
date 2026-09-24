@@ -21,7 +21,7 @@ MIN_RUNS = 40   # 最少要看到这么多带 metadata 的 run，否则拒跑（
 # 的 SUPERSEDED 同一份名单，理由同源（docs/finding_concurrency_contamination_20260924.md）。
 # 该 pair 的差值本身照旧引用（§discussion 用它证明体积列看不出污染），
 # 只是不进这张表。
-SUPERSEDED = {"pois200_foyer_bres"}
+SUPERSEDED = {"pois200_foyer_bres", "pois200_foyer_hz0"}
 
 
 def one(d):

@@ -9,7 +9,7 @@ foyer_hc_r2,controller,1.139502,1.364232,0.835271
 foyer_hz1,controller,1.309783,1.523466,0.859739
 foyer_hz1_r2,controller,1.833856,2.097515,0.874299
 foyer_hz2,controller,1.252124,1.435327,0.872361
-foyer_hz0,controller,1.407998,1.660668,0.84785
+foyer_hz0_r2,controller,1.3125,1.578978,0.831234
 foyer_bres_r2,controller,1.2751,1.481073,0.86093
 foyer_breshz1,controller,1.342162,1.625524,0.82568
 foyer_nogate,controller,1.330623,1.677324,0.793301

@@ -28,14 +28,14 @@ We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 a family of admission policies against a sweep of static concurrency caps.
 Nine controller variants span four mechanistically distinct ideas, and a
 reimplementation of an independent congestion-based controller from the
-literature runs alongside them. Six of the nine have measurements we can
-compare, and none of those six is above the static Pareto front
+literature runs alongside them. Seven of the nine have measurements we can
+compare, and none of those seven is above the static Pareto front
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
 $\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
 arm we repeated misses by 0.9 with its repeat at 5.6. Four of the nine were
-measured while other jobs shared the host; we re-measured one, which moved 6.5
-points closer to the front without crossing it, and \S\ref{sec:results} says
-what the verdict rests on until the other three land.
+measured while other jobs shared the host; we have re-measured two, which moved
+6.5 and 6.4 points closer to the front without crossing it, and
+\S\ref{sec:results} says what the verdict rests on until the other two land.
 
 \begin{figure}[tb]
   \centering
@@ -53,15 +53,15 @@ what the verdict rests on until the other three land.
   interpolation, and we do not have the switching policy that would turn it
   into a measurement; \S\ref{sec:bg} states the limit and names the arm that
   beats the nearest measured static point on SLO while losing on wall clock. Nine \sys{} variants plus a
-  reimplementation of an independent controller, and of the six \sys{} variants
+  reimplementation of an independent controller, and of the seven \sys{} variants
   whose measurements are clean, none is above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
-  that verdict is conditional on the threshold. The five points drawn with a
+  that verdict is conditional on the threshold. The four points drawn with a
   hollow ring were measured while three or more other engine instances shared
-  the host (\S\ref{sec:repro}); on three of them the per-request decode
+  the host (\S\ref{sec:repro}); on two of them the per-request decode
   interval is inflated by 24--41\% and they are not comparable with the rest,
-  on the other two the flag is a window that left no measurable trace. The
-  three are being re-measured, and one arm that carried the flag in an
+  on the other two the flag is a window that left no measurable trace. Those
+  two are being re-measured, and two arms that carried the flag in an
   earlier version has been re-measured clean and is plotted without a ring.}
   \label{fig:frontier}
 \end{figure}

@@ -39,7 +39,7 @@ import csv, json, os, statistics, sys
 # 只列【有 controller.jsonl】的 run —— 静态 cap 不记准入队列，列进来只会刷屏
 # 「缺」，把真正的缺失淹掉（2026-09-25 第一次跑就是这样）。
 RUNS = ["pois200_foyer_hc", "pois200_foyer_hz1", "pois200_foyer_hz2",
-        "pois200_foyer_hz0", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
+        "pois200_foyer_hz0_r2", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
         "pois200_foyer_nogate", "pois200_foyer_rg4", "pois200_foyer_sf0_r2",
         "pois200_foyer_push_25",          # §VII 的同代 25 档控制器臂
         # 更早一代的 25 档控制器——正文 §VII 写「read 9--11」。原来只列了 budget3 一条，

@@ -14,12 +14,12 @@ cap3_fixed,cap3 (fixed),258.6963,2.89,74.3744,86.1413,-11.7670,BELOW,clean,0
 foyer_hz1_r2,horizon$=$1 (repeat),260.7962,2.69,80.8809,86.4564,-5.5755,BELOW,clean,0
 cap5,cap5,260.8966,4.89,27.1271,86.4715,-59.3443,BELOW,clean,0
 foyer_sf0_r2,single-flight off,263.3403,2.43,86.2863,86.8381,-0.5519,TIE,watch,0
+foyer_hz0_r2,horizon$=$0,264.2349,2.64,79.7798,86.9724,-7.1926,BELOW,?,0
 aimd2,"AIMD, retuned",264.6104,3.87,52.7528,87.0287,-34.2759,BELOW,clean,0
 foyer_bres_r2,resident base,265.8658,2.41,85.8859,87.2171,-1.3312,BELOW,clean,0
 foyer_nogate,"no gate, no resv.",272.3026,3.25,66.5666,88.1829,-21.6163,BELOW,watch,0
 foyer_rg4,running gate$=$4,282.3023,3.03,64.2929,89.6833,-25.3904,BELOW,watch,0
 default,no control,288.6046,94.91,3.0090,90.6289,-87.6198,BELOW,clean,0
-foyer_hz0,horizon$=$0,290.0402,2.69,77.2407,90.8443,-13.6036,BELOW,CONTESTED,0
 foyer_hc,horizon$=$3 (base),291.2765,2.06,89.7898,91.0298,-1.2400,BELOW,clean,0
 foyer_hc_r2,horizon$=$3 (2nd run),293.2012,2.07,89.5896,91.3186,-1.7290,BELOW,clean,0
 pairB_cap2hc,cap2+HC,295.0208,1.99,91.5916,91.5916,0.0000,TIE,clean,1
