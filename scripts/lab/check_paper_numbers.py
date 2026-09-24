@@ -367,6 +367,21 @@ def main():
         ck("replicates 墙钟散布下界", "%.1f" % rr[0], "sec_xtrace.tex")
         ck("replicates 墙钟散布上界", "%.1f" % rr[-1], "sec_xtrace.tex")
 
+    # ---- 摘要与 §V 的「非支配」声明：sf0_r2 不被表 I 的任何静态行支配 ----
+    # 这是摘要里唯一一处【正面】声明（"not dominated ... 4.4pp above the nearest"），
+    # 所以它必须机械可复算。判据就是非支配的定义：没有一条静态行在【墙钟更快】的
+    # 同时【SLO 也更高】。
+    _t = load(os.path.join(ROOT, "paper/data/table1.csv"))
+    _stat = [r for r in _t if not r["run"].startswith(("foyer", "aimd", "foyfix"))
+             and r["run"] != "default"]
+    _sf = [r for r in _t if r["run"] == "foyer_sf0_r2"]
+    if _sf and _stat:
+        _w0, _s0 = float(_sf[0]["wall_min"]), float(_sf[0]["slo_pct"])
+        _dom = [r["run"] for r in _stat
+                if (float(r["wall_min"]) < _w0 and float(r["slo_pct"]) >= _s0)
+                or (float(r["slo_pct"]) > _s0 and float(r["wall_min"]) <= _w0)]
+        ck("摘要「not dominated」：支配 sf0_r2 的静态行数", str(len(_dom)), "main.tex")
+
     # ---- toolwait.csv ----
     for r in load(os.path.join(ROOT, "paper/data/toolwait.csv")):
         for c in ("demand_med_s", "demand_mean_s", "measured_mean_s"):
