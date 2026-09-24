@@ -54,6 +54,12 @@
   症状：`steps.jsonl` 里 `connection closed before message completed` 在某个时刻
   突然成簇出现，`status=FAILED`；server 日志里 `Subprocess scheduler_0 crashed
   with exit code -15`。**这个 SIGTERM 是结果不是原因，别去查谁发的。**
+- **跑实验时必须挂 `gpu_watch.py`**（2026-09-24 用户提出，已接入 `run_matrix.py`）：
+  池子守卫只管【启动那一刻】，跑到一半别人往同一张卡上挂进程会静默污染这一段的
+  tau / SLO / 墙钟，而数据看上去完全正常。watcher 每 15 秒记一次该卡的显存、
+  利用率、全部计算进程及其属主，输出到 `<run_dir>/gpu_watch.jsonl`；属主不是自己的
+  标成 foreign。汇总用 `gpu_watch_summary.py <rundir>`，CLEAN 才敢写"这次测量期间
+  该卡独占"。注意此监控 2026-09-24 才加，**早于它的 run 没有这层保护**。
 - KV pool 必须落在 `101,432 ± 20`，否则该 run 作废，不记录——SGLang 按启动时的空闲显存
   定池子，池子小了数字就不可比。
 
