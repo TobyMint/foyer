@@ -327,6 +327,35 @@ def main():
             if x["bucket_min"] == _m:
                 ck("%s 转折前桶（第 %s 分）" % (_key, _m), x["tau2_p50_ms"], "sec_discussion.tex")
 
+    # ---- 全局守卫：paper/data/*.csv 里不该再出现【被替代的旧 run】----
+    # 2026-09-25：`swap_superseded.py` 只改生成器的 run 列表、**不重生成数据**，
+    # 于是我漏掉的那几张表（arrival_slo/stall/idle_pooled/frontier_split）都留着旧 run。
+    # 逐表去修是治标；这条守卫一次覆盖全部 —— 只要哪张表还引用旧 run 就报。
+    # 豁免：本来就是「全量清单」的表（它们按设计覆盖机器上每一条 run）。
+    INVENTORY = {"concurrency.csv", "runs_precise.csv", "projection.csv",
+                 "gate_attrib.csv", "superseded.csv"}
+    _sup = set()
+    for _gp in ("gen_eviction.py", "gen_repeat_spread.py"):
+        _gs = open(os.path.join(ROOT, "scripts/lab", _gp), encoding="utf-8").read()
+        _m = re.search(r"SUPERSEDED\s*=\s*\{(.*?)\}", _gs, re.S)
+        if _m:
+            _sup |= set(re.findall(r'"([A-Za-z0-9_]+)"', _m.group(1)))
+    _sup = {k.replace("pois200_", "") for k in _sup}
+    for _f in sorted(glob.glob(os.path.join(ROOT, "paper/data", "*.csv"))):
+        _bn = os.path.basename(_f)
+        if _bn in INVENTORY:
+            continue
+        _rr = load(_f)
+        if not _rr:
+            continue
+        _key = "run" if "run" in _rr[0] else ("arm" if "arm" in _rr[0] else None)
+        if not _key:
+            continue
+        _stale = sorted({str(r[_key]).replace("pois200_", "") for r in _rr
+                         if str(r[_key]).replace("pois200_", "") in _sup})
+        if _stale:
+            fails.append(("%s 仍引用被替代的旧 run" % _bn, "、".join(_stale), _bn))
+
     # ---- frontier_split.csv：辅助表，但必须与表 I 的 Δ 一致 ----
     # 它【不在正文里】，可是读者会打开 paper/data/ 逐个看。2026-09-25 codex 第 19 轮
     # 就是因为这张表给 hz1 +0.22（正文 −0.93）而判「从 paper/data 能追到互相矛盾的答案」。
@@ -337,6 +366,14 @@ def main():
         if _k in _tt:
             ck("frontier_split 的 %s 混合判決与表 I 一致" % _k, "%.2f" % float(_tt[_k]),
                "frontier_split.csv", tier="S")
+        else:
+            # ⚠ 原来这里直接 skip —— 于是**被替代的旧 run 留在表里也永远发现不了**。
+            # 2026-09-25 实测：frontier_split.csv 还留着 foyer_hz0（−13.60）与
+            # foyer_hz2（−4.81），而表 I 已经是 hz0_r2 的 −7.19 / hz2_r2 的 −0.30。
+            # 读者打开 paper/data/ 会追到互相矛盾的答案 —— 正是 codex 第 19 轮
+            # 为另一条臂判过的那一类。**缺的键要报，不能跳过**（纪律 3）。
+            fails.append(("frontier_split 的 %s 在表 I 里没有对应行（是不是被替代的旧 run？）" % _k,
+                          _v, "frontier_split.csv"))
 
     # ---- §III 的 host-tier 集合：判据 + 两条具名排除 必须正好等于 reuse.csv 的行数 ----
     _ru = load(os.path.join(ROOT, "paper/data/reuse.csv"))
