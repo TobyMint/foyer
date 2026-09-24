@@ -14,6 +14,7 @@ set -u
 GPU=$1; LANE=$2; MARKER=$3; MAXMINE=${4:-1}
 N=/data/xbw/turnstile/results/night
 LOG=/tmp/wait_gpu${GPU}_$(basename "$LANE" .sh).log
+LOCK=/tmp/turnstile_launch.lock
 echo "[$(date '+%F %T')] 等待 marker: $N/$MARKER/summary.json" >> "$LOG"
 for i in $(seq 1 1440); do
   if [ -f "$N/$MARKER/summary.json" ]; then
@@ -25,10 +26,24 @@ for i in $(seq 1 1440); do
     # 'sglang\.launch_server' 是 server 主进程的 argv，且不会出现在本脚本命令行里。
     MINE=$(pgrep -u "$(id -u)" -f 'sglang\.launch_server' 2>/dev/null | wc -l)
     if [ "$MEM" -lt 2000 ] && [ "$MINE" -le "$MAXMINE" ]; then
-      echo "[$(date '+%F %T')] marker 就绪；gpu$GPU mem=${MEM}MiB 我的server=${MINE} -> 启动 $LANE" >> "$LOG"
-      nohup bash "$LANE" >> "${LOG%.log}.out" 2>&1 &
-      echo "[$(date '+%F %T')] 已启动 pid=$!" >> "$LOG"
-      exit 0
+      # 加锁：两个等待器可能在同一秒都读到 MINE=1，各自启动就凑成 3 条车道了。
+      # 而且新 server 要 ~40~60 秒才注册进来，所以拿到锁后必须【持锁等它出现】，
+      # 否则另一个等待器在窗口里再查一次仍然看到旧计数。
+      if mkdir "$LOCK" 2>/dev/null; then
+        sleep 2                                    # 让先到的那个把 server 拉起来
+        MEM=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$GPU" 2>/dev/null || echo 99999)
+        MINE=$(pgrep -u "$(id -u)" -f 'sglang\.launch_server' 2>/dev/null | wc -l)
+        if [ "$MEM" -lt 2000 ] && [ "$MINE" -le "$MAXMINE" ]; then
+          echo "[$(date '+%F %T')] 持锁；gpu$GPU mem=${MEM}MiB 我的server=${MINE} -> 启动 $LANE" >> "$LOG"
+          nohup bash "$LANE" >> "${LOG%.log}.out" 2>&1 &
+          echo "[$(date '+%F %T')] 已启动 pid=$!" >> "$LOG"
+          sleep 100                                # 持锁到新 server 注册进来
+          rmdir "$LOCK" 2>/dev/null
+          exit 0
+        fi
+        echo "[$(date '+%F %T')] 拿到锁但复核不通过（mem=${MEM} 我的server=${MINE}），让给别人" >> "$LOG"
+        rmdir "$LOCK" 2>/dev/null
+      fi
     fi
     [ $((i % 5)) -eq 0 ] && echo "[$(date '+%F %T')] marker 已就绪，仍在等卡：gpu$GPU mem=${MEM}MiB 我的server=${MINE}" >> "$LOG"
   else

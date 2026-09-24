@@ -64,6 +64,24 @@ runs $\tau_1$ spans 27.0--36.7\,ms, and on the device-only family, raising the
 busy-time running count from 1.00 to 1.84 absorbs a third of what the extra
 concurrency buys.
 
+The reason $\tau$ moves is recomputation, and whether recomputation happens is
+decided by the memory tier rather than by the policy. A session's prefix is
+worth reusing only while it is still resident, so prefix \emph{reuse} has a
+ceiling set by the workload---in our trace, 19.9\,M of the 28.5\,M prompt
+tokens, the most any configuration in our data reuses. Whether that ceiling is
+realized is set by the tier. With the KV pool on the device alone, reuse
+collapses as concurrency rises---69.8\% at $\overline{R}_{\text{busy}}$ 1.00
+down to 27.4\% at 1.84---and the shortfall reappears one for one as
+recomputation, 8.6\,M to 20.7\,M tokens. With a host tier in front of it, the
+same ceiling holds across the range our controllers occupy---69.8\% to 68.1\%
+between 1.25 and 1.73---even though the \emph{device} misses more. Two
+configurations at the same running count and the same pool occupancy realize
+59.6\% and 68.8\% of the ceiling respectively (\S\ref{sec:model}); what
+separates them is not how full the pool is but what happens when it overflows.
+That is the finding we would carry to another system first, and it is why this
+paper's answer to its own title is a property of the deployment rather than of
+the controller.
+
 The idle component is structural rather than a control failure. A session in a
 tool wait issues no request, so when all live sessions happen to be waiting,
 the engine is genuinely empty. The stretches are short in the middle and long
@@ -78,6 +96,26 @@ leave and therefore that there is no idle time to recover. There is.
 \subsection{Contributions}
 
 \begin{itemize}
+  \item \textbf{We identify the memory tier as what decides whether added
+        concurrency is paid for in recomputation, and therefore whether
+        admission control has any room.} Prefix reuse has a ceiling set by the
+        workload; whether that ceiling is realized is set by the tier.
+        Device-only, reuse collapses from 69.8\% to 27.4\% of the prompt
+        between $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall
+        reappears as recomputation, 8.6\,M to 20.7\,M tokens; with a host tier
+        the ceiling holds, 69.8\% to 68.1\% over 1.25 to 1.73, while the
+        \emph{device} misses more (\S\ref{sec:model}). Two configurations at
+        the same running count and the same pool occupancy realize 59.6\% and
+        68.8\% of the ceiling, so it is not how full the pool is but what
+        happens when it overflows. The per-step elasticity follows the same
+        line: it passes one above $\overline{R}_{\text{busy}} \approx 1.5$
+        device-only and stays below one across the controllers' whole
+        operating range with a host tier (\S\ref{sec:criterion}). Two
+        measurements that do not share a code path---client-side step timing
+        and engine-side token accounting---give the same answer, which is why
+        we state the criterion as a property of the workload \emph{and} the
+        configuration. This is the finding we would carry to another system
+        first, and it is what the title's question turns on.
   \item We test four routes by which an adaptive admission controller was
         expected to beat a tuned static cap on this workload, and we are
         precise about what each one rests on. Two are falsified by measurement
@@ -94,21 +132,11 @@ leave and therefore that there is no idle time to recover. There is.
         that locates the cancellation: admission policy moves the
         running-request count, and the per-step cost moves with it. On the
         device-only configurations we can account for that rise token for
-        token---evicted prefixes are recomputed almost one for one---and we
-        report where that account stops: on host-tier configurations the
-        recomputation count is flat while the step cost still moves, and we do
-        not know why (\S\ref{sec:model}).
-  \item We identify the host KV tier as what decides whether the engine's step
-        cost bounds admission control at all---and this is the finding we would
-        carry to another system first. On the device-only configurations the
-        per-step elasticity passes one above $\overline{R}_{\text{busy}} \approx
-        1.5$ and the prefix cache collapses from 80.8\% to 32.8\% as the cap
-        rises; with a host tier neither happens---the elasticity stays below one
-        across the controllers' whole operating range, and the hit rate holds at
-        78.7--80.7\% (\S\ref{sec:model}, \S\ref{sec:criterion},
-        \S\ref{sec:related}). Two measurements that do not share a code path
-        give the same answer, which is why our criterion is a property of the
-        workload \emph{and} the configuration rather than of the workload alone.
+        token---evicted prefixes are recomputed almost one for one. On
+        host-tier configurations recomputation is flat and the account has to
+        come from elsewhere; we report the part of that residual we were able
+        to attribute, and the part we were not (\S\ref{sec:model},
+        \S\ref{sec:repro}).
   \item We reduce the question to one measurable number, the elasticity of
         per-step cost with respect to the running count (\S\ref{sec:criterion}),
         and measure it at $0.38$ on the model-consistent step cost and $0.61$

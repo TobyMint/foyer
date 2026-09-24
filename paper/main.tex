@@ -27,7 +27,7 @@
 \begin{document}
 
 \title{When Does Admission Control Pay?\\
-Decomposing End-to-End Wall Clock in Memory-Bound Agentic LLM Serving}
+The Memory Tier Sets the Cost of Concurrency in Agentic LLM Serving}
 
 \author{\IEEEauthorblockN{Anonymous Submission}}
 
@@ -44,10 +44,18 @@ $\overline{R}/\tau$---running requests over per-step cost---so raising
 concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
 $\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero, busy-time throughput keeps
 converting; near one it does not. It is a property of the workload \emph{and}
-the engine configuration, not of the controller---our controllers run with a
-host KV tier, and on that configuration it stays below one across their whole
-operating range, so the ceiling we measure on device-only caps is not what
-bounded them. It bounds what added concurrency is worth, not what a
+the engine configuration, not of the controller, and what sets it is the
+memory tier. Prefix reuse has a ceiling the workload fixes---19.9\,M of our
+28.5\,M prompt tokens---and the tier decides whether it is realized:
+device-only, reuse collapses from 69.8\% to 27.4\% as the running count rises
+from 1.00 to 1.84 and the shortfall returns one for one as recomputation
+(8.6\,M to 20.7\,M tokens); with a host tier the ceiling holds, 69.8\% to
+68.1\% between 1.25 and 1.73, while the \emph{device} cache misses more. Two
+configurations at the same running count and the same pool occupancy realize
+59.6\% and 68.8\% of it, so it is not how full the pool is but what happens
+when it overflows. Our controllers run on the host-tier configuration, where
+$\epsilon$ stays below one across their whole operating range, so the ceiling
+we measure on device-only caps is not what bounded them. It bounds what added concurrency is worth, not what a
 whole run achieves---idle time and the SLO axis are separate. We measure $\epsilon$ on a
 memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
 four median sessions) and get $0.38$ to $0.61$ depending on which step cost a

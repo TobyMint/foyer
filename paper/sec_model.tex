@@ -192,12 +192,82 @@ serves \emph{exactly zero}---the device miss equals the recomputed count to
 within rounding on all five. Recomputation is still what the device cannot
 absorb; the host tier is a second absorber in front of it.
 
-That does not resolve the \sys{} family, and we say so plainly. Those runs sit
-at a flat 8.6--8.7\,M recomputed tokens while $\tau_1$ ranges from 27.0 to
-35.7\,ms and $\tau_2$ from 22.7 to 33.1\,ms. Whatever moves $\tau$ there is not recomputation, and we do not
-know what it is. We flag it as the largest open question in the paper, and note
-that the negative result does not rest on it: the cancellation is measured
-directly, not inferred from the mechanism.
+\subsection{The tier, not the policy, decides whether reuse survives}
+
+The device-miss column hides the quantity that matters. Define
+\emph{reuse} as the prompt tokens served from anywhere in the memory
+hierarchy---device radix cache plus host tier---so that
+$\text{reuse} + \text{recomputed} = \text{prompt}$, with the prompt fixed at
+28.5\,M by the trace.
+
+Reuse has an empirical ceiling in our data: \emph{no} configuration reuses
+more than 19.9\,M of the 28.5\,M, because that is all the overlap the session
+history contains (the trace's own mean planned hit rate is 0.738, and
+round-one requests have no prefix to reuse at all). The ceiling is a property
+of the workload. \textbf{Whether it is realized is a property of the memory
+tier}, and the two families diverge sharply:
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+device-only & $\overline{R}_{\text{busy}}$ & 1.00 & 1.27 & 1.53 & 1.65 & 1.84 \\
+             & reuse (\%)                & 69.8 & 67.7 & 59.6 & 46.0 & 27.4 \\
+             & recomputed (M)            &  8.6 &  9.2 & 11.5 & 15.4 & 20.7 \\
+\midrule
+host tier    & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
+             & reuse (\%)                & 69.8 & 68.8 & 68.1 & & \\
+             & recomputed (M)            &  8.6 &  8.9 &  9.1 & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+On the device-only family reuse collapses from 69.8\% to 27.4\% and the
+shortfall appears one for one as recomputation, 8.6\,M to 20.7\,M. On the
+host-tier family the same ceiling is held across the whole range---69.8\% to
+68.1\% between $\overline{R}_{\text{busy}}$ 1.25 and 1.73---and it holds while
+the \emph{device} misses are larger than the device-only family's at every
+point (22.4--27.9\,M against 8.6--20.7\,M), because the host serves
+13--19\,M in front of the recomputation instead of letting the device keep it.
+A reader watching only the device hit rate would conclude the host tier made
+things worse; the reuse column says it is the only configuration that keeps
+the ceiling.
+
+This is the same collapse \S\ref{sec:related} reports under a different
+normalization, and the two agree: the round-1-and-later prefix hit rate---%
+which excludes round-zero steps, where there is no prefix to reuse---falls
+from 80.8\% to 32.8\% across the device-only caps and holds at 80.7\% to
+78.7\% with a host tier. The two conventions differ only in the denominator,
+so we use one here (all steps, token-weighted, so that reuse and
+recomputation add to the prompt) and name the other when we quote it.
+
+Device occupancy does not explain the split. \texttt{cap3\_fixed} and
+\texttt{cap3\_hc} run at nearly the same mean device occupancy (55.8\% and
+55.5\%) and nearly the same running count (1.53 and 1.51), and they realize
+59.6\% and 68.8\% of the ceiling respectively. What differs is not how full
+the device pool is but what happens when it overflows: with no host tier an
+evicted prefix is gone and must be recomputed; with one it is demoted and read
+back. The pool is the binding resource, the tier sets the pool, and the tier
+therefore sets whether added concurrency is paid for in recomputation.
+
+That gives the criterion of \S\ref{sec:criterion} a mechanism rather than a
+correlation, and it makes a falsifiable prediction: because the host tier
+multiplies the effective capacity (ratio 2 against the device pool), the
+reuse collapse should move to roughly three times the running count on the
+host-tier family---beyond any operating point our controllers reach, but
+within reach of a static cap. \S\ref{sec:results} reports the test.
+
+\paragraph{What is left unexplained.} Not everything here is accounted for.
+The host-tier runs sit at a flat 8.6--9.1\,M recomputed tokens \emph{and} a
+flat 68.1--69.8\% reuse, yet $\tau_1$ spans 27.0--35.7\,ms across them. Part of
+that is now explained and part is not. Three of those runs
+(\texttt{F:hz2} 33.6, \texttt{F:bres} 34.1, \texttt{F:hz0} 35.7\,ms) were
+measured while three other engine instances shared the host, which inflates
+per-step cost by 25--40\% with no effect on reuse at all
+(\S\ref{sec:repro}); they have been re-run. Excluding them the remaining five
+span 27.0--29.2\,ms at flat recomputation. That residual is small but it is
+not zero, and we do not attribute it. We note that the negative result does
+not rest on it: the cancellation is measured directly, not inferred from the
+mechanism.
 
 \paragraph{A refutation we had to withdraw.} An earlier revision withdrew this
 mechanism outright, on two checks that were both wrong. The first was that

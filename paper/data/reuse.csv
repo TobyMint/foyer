@@ -1,0 +1,22 @@
+# 前缀复用的天花板 vs 内存梯队 —— 由 scripts/lab/gen_reuse.py 生成，勿手改
+# reuse_dev_M   = prompt - dev_miss       设备侧 radix cache 兑现的复用
+# reuse_host_M  = host 梯队接住的（device-only 恒为 0）
+# reuse_total_M = 两者之和 = 真正没有重算的那部分 prompt
+# reuse_frac    = reuse_total / prompt —— device-only 随 R̄ 塌，hicache 守住
+# 天花板（trace 允许的最大复用）≈ 19.9 M；兑现它与否是【配置】的属性
+# contested: 该 run 是否落在主机争用窗口里（见 concurrency.csv）。CONTESTED 的
+#            tau1_ms 列不可用；reuse_* 是体积比，与时间无关，不受争用影响。
+run,family,Rbar_busy,prompt_M,reuse_dev_M,reuse_host_M,reuse_total_M,reuse_frac,recompute_M,tau1_ms,contested
+cap1,device_only,1.0,28.5,19.9,0.0,19.9,0.698,8.6,28.8,watch
+cap2,device_only,1.271,28.5,19.3,-0.0,19.3,0.677,9.2,27.4,clean
+cap3_fixed,device_only,1.534,28.5,17.0,-0.0,17.0,0.596,11.5,29.7,clean
+cap4,device_only,1.65,28.5,13.1,-0.0,13.1,0.460,15.4,32.4,clean
+cap5,device_only,1.842,28.5,7.8,-0.0,7.8,0.274,20.7,36.7,clean
+pairB_cap2hc,hicache,1.253,28.5,0.6,19.3,19.9,0.698,8.6,27.0,clean
+foyer_hc,hicache,1.353,28.5,1.0,18.9,19.9,0.698,8.6,28.7,clean
+foyer_hz2,hicache,1.439,28.4,1.5,18.2,19.7,0.694,8.7,33.6,CONTESTED
+foyer_bres,hicache,1.481,28.5,1.9,17.8,19.7,0.691,8.7,34.1,CONTESTED
+cap3_hc,hicache,1.509,28.5,2.5,17.1,19.6,0.688,8.9,28.0,clean
+foyer_hz1,hicache,1.524,28.5,2.3,17.5,19.8,0.695,8.7,29.2,clean
+foyer_hz0,hicache,1.666,28.2,3.4,16.1,19.5,0.691,8.7,35.7,CONTESTED
+cap4_hc,hicache,1.729,28.5,6.1,13.3,19.4,0.681,9.1,29.8,clean
