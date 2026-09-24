@@ -444,3 +444,22 @@ point we measured, and does not dominate one either. The measurement we offer is
 a diagnostic an engineer can take before committing to a sweep; whether it
 predicts the outcome on another workload is a question we tested once and could
 not confirm.
+
+The part we would carry elsewhere is not the negative result but the
+mechanism behind it. Prefix reuse is bounded by the workload---75.5\% of our
+prompt tokens---and whether that bound survives added concurrency is set by
+the memory tier: device-only, realization falls from 92.6\% to 36.4\% as the
+running count rises, and the shortfall reappears as recomputation; with a host
+tier it holds at 90.2--92.4\% across the range our controllers occupy, while
+the device cache misses \emph{more}. Two configurations at the same running
+count and the same pool occupancy realize 79.0\% and 91.3\% of the bound,
+which is why we describe the tier rather than the occupancy as the variable.
+That claim is measured on one trace family and one card, its controlled
+version is still running, and we do not extend it past what we measured---but
+it is the finding a system designer can act on, and it is the one we would
+test first on different hardware. Two boundaries come with it. On a second
+workload the direction survives and the level does not: that trace realizes
+less of its own bound at a lower occupancy, so no occupancy threshold
+transfers. And the variable-load case, which is where a controller should
+have its best chance, is measured but not usable---its baselines were taken
+under host co-tenancy and we report it as open rather than as a result.
