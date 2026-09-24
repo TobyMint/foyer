@@ -96,7 +96,8 @@ in the tail---median 5.6\,s, mean 20.6\,s---and the tail is what a scheduler
 feels: 69.6\% of all idle \emph{time} sits in stretches over 20\,s, an order
 of magnitude above the 2\,s control cycle. Crucially, the tool wait itself is much longer than
 the trace's median suggests: the median inter-round gap is 0.35\,s, but the
-\emph{mean} is 16.85\,s with 22\% of gaps over ten seconds. A controller that
+\emph{mean} is 15.8--16.9\,s with 22\% of gaps over ten seconds. A controller
+that
 reads only the median concludes, as we initially did, that sessions never
 leave and therefore that there is no idle time to recover. There is.
 

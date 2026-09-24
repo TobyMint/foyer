@@ -14,7 +14,8 @@ cannot be co-resident: their combined contexts exceed the pool by 76\%.
 
 The tool wait is the load's defining property and the one most easily
 misread. Its \emph{median} is 0.35\,s, which invites the conclusion that
-sessions never leave the engine. Its \emph{mean} is 16.85\,s and the maximum is 300\,s; 21.8\% of the
+sessions never leave the engine. Its \emph{mean} is 16.85\,s measured and 15.82\,s
+demanded, and the maximum is 300\,s; 21.8\% of the
 tool waits the trace specifies exceed ten seconds, which is 14.4\% of all
 round transitions once the zero-wait ones are counted, or 18.6\% on the
 measured gaps. We verified that our replay

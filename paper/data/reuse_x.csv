@@ -1,0 +1,15 @@
+# 跨 trace 的复用兑现 —— 由 scripts/lab/gen_reuse_x.py 生成，勿手改
+# trace: replay_realhr.csv（117 会话 390 步）
+# 上界 = 6253400 / 7248629 = 0.8627，从 trace 的 prefix_len 求和，独立于观测；
+#   与 runner summary.json 的 planned_prefix_hit_rate 断言相符。
+# 实测复用 = prompt - uncached（steps.jsonl），兑现率 = 实测 / 上界。
+# 用途：§VI 在第二条 trace 上重算同一组量。
+#   主 trace 的同一组量在 paper/data/reuse.csv（gen_reuse.py 生成）；两张表
+#   用同一套定义，合起来才是 §VI 那张跨 trace 对照。
+# 注意【兑现率跨 trace 不可用占用率概括】：
+#   这条 trace 在占用 15.8% 时兑现 0.7478，而主 trace 在占用 22.4% 时兑现 0.9255。
+run,sessions,steps,Rbar_busy,occ_p50_pct,prompt_tok,reuse_tok,recompute_tok,reuse_frac,bound_frac,realized_frac
+realhr_cap2,117,390,1.076,15.8,7248629,4676257,2572372,0.6451,0.8627,0.7478
+realhr_cap3,117,390,1.160,18.4,7248629,4511841,2736788,0.6224,0.8627,0.7215
+realhr_foyer,117,390,1.222,19.4,7248629,4337364,2911265,0.5984,0.8627,0.6936
+realhr_cap4,117,390,1.287,19.8,7248629,4220786,3027843,0.5823,0.8627,0.6750

@@ -1,0 +1,12 @@
+# 轮次间隔：trace 要求 vs 实测 —— 由 scripts/lab/gen_toolwait.py 生成，勿手改
+# 轮次转换 = 同会话相邻两轮 = 每会话除最后一轮外的每一行（999 行 - 200 会话 = 799）
+# ⚠ 分母不同，均值差很多，正文引用时必须指明口径：
+#     全部 999 行（含每会话最后一轮，无后继）  均值 12.65 s
+#     799 次轮次转换（本表）                  均值 15.82 s   <- 论文用的
+#     662 个非零 tool_wait                     均值 19.10 s
+# 论文摘要的 16.85 s 是【实测】列的均值（run 的 steps.jsonl 实测间隔，
+# 含等 permit 的门时间），15.82 s 是 trace 要求值。
+run,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,measured_mean_s,measured_p90_s
+pois200_foyer_hc,799,0.34,15.82,27.72,0.35,16.85,29.33
+pois200_cap1,799,0.34,15.82,27.72,0.34,15.82,27.72
+pois200_cap3_hc,799,0.34,15.82,27.72,0.34,15.82,27.72

@@ -21,7 +21,8 @@ Over 1{,}849 stretches the median is 5.6\,s---close to the 5\,s sampling
 floor, because most tool calls are quick---but 17.6\% of them exceed 20\,s,
 the 90th percentile is 30.1\,s, and the longest is 511\,s
 (Fig.~\ref{fig:idle}). The tail, not the middle, is what a scheduler feels,
-and it sits at the scale of the 16.85\,s mean tool wait.
+and it sits at the scale of the 15.8--16.9\,s mean tool wait (demanded and
+measured; \texttt{toolwait.csv}).
 
 Second, the two components move independently. \texttt{bres}
 (\S\ref{sec:results}) reduces idle from 15.9\% to 10.1\%, recovering about 17
@@ -46,7 +47,7 @@ one thing will get this wrong.
   completed runs (1{,}849 stretches). Most stretches are short---the median is
   5.6\,s---but the minutes are not: 69.6\% of all idle \emph{time} sits in
   stretches longer than 20\,s, and the mean stretch is 20.6\,s, the same order
-  as the 16.85\,s mean tool wait. The cliff is the 5\,s sampling floor.}
+  as the 15.8--16.9\,s mean tool wait. The cliff is the 5\,s sampling floor.}
   \label{fig:idle}
 \end{figure}
 

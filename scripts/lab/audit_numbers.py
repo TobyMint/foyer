@@ -30,7 +30,10 @@ def load_data_numbers():
     vals = set()
 
     def add(x):
-        for d in (0, 1, 2, 3):
+        # d 必须到 4：CSV 里有 4 位小数的列（reuse.csv 的 reuse_frac/realized_frac
+        # 就是 %.4f），而 d 只到 3 时 round(0.6917,3)=0.692 ≠ 0.6917，于是这些
+        # 明明在数据文件里的值被报成"找不到"——2026-09-24 发现，当时满屏假阳性。
+        for d in (0, 1, 2, 3, 4):
             vals.add(round(x, d))
             vals.add(round(x / 100.0, d))     # 百分比 vs 小数
             vals.add(round(x * 100.0, d))

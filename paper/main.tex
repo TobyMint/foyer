@@ -91,8 +91,9 @@ clock splits into busy and idle time; admission policy moves only the running
 count, and $\tau$ rises with it. The idle component (7.4--36.3\% of the
 sampled span) comes from gaps the tool waits set---an agent session issues no
 request while a tool runs,
-and that wait averages 16.85\,s, not the sub-second figure the trace's median
-suggests---though how many such gaps a run collects is partly the policy's,
+and that wait averages 16.85\,s measured over the controller's run (the trace
+demands 15.82\,s; they differ by the controller's own admission delay), not
+the sub-second figure the trace's median suggests---though how many such gaps a run collects is partly the policy's,
 since a policy sets how many sessions stay live. On device-only configurations we can account for the rise token for
 token; on host-tier ones part of it is co-tenancy we found late and part we
 still cannot attribute, and we say which is which. We also report the six of
