@@ -60,6 +60,23 @@ def _import_running_all(run):
     return sum(v) / len(v)
 
 
+AUDIT = []
+
+
+def _audit(desc, val, src):
+    """记录每个被检查的值在【它被检查的那段正文】里出现多少次。
+
+    为什么：`ck` 是字符串级的，一个值出现 20 次和出现 1 次，检查强度完全不同 ——
+    出现次数越多，越可能是在别处撞上的（2026-09-25 的「假通过」就是这么来的：
+    §III 的 39.3 变成 39.2 之后检查器仍通过，因为 39.2 在别处出现过）。
+    这次审计只把弱的检查**列出来供人看**，不自动判它们错。
+    """
+    try:
+        AUDIT.append((str(src).count(str(val)), desc, str(val)))
+    except Exception:
+        pass
+
+
 def main():
     P = paper_text()
     alltext = "\n".join(P.values())
@@ -77,6 +94,7 @@ def main():
         nonlocal checks
         checks += 1
         src = P.get(where, "") if where else alltext
+        _audit(desc, val, src)
         if has(src, val):
             if VERBOSE:
                 print("  OK   %-58s %s" % (desc, val))
@@ -225,8 +243,16 @@ def main():
         r = gah["pois200_foyer_hc"]
         ck("foyer_hc 被强制准入数", r["forced_admits"], "sec_results.tex")
         ck("foyer_hc 总准入数", r["total_admits"], "sec_results.tex")
-        ck("foyer_hc 投影超预算周期数", r["cycles_over_budget"], "sec_results.tex")
-        ck("foyer_hc 超预算时放行数", r["admitted_while_over"], "sec_results.tex")
+        # 这两个数**必须一起查**：放行数是 9，单独查「9」在正文里出现 135 次，
+        # 等于空转（2026-09-25 --audit 扫出来的）。正文那句话是
+        # 「of 3{,}700 such cycles, nine admitted」—— 查这一整串。
+        _NUM9 = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+                 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+        ck("§V 超预算周期数与放行数（复合句）",
+           "of %s such cycles, %s admitted"
+           % ("{:,}".format(int(r["cycles_over_budget"])).replace(",", "{,}"),
+              _NUM9.get(int(r["admitted_while_over"]), "?")),
+           "sec_results.tex")
         ck("foyer_hc 被强制准入占比", "%.1f" % (100.0 * int(r["forced_admits"]) / int(r["total_admits"])),
            "sec_results.tex")
 
@@ -468,11 +494,24 @@ def main():
         _cls = _c.Counter(r["class"] for r in at)
         # 正文：「4 of the 12 rows are attributed: three to unused memory ... one to step cost,
         #       five have a tau no matched comparison can confirm, and three are residuals」
-        ck("归因行数", str(len(at)), "sec_results.tex")
-        ck("归因-内存没用满", str(_cls.get("内存没用满", 0)), "sec_results.tex")
-        ck("归因-步成本", str(_cls.get("步成本更高", 0)), "sec_results.tex")
-        ck("归因-τ高不可比", str(_cls.get("步成本更高（但对照的在跑数不可比）", 0)), "sec_results.tex")
-        ck("归因-残差", str(_cls.get("残差（只能报观测）", 0)), "sec_results.tex")
+        # ⚠ 这几条**不能查单个数字** —— 归因数只有个位数（1/3/5），
+        # 审计显示「1」在正文里出现 184 次、「3」165 次，等于空转
+        # （2026-09-25 加了 --audit 才看见）。改成查【正文那一整句复合串】，
+        # 计数一变这句话就对不上，检查才有意义。
+        _NUM = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+                7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
+        _n_mem = _cls.get("内存没用满", 0)
+        _n_step = _cls.get("步成本更高", 0)
+        _n_high = _cls.get("步成本更高（但对照的在跑数不可比）", 0)
+        _n_res = _cls.get("残差（只能报观测）", 0)
+        ck("§V 归因计数复合句（N of the M rows are attributed）",
+           "%d of the %d rows are attributed" % (_n_mem + _n_step, len(at)),
+           "sec_results.tex")
+        ck("§V 归因分项（三条内存 / 一条步成本 / 五条 τ 高 / 三条残差）",
+           "%s to unused memory" % _NUM.get(_n_mem, "?"), "sec_results.tex")
+        ck("§V τ 高行数", "%s\\nhave a $\\tau$" % _NUM.get(_n_high, "?"),
+           "sec_results.tex", tier="S")
+        ck("§V 残差行数", "and %s are residuals" % _NUM.get(_n_res, "?"), "sec_results.tex")
 
     # ---- §III 的两个例证（default 与 foyfix_hc 对 foyer_hc 的分量差）----
     _dd = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
@@ -544,6 +583,7 @@ def main():
         ck("§VII 更早一代 25 档的下界",
            "%.0f" % min(float(x["waiting_p50"]) for x in _early), "sec_discussion.tex")
 
+    _25 = _bl.get(("pois200_foyer_push_25", "run"))
     for _r in ("pois200_foyer_hc", "pois200_foyer_push_25"):
         if (_r, "run") in _bl:
             _k = _bl[(_r, "run")]
@@ -557,9 +597,15 @@ def main():
             # 三个相位中位、以及非零周期占比 —— 都不是「哪个窗口的中位」。
             ck("§VII %s 本档会话数" % _r, _k["n_sessions"], "sec_discussion.tex")
             ck("§VII %s 扣住本档的比例" % _r, "%.0f" % float(_k["pct_of_tier"]), "sec_discussion.tex")
-            ck("§VII %s 相位中位(前10%%)" % _r, "%.0f" % float(_k["median_p10"]), "sec_discussion.tex")
-            ck("§VII %s 相位中位(中段)" % _r, "%.0f" % float(_k["median_mid"]), "sec_discussion.tex")
-            ck("§VII %s 相位中位(后10%%)" % _r, "%.0f" % float(_k["median_p90"]), "sec_discussion.tex")
+            # 相位中位**不能逐个数字查** —— 21/89/6/18/0 这种个位数正文里到处都是
+            # （审计显示 "0" 出现 101 次、检查等于空转）。查正文里那一整句复合串。
+            if _r.endswith("foyer_hc") and _25:
+                for _lab, _a, _b in (("第一", "median_p10", "median_p10"),
+                                     ("第二", "median_mid", "median_mid"),
+                                     ("第三", "median_p90", "median_p90")):
+                    ck("§VII %s 相位（200 档在前）" % _lab,
+                       "%s against %s" % ("%.0f" % float(_k[_a]), "%.0f" % float(_25[_b])),
+                       "sec_discussion.tex")
             ck("§VII %s 非零周期占比" % _r, _k["pct_nonzero"], "sec_discussion.tex")
         if (_r, "all") in _bl:
             # 2026-09-25 重写后，正文【不再跨档比队列长度】（两个 trace 不可比，
@@ -649,6 +695,15 @@ def main():
                           _dt.datetime.fromtimestamp(newest_data).strftime("%H:%M")))
         elif VERBOSE:
             print("  OK   图不比数据旧")
+
+    if "--audit" in sys.argv:
+        AUDIT.sort(reverse=True)
+        print("\n===== 检查强度审计：被检查的值在它被检查的那段正文里出现几次 =====")
+        print("（出现次数多 = 检查弱：值可能是在别处撞上的。只列 >=3 次的。）")
+        _weak = [(n, d, v) for n, d, v in AUDIT if n >= 3]
+        for n, d, v in _weak[:45]:
+            print("  %3d 次  %-56s %s" % (n, d, v))
+        print("  %d 项检查里，%d 项的值出现 >=3 次" % (len(AUDIT), len(_weak)))
 
     print("共 %d 项检查：%d 项 MISS（正文引用过、却没找到，必须处置），"
           "%d 项次要未印（论文只印聚合值，属预期）。" % (checks, len(fails), len(secondary)))
