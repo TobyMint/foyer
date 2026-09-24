@@ -167,3 +167,18 @@ time-slicing two caps approximates any point on the segment between them」—�
 
 这又是 CLAUDE.md 纪律 2 那一条（两条管线算同一个量必须共用定义），
 **这次是自查扫出来的，不是审查抓的** —— 说明那条纪律要主动去查，不能等。
+
+
+## 八、本轮之后又做的（自查 + 措辞）
+
+- **`slo_sensitivity.py` 的臂列表缺 `hz1_r2` 与 `sf0_r2`** —— 补上之后发现第七节
+  7.1 那条「越线不复现」。
+- 归因表的落盘文件注释里没有写三个阈值，与 CLAUDE.md 纪律 4（正文里带阈值的判据
+  要能在生成脚本里指到那一行）不符；已把三个阈值逐字写进 CSV 头。
+- 标题「十二臂归因」原来写成「九臂」（表里是 12 行）。
+- §V 「Not one **clean configuration** in the table gets above the line」→
+  「Not one configuration **whose measurements are clean** gets above the line」
+  —— 配置无所谓干净，测量才有。
+- §VI 那条 5s 越线前半句写「a win on that axis」，改成「nominally a win」并指出
+  段末会收回，免得读者把它当结论。
+- 摘要两处措辞收短（1038 词；接手时 892）。
