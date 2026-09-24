@@ -35,6 +35,15 @@ def has(text, v):
     就按**字面子串**查 —— 多列一起查比单查一个数可靠得多，单查一个数太容易
     在别处撞车（2026-09-25 加归因表检查时加的这条通路）。"""
     s = str(v)
+    # 先说复合串（多列片段，如 "54.5 & 1.455 & 28.9"）：它 float() 一定会抛，
+    # 而**原来那个 except 分支直接 return s in text 就出去了** —— 于是下面放宽
+    # 空白的逻辑永远走不到（2026-09-25 加复合串检查时连踩两次）。
+    # 表里的列是【对齐过的】，「91.2 &  5.1」中间可能有两个空格，必须放宽 & 两侧空白。
+    if " & " in s:
+        import re as _re
+        # re.escape 把 " & " 转义成 "\ \&\ "（空格和 & 都被转义），按【那个】替换
+        pat = _re.escape(s).replace("\\ \\&\\ ", r"\s*&\s*")
+        return _re.search(pat, text) is not None
     try:
         float(s)
     except ValueError:
@@ -189,25 +198,28 @@ def main():
            r["slope_pp_per_unit"].lstrip("-"))
 
     # ---- 表 I 的每一行：墙钟 / 并发 / SLO 三个显示列 ----
-    # 2026-09-24 补：no-control 那一行的 conc 曾是 1.69，而 1.69 是
-    # num_running_reqs 的均值 —— 也就是标题里写明「Conc. 不是它」的那个量。
-    # 那种错（同一列两个口径）本脚本抓不到，但「表里的数与数据文件对不上」能抓到，
-    # 所以把三列都纳入。wall/conc/slo 在表里印 1 位小数。
+    # 2026-09-25 改成查【三个数连起来】的复合串。原来逐列查，而并发是 1.0/2.6/3.9
+    # 这种短值 —— --audit 显示 "3.9" 在正文出现 6 次，逐列查等于空转。
+    # 复合串一旦有一个数变了就对不上，这才叫检查。
     runs_csv = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/runs.csv"))}
-    # table1.csv 覆盖 runs.csv 的全部行；正文的表只印其中一部分。
-    # pairA_cap2hc 被 pairB 在两个轴上都支配，正文【不印它】（只在候选锚点里出现），
-    # 所以这两项是预期内的不匹配，跳过。
     NOT_PRINTED = {"pairA_cap2hc"}
     for r in load(os.path.join(ROOT, "paper/data/table1.csv")):
         k = r["run"]
         if k in NOT_PRINTED:
             continue
-        ck("表 I %s 的墙钟" % k, "%.1f" % float(r["wall_min"]), "sec_results.tex")
-        ck("表 I %s 的 SLO" % k, "%.1f" % float(r["slo_pct"]), "sec_results.tex")
         if k in runs_csv:
-            ck("表 I %s 的并发" % k, "%.1f" % float(runs_csv[k]["conc"]), "sec_results.tex")
+            # 位数按【正文印的】给：墙钟 1 位、并发 2 位、SLO 1 位
+            # （table1.csv 存的是 4 位，直接拿来比会对不上 —— 刚踩过）
+            # no-control 那一行的 Conc. 是【百分比】(94.9)，不是并发数 ——
+            # 表 I 的脚注专门说明了这一点（2026-09-24 修过一次量纲错）。
+            _cc = float(runs_csv[k]["conc"])
+            ck("表 I %s 的墙钟&并发&SLO 三连" % k,
+               "%.1f & %s & %.1f" % (float(r["wall_min"]),
+                                     "%.1f" % _cc if _cc > 10 else "%.2f" % _cc,
+                                     float(r["slo_pct"])),
+               "sec_results.tex")
 
-    # ---- table1.csv：表 I 的 Δ ----
+
     for r in load(os.path.join(ROOT, "paper/data/table1.csv")):
         if r.get("delta_pp"):
             ck("表 I %s 的 Δ" % r["run"], r["delta_pp"].lstrip("-"), "sec_results.tex")
@@ -218,10 +230,10 @@ def main():
 
     # ---- tier25.csv：表 II 的每一列（2026-09-24 补上生成器 gen_tier25.py 后纳入）----
     for r in load(os.path.join(ROOT, "paper/data/tier25.csv")):
-        ck("表 II %s 墙钟" % r["run"], r["wall_min"], "sec_discussion.tex")
-        ck("表 II %s 并发" % r["run"], r["conc"], "sec_discussion.tex")
-        ck("表 II %s SLO" % r["run"], r["slo_pct"], "sec_discussion.tex")
-        ck("表 II %s 段SD" % r["run"], r["seg_sd_pp"], "sec_discussion.tex")
+        # 同上：四列连成一个复合串。单查「5.1」「92.8」这种短值会撞车。
+        ck("表 II %s 墙钟&并发&SLO&段SD 四连" % r["run"],
+           "%s & %s & %s & %s" % (r["wall_min"], r["conc"], r["slo_pct"], r["seg_sd_pp"]),
+           "sec_discussion.tex")
 
     # ---- gate_attrib.csv 注释行里落定的两个中位数 ----
     # 「两个中位数会随集合变」（§V 的稳健性声明）用的就是这两行；它们只存在于
@@ -564,7 +576,14 @@ def main():
         _dom = [r["run"] for r in _stat
                 if (float(r["wall_min"]) < _w0 and float(r["slo_pct"]) >= _s0)
                 or (float(r["slo_pct"]) > _s0 and float(r["wall_min"]) <= _w0)]
-        ck("摘要「not dominated」：支配 sf0_r2 的静态行数", str(len(_dom)), "main.tex")
+        # 原来查的是 str(len(_dom))，也就是查「0」在摘要里出不出现 ——
+        # --audit 显示 "0" 出现 20 次，等于空转。改成查【那句话本身】：
+        # 只要支配行的数目变成非 0，这句话就不该留在摘要里，字面查才对得上。
+        if len(_dom) == 0:
+            ck("摘要「not dominated」声明", "\\emph{not dominated} by", "main.tex")
+        else:
+            fails.append(("摘要仍写 not dominated，但实测有 %d 条静态行支配 sf0_r2" % len(_dom),
+                          "、".join(_dom), "main.tex"))
 
     # ---- backlog.csv：§VII 的队列长度 ----
     # 每个 run 两行：window=run（[最早提交, 最后完成]，与全篇墙钟同一窗口）与
