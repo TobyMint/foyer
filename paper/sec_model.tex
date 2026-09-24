@@ -278,19 +278,19 @@ recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
 72.8--92.5\% across the nineteen host-tier runs that completed this
 trace---the same trace, HiCache on, at least 995 of its 999 steps---including
 every controller arm; the lowest is the arm that disables every throttle and
-therefore evicts the most (21.1\,M tokens, the largest in the table). That rule
+therefore evicts the most (21.1\,M tokens, the largest in the table). The
+\emph{device} meanwhile misses more than the device-only family's at every
+point (21.6--27.9\,M against 8.6--20.7\,M), because the host serves
+9.5--19.3\,M in front of the recomputation instead of letting the device keep
+it---so a reader watching only the device hit rate would conclude the host tier
+made things worse. That rule
 on its own selects \emph{twenty}, and we name the four runs it is not meant to
 catch, because a reader scanning the logs will find them: two that stopped at
 763 and 770 steps (they realize 70.7\% and 67.1\%, and we exclude them for not
 finishing rather than for their values), the variable-load family (a different
 trace, and short of the step count as well), and one whose engine
 prompt-token counter reads $1.41\times$ the trace plan with zero retractions
-and no client-side retries, which we could not reconcile.
-while the \emph{device} misses more than the device-only family's at every
-point (21.6--27.9\,M against 8.6--20.7\,M), because the host serves
-9.5--19.3\,M in front of the recomputation instead of letting the device keep
-it. A reader watching only the device hit rate would conclude the host tier
-made things worse. (Two denominators appear here and we name them: the 75.5\%
+and no client-side retries, which we could not reconcile. (Two denominators appear here and we name them: the 75.5\%
 is the trace's bound as a share of the prompt, and 92.5\% is the best observed
 reuse as a share of \emph{that bound}---\texttt{cap1}, the run that realizes
 it, reuses 69.9\% of its prompt. \texttt{reuse.csv} carries \texttt{reuse\_frac} and
@@ -315,8 +315,10 @@ Device occupancy does not explain the split. \texttt{cap3\_fixed} and
 79.0\% and 91.3\% of the bound respectively. What differs is not how full the
 device pool is but what happens when it overflows: with no host tier an
 evicted prefix is gone and must be recomputed; with one it is demoted and read
-back. The pool is the binding resource, the tier sets the pool, and the tier
-therefore sets whether added concurrency is paid for in recomputation. The
+back. The pool is the binding resource; the tier sets the pool; and in these two
+runs, which differ in the tier and in nothing we can see on the engine side,
+the tier is what separates paying for added concurrency in recomputation from
+not paying for it. The
 caveat is that this pair is two runs on two different days and two different
 GPUs, not a paired experiment; \S\ref{sec:repro} states what we did to rule
 out co-tenancy. A capacity-controlled version---same card, same trace, only
@@ -340,9 +342,9 @@ our own data. Occupancy is instantaneous while reuse depends on history; a
 session's prefix must survive from one round to the next, and how much
 pressure that puts on the pool is not visible in what the pool holds at an
 instant. We do not have the measurement that would separate those, which is
-why the controlled experiment we report in \S\ref{sec:results} varies the
-pool alone, on one card and one trace, rather than leaning on the cross-trace
-comparison. The claim this section supports is the narrow one: within a
+why the controlled experiment now queued for \S\ref{sec:results}---it varies
+the pool alone, on one card and one trace---is the one that will settle it, and
+why we do not lean on the cross-trace comparison here. The claim this section supports is the narrow one: within a
 configuration, the host tier preserves realization at a matched running count
 and a matched occupancy, and without it realization falls.
 

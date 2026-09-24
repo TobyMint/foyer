@@ -31,7 +31,11 @@ land below the static Pareto front, and so does a reimplementation of an
 independent congestion-based controller from the literature
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
 $\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
-arm we repeated misses by 0.9 with its repeat at 5.6.
+arm we repeated misses by 0.9 with its repeat at 5.6. Three of the nine were
+measured while other jobs shared the host and are being re-measured; the one
+that has been moved 6.5 points closer to the front without crossing it, and
+\S\ref{sec:results} says what the verdict rests on until the other two
+land.
 
 \begin{figure}[tb]
   \centering
@@ -41,8 +45,11 @@ arm we repeated misses by 0.9 with its repeat at 5.6.
   uses each configuration's \emph{better} run where a repeat exists, which is
   why \texttt{cap3}+HiCache's 236-minute run sits below the line rather than on
   it; a policy below or on it has
-  not beaten a static cap, because time-slicing two caps approximates any
-  point on the segment between them. Nine \sys{} variants plus a
+  not beaten the \emph{line}, because time-slicing two caps approximates any
+  point on the segment between them. That is an argument about an
+  interpolation, and we do not have the switching policy that would turn it
+  into a measurement; \S\ref{sec:bg} states the limit and names the arm that
+  beats the nearest measured static point on SLO while losing on wall clock. Nine \sys{} variants plus a
   reimplementation of an independent controller, none above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
   that verdict is conditional on the threshold. The five points drawn with a

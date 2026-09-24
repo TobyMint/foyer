@@ -7,28 +7,27 @@ Fig.~\ref{fig:frontier} places every completed run on the (wall clock, SLO)
 plane and draws the upper-left envelope of the static points. Table~\ref{tab:runs}
 gives the numbers and each controller's signed distance from that envelope.
 
-The result is unambiguous. Of nine controller variants, \emph{none} is above
+The result is unambiguous for the arms we can compare, and we say which
+those are before we lean on it. Of the nine controller variants, six are clean
+measurements; of those six, \emph{none} is above
 the envelope---not one, on any run, and the pair we repeated most tightly says
 so at a resolution the others do not. The closest arm of all is the one with
 single-flight admission disabled, at $0.55$ percentage points \emph{below} the
 line---inside our $\pm1.0$\,pp tie band, so we record it as \emph{on} the
 line rather than below it, but on the below side of it.
 
-We have to bound that sentence, and we do it here rather than in a footnote.
-Three of the nine carry the co-tenancy flag of Table~\ref{tab:runs}: their wall
-clock, SLO and $\Delta$ are not comparable with the rest, and for them the
-verdict is \emph{provisional}. The direction of the correction is known, and
-it runs our way---co-tenancy inflates the step cost, which pushes an arm
-\emph{down}, so their measured distances overstate how far below the line they
-are; the question is by how much. A fourth variant carried the flag and has
-been re-measured (\S\ref{sec:repro}): it moved from $7.81$\,pp below the front
-to $1.33$, the largest correction of the four, and it is still below and still
-outside the tie band. So the verdict above is a statement about the six
-variants that are clean or re-measured; the other three are set aside until
-they land rather than counted in its favour. If one of them did land above the
-line, the headline would weaken to ``six of nine, one win'' and this paper
-would say so; the correction we have measured moved an arm 6.5\,pp \emph{up},
-which is enough to matter and not enough to cross.
+The six, and why not the other three: those carry the co-tenancy flag of
+Table~\ref{tab:runs}, their wall clock, SLO and $\Delta$ are not comparable
+with the rest, and their verdict is \emph{provisional}. The direction of the
+correction is known and it runs our way---co-tenancy inflates the step cost,
+which pushes an arm \emph{down}, so their measured distances overstate how far
+below the line they are; the question is only by how much. A fourth variant
+carried the flag and has been re-measured (\S\ref{sec:repro}): it moved from
+$7.81$\,pp below the front to $1.33$, still below and still outside the tie
+band. That 6.5\,pp is the largest correction the flag has produced so far, and
+it is what we would expect the other three to show: enough to matter, not
+enough to cross. If one of them did land above the line the headline would
+weaken to ``six of nine, one win'', and this paper would say so.
 
 The base configuration is the one whose repeats we can trust, and they are
 tight: four runs spanning 0.5\,pp of SLO (89.5\% mean; 279.8, 289.6, 291.3
@@ -39,7 +38,7 @@ single-flight-off arm. So that
 difference is several times the noise of its own configuration rather than
 inside it, and it is a trade rather than a win: 28 minutes of wall clock bought
 with 3.5\,pp of SLO, moving the arm onto the tie band from below it. Not one
-configuration in the table gets above the line, and the tightest pair we have
+clean configuration in the table gets above the line, and the tightest pair we have
 is what makes us willing to say the near misses are misses. A fifth pair, two runs of \texttt{cap3}+HiCache, \emph{is} used, and an
 earlier draft of this paper wrongly set it aside saying one of them exceeded
 its own cap. That was a different run: the over-cap one is the device-only

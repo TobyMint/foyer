@@ -7,10 +7,11 @@
 
 **现状：满足，且这一条有机械护栏。**
 
-- `check_paper_numbers.py`：**317 项检查、0 MISS**（55 项是「论文只印聚合值」的次要档，
+- `check_paper_numbers.py`：**331 项检查、0 MISS**（56 项是「论文只印聚合值」的次要档，
   逐条列出供扫一眼）。查的是【正文 ↔ 数据文件】的逐项一致。
-  **2026-09-25 新增 55 项**：归因表（此前完全没有检查）、§III 的两个例证、
-  重复对散布、`replicates.csv` 的区间。
+  **2026-09-25 共新增 69 项**：归因表 12 行三列连查（此前**完全没有**检查）、
+  §III 的三个例证、重复对散布、`replicates.csv` 区间、`superseded.csv`、
+  `tau2_windows.csv`。
 - 编译：**23 页、0 Overfull、无 undefined 引用**；禁用文献（2608.30830 / 2608.01657）不在库里。
 - 所有生成器都有「缺 run 就报错」护栏（`gen_concurrency` 140、`gen_gate_attrib` 40、
   `gen_projection` 45、`gen_reuse_x` 退非零、`gen_occupancy`/`gen_eviction` 直接退出）。
@@ -23,7 +24,7 @@
 
 ## 二、每一轮审查提的问题都已处置，或明确说明为何不处置
 
-**现状：满足到第 15 轮，第 15 轮在跑。**
+**现状：满足到第 15 轮；第 16 轮（复读，只核处置）在跑。**
 
 | 轮次 | 记录 | 结果 |
 |---|---|---|
@@ -31,8 +32,8 @@
 | 第 12 轮（codex + 子 agent） | `docs/finding_review_r12_disposition_20260924.md` | 25 处改动，全部处置 |
 | 第 13 轮（子 agent 复核 + codex） | `docs/finding_review_r13_disposition_20260924.md` | 7 条 major + 9 条 minor 全部处置；未处置项写明理由 |
 | 第 14 轮（codex） | `docs/finding_review_r14_disposition_20260924.md` | 3 项 MATCH、2 处改、2 处表述 |
-| 第 15 轮（codex） | `reviews/codex_r15_20260925.md` | 针对 bres_r2 落地的改动 |
-| 子 agent 第 7 轮 | 进行中 | 范围收紧到三件事（Route 1 改写、§III 换例证、新增句子的强度） |
+| 第 15 轮（codex + 子 agent 第 7 轮） | `docs/finding_review_r15_disposition_20260925.md` | 四条 major + 六条 minor 全部处置；codex 给 5–15%，主要驱动是 §III 一段残留 |
+| 第 16 轮（codex 复读） | `reviews/codex_r16_20260925.md` | 只核四条 major 是否处置到位 |
 
 **本轮（bres_r2 落地）的处置**记在 `docs/finding_rerun_bres_20260925.md`，12 条连锁改动。
 
@@ -46,10 +47,18 @@
     + 两个重复对 `cap4_r2`/`foyer_r2`；
 - **在跑**：`foyer_hz0_r2`（GPU 2）、`foyer_hz2_r2` + `foyer_breshz1_r2`（GPU 3）；
 - **排队**（`wait_and_launch.sh` 链式，严格 2 车道）：`cap5_hc`/`cap6_hc`/`cap8_hc`（HiCache
-  推到高 R̄）→ 半池因果实验 `cap2_hp`/`cap3_hp`/`cap4_hp` → `cap1_r2`（队尾，确认性质）；
-- **跑不了的**：lab-A100 的方向 D（第二配置复现）。判据是「空闲 >60GB 且 util <20%」，
-  实测该机 GPU0/1/2 的 util 长期 49–100%，waiter 挂着但整夜没出现窗口。
-  **宁可交白卷也不产出被同机争用污染的数据** —— 已写进论文 Limitations。
+  推到高 R̄）→ 半池因果实验 `cap2_hp`/`cap3_hp`/`cap4_hp` → `cap1_r2` →
+  **同卡背靠背的层级配对** `cap3_pd`/`cap3_ph`（2026-09-25 新排，预注册在
+  `docs/prereg_tierpair_20260925.md`：论文的匹配对跨 19.5 小时、跨卡，
+  而**梯队**正是标题主张的那个变量，这一对把它控制住）；
+- **跑不了的**：lab-A100 的方向 D（第二配置复现）。**理由已换成具体的三条**
+  （见 `docs/a100_window_assessment_20260925.md`）：① 旧判据（瞬时 util<20%）
+  是**假阳性** —— 它连续六次报「BIG WINDOW」，而同机有三个租户在跑活跃训练
+  （`yz` 三分钟前刚起一个新 job、`qcrs` 跑了 1 天 13 小时、`linchen` 14 小时）；
+  ② A100 上没有 coder + YaRN 模型，换过去会同时动四条轴；
+  ③ 论文因果主张最缺的那条对照（同卡、只改池子）在 3090 上，已预注册。
+  新看门狗 `a100_window.sh`（按卡统计 + 持续 10 分钟判据）已挂上，窗口出现会写标记文件，
+  **不自动起实验**。**宁可交白卷也不产出不可比的数据。**
 
 ## 四、如果要继续推，还差什么
 

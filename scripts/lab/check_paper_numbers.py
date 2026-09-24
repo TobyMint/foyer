@@ -235,6 +235,19 @@ def main():
         ck("superseded %s 复用占比" % r["run"], r["reuse_frac"], "sec_discussion.tex")
         ck("superseded %s τ₂" % r["run"], r["tau2_ms"], "sec_discussion.tex")
 
+    # ---- §II 的两条「对最近静态锚点」的数（2026-09-25 补：此前 0.93 是旧值）----
+    _t1 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
+    if {"foyer_sf0_r2", "cap3_hc_r2", "cap3_hc", "foyer_hz1"} <= set(_t1):
+        ck("§II sf0_r2 对 cap3_hc_r2",
+           "%.1f" % (float(_t1["foyer_sf0_r2"]["slo_pct"]) - float(_t1["cap3_hc_r2"]["slo_pct"])),
+           "sec_background.tex")
+        ck("§II sf0_r2 对 cap3_hc",
+           "%.1f" % (float(_t1["foyer_sf0_r2"]["slo_pct"]) - float(_t1["cap3_hc"]["slo_pct"])),
+           "sec_background.tex")
+        ck("§II hz1 对 cap3_hc",
+           "%.1f" % (float(_t1["foyer_hz1"]["slo_pct"]) - float(_t1["cap3_hc"]["slo_pct"])),
+           "sec_background.tex")
+
     # ---- attribution.csv：§V 的十二行归因表（2026-09-25 补：此前这张表完全没有检查）----
     at = load(os.path.join(ROOT, "paper/data/attribution.csv"))
     if at:
