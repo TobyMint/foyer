@@ -60,7 +60,17 @@ have been run more than once; their SLO spreads are 0.5, 0.8, 1.0, 3.9 and
 decide something---\texttt{horizon}=1 and the leftmost anchor---so where a small
 margin matters our repeats are weakest, and where they are strongest (the base
 configuration and the \texttt{cap3}+HiCache anchor) the margin is not small. We
-report both ends rather than the average.}
+report both ends rather than the average.
+There is also an asymmetry in how the two sides enter the comparison, and it
+runs against the controllers: the envelope takes each anchor's \emph{better}
+run where a repeat exists, while each controller is a single run. The exposure
+is bounded, and by less than the widest anchor's spread suggests. Every
+controller sits to the right of \texttt{cap3}+HiCache's repeat, so the verdicts
+are set by the segment between that anchor and \texttt{cap2}+HiCache---and
+those two anchors' own repeats differ by 0.8 and 1.0\,pp, below the $\pm1.0$\,pp
+band we judge in. The leftmost anchor's 5.1\,pp spread cannot reach any
+controller's $\Delta$, because no controller finishes fast enough to be judged
+against that segment.}
 
 The anchor repeats moved the frontier twice and we report both moves. The
 leftmost anchor's second run came out both faster (209.1 against 213.0 minutes)
