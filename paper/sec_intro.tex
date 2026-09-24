@@ -125,7 +125,8 @@ leave and therefore that there is no idle time to recover. There is.
 \subsection{Contributions}
 
 \begin{itemize}
-  \item \textbf{We identify the memory tier as what decides how much of the
+  \item \textbf{We identify the memory tier as what determines, in our
+        measurements, how much of the
         achievable prefix reuse survives added concurrency, and therefore how
         much a controller has to gain by admitting more.} The two senses of
         ``room'' need separating, and \S\ref{sec:xtrace} is what separates
@@ -138,7 +139,7 @@ leave and therefore that there is no idle time to recover. There is.
         (\S\ref{sec:xtrace}). The claim here is the local one. The trace
         bounds reuse at
         75.5\% of its prompt tokens, and no configuration we ran reaches that
-        bound---the best realizes 92.5\% of it. What the tier decides is how
+        bound---the best realizes 92.5\% of it. Where the tier enters is how
         much of the bound is realized as concurrency rises: device-only,
         realization falls from 92.5\% to 36.4\% between
         $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall appears

@@ -47,7 +47,7 @@ converting, near one it does not. It is a property of the workload \emph{and}
 the engine configuration, not of the controller, and in our data what it tracks
 is the memory tier. The trace bounds reuse at 75.5\% of its prompt tokens, and no
 configuration we ran reaches that bound---the best realizes 92.5\% of it.
-What the tier decides is how much of the bound survives added concurrency:
+Where the tier enters is how much of the bound survives added concurrency:
 device-only, realization falls from 92.5\% to 36.4\% as the running count
 rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
 20.7\,M tokens); with a host tier the static points hold at 90.2--92.4\%
@@ -59,7 +59,7 @@ what happens when it overflows. That pair is two runs on two days, and a
 capacity control that changes the pool size alone on one card is queued; we
 report it when it lands. Our controllers run on the host-tier configuration,
 where $\epsilon$ stays below one across their whole operating range, so the
-device-only ceiling is not what bounded them---it bounds what added concurrency
+device-only ceiling is not what stopped them---it bounds what added concurrency
 is worth, not what a whole run achieves, since idle time and the SLO axis are
 separate. On a memory-bound agentic replay (200 sessions, one 24\,GB GPU, a
 pool that holds four median sessions) we measure $\epsilon$ at $0.38$ to
