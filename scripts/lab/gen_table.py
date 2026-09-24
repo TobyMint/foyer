@@ -12,7 +12,7 @@
 
 用法: python3 gen_table.py ../paper/data/runs.csv
 """
-import csv, sys
+import csv, os, sys
 
 # 表里的行标签（与论文一致），以及它们的排序位置由 Δ 决定
 LABEL = {
@@ -51,6 +51,19 @@ def main():
     runs = {r["run"]: r for r in load(sys.argv[1]) if r["tier"] == "200"}
     env = [(w, s) for w, s, _ in _envelope(ENV_KEYS, runs)]
 
+    # 同机争用标记：读 concurrency.csv，被标 CONTESTED 的臂在表里加 \ddagger，
+    # 提醒读者这一行的墙钟/SLO/Δ 是在同机 >=4 条车道下测的、与其余各行不可比，
+    # 已重测（见 §repro）。表是脚本生成的，标记也必须从这里出，不能手加。
+    conc = {}
+    cand = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "concurrency.csv")
+    if os.path.exists(cand):
+        for r in load(cand):
+            conc[r["run"].replace("pois200_", "")] = r["verdict"]
+        assert len(conc) > 50, "concurrency.csv 只读到 %d 行" % len(conc)
+    # 短名（表里的 key）-> concurrency.csv 的短名：一致，直接查
+    def dagger(k):
+        return "$^\\ddagger$" if conc.get(k) == "CONTESTED" else ""
+
     def front_slo(w):
         for (w0, s0), (w1, s1) in zip(env, env[1:]):
             if w0 <= w <= w1:
@@ -69,7 +82,7 @@ def main():
         if anchor:
             ds = "\\emph{anchor}"
         return "    %-17s & %s & %s & %s & %s \\\\" % (
-            LABEL[k], r["wall_min"], r["conc"], r["slo_pct"], ds)
+            LABEL[k] + dagger(k), r["wall_min"], r["conc"], r["slo_pct"], ds)
 
     print("    \\multicolumn{5}{l}{\\emph{Static caps}}\\\\")
     for k in ["default", "cap1", "cap2", "cap3_fixed", "cap4", "cap5"]:

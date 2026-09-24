@@ -45,15 +45,17 @@ concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
 $\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero, busy-time throughput keeps
 converting; near one it does not. It is a property of the workload \emph{and}
 the engine configuration, not of the controller, and what sets it is the
-memory tier. Prefix reuse has a ceiling the workload fixes---19.9\,M of our
-28.5\,M prompt tokens---and the tier decides whether it is realized:
-device-only, reuse collapses from 69.8\% to 27.4\% as the running count rises
-from 1.00 to 1.84 and the shortfall returns one for one as recomputation
-(8.6\,M to 20.7\,M tokens); with a host tier the ceiling holds, 69.8\% to
-68.1\% between 1.25 and 1.73, while the \emph{device} cache misses more. Two
-configurations at the same running count and the same pool occupancy realize
-59.6\% and 68.8\% of it, so it is not how full the pool is but what happens
-when it overflows. Our controllers run on the host-tier configuration, where
+memory tier. The trace bounds reuse at 75.5\% of its prompt tokens, and no
+configuration we ran reaches that bound---the best realizes 92.6\% of it.
+What the tier decides is how much of the bound survives added concurrency:
+device-only, realization falls from 92.6\% to 36.3\% as the running count
+rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
+20.7\,M tokens); with a host tier it holds at 90.2--92.3\% between 1.25 and
+1.73, while the \emph{device} cache misses more. Two configurations at the
+same running count and the same pool occupancy realize 78.9\% and 91.1\% of
+the bound, so it is not how full the pool is but what happens when it
+overflows---and that pair is two runs on two days, so we also vary the pool
+alone, on one card, to isolate capacity. Our controllers run on the host-tier configuration, where
 $\epsilon$ stays below one across their whole operating range, so the ceiling
 we measure on device-only caps is not what bounded them. It bounds what added concurrency is worth, not what a
 whole run achieves---idle time and the SLO axis are separate. We measure $\epsilon$ on a

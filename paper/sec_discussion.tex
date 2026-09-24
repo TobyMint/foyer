@@ -145,23 +145,29 @@ preserves that structure but fixes it in advance, which is exactly the
 limitation these works would press on.
 
 \paragraph{Prefix caching.} The prefix cache is often proposed as the signal
-an admission policy should use. In our workload it is not a policy variable:
-round-1+ hit rate is a function of the admission policy, and of the host tier,
-in a way an earlier draft of this paper got wrong in both directions. Without
-HiCache it collapses as the cap rises: 80.8\%, 78.5\%, 70.6\%, 56.0\%, 32.8\%
-for caps of one through five, against a planned 80.9\% for the trace. With
-HiCache it does not: 80.7\%, 79.6\%, 78.7\% for caps of two, three and four.
-Our controller sits at 80.6\%.
+an admission policy should use. What we measure is that the \emph{realized}
+reuse is a function of the admission policy and of the host tier, while the
+\emph{planned} reuse is a constant of the trace; an earlier draft of this
+paper conflated the two and got the direction wrong in both. The trace plans
+a round-1-and-later hit rate of 80.9\%. Without HiCache the realized
+round-1+ rate follows the plan only at the loosest cap and then collapses:
+80.8\%, 78.5\%, 70.6\%, 56.0\%, 32.8\% for caps of one through five. With
+HiCache it tracks the plan at every cap we ran: 80.7\%, 79.6\%, 78.7\% for
+caps of two, three and four. Our controller sits at 80.6\%.
 So the honest statement is not that admission does not move this quantity---%
 \texttt{cap4} alone moves it 25 points---but that the host tier is what keeps
 it from moving, which is the same mechanism \S\ref{sec:model} and
 \S\ref{sec:criterion} keep running into. A configuration without a host tier
 that admits four sessions does not have the cache that a host-tier one at the
-same concurrency does. (Both numbers are the
-unweighted mean of the per-step planned hit rate over rounds 1 and later; the
-token-weighted figure for the same steps is 86.2\%, and the all-steps figure
-is 73.8\%. We use the unweighted round-1+ convention throughout, and flag it
-because the paper's earlier drafts mixed conventions.) We note the boundary of this claim---we varied admission policy,
+same concurrency does. All eight numbers in this paragraph are the
+\emph{observed} per-step hit rate (\texttt{server\_prefix\_hit\_rate} in the
+per-step logs), unweighted mean over rounds $\ge 1$; the planned rate is the
+trace constant 80.9\% and does not move with the cap. \S\ref{sec:model} uses
+a different convention---all steps, token-weighted, so that reuse and
+recomputation partition the prompt---under which the same collapse reads
+92.6\%$\to$36.3\% of the trace's bound for the device-only caps and
+92.3\%$\to$90.2\% with a host tier. We state both because the paper's earlier
+drafts mixed them. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
 test. A characterization of production KV-cache traffic at a large cloud
 provider finds that eviction-policy design is ``highly workload-dependent''
@@ -218,13 +224,18 @@ conditional: at the strict threshold that interactive serving actually cares
 about, no controller reaches the static front; at a loose one, one does. The
 second is that the crossing is still not a win, though the reason is more
 awkward than we first wrote. $+2.7$\,pp at 20\,s is larger than the replicate
-SLO spread of two of the three controller-side configurations we repeated
-(1.0 and 0.5\,pp) but smaller than the best arm's own (3.9\,pp) and smaller
-than an envelope anchor's (5.1\,pp)---and it is the
+SLO spread of the two tightest pairs we have---0.5\,pp for the base controller
+and 0.8\,pp for \texttt{cap3}+HiCache---but smaller than three others: 1.0\,pp
+for \texttt{cap2}+HiCache, 3.9\,pp for the best arm's own repeat, and 5.1\,pp
+for \texttt{cap4}+HiCache. Two of those three are anchors, and it is the
 anchors, not the controllers, that set the line the margin is measured
-against. A third pair
-exists---two runs of \texttt{cap3}+HiCache---but one of them exceeded its own
-cap, so we do not use it as a replicate. A margin that appears only at one threshold
+against, so the comparison that matters is the one against the loose
+anchors---where the margin is not resolvable. (An earlier revision discarded
+the \texttt{cap3}+HiCache pair on the ground that one run had exceeded its
+cap. That was wrong: the over-cap run is the \emph{device-only}
+\texttt{cap3} repeat, and both HiCache runs peak at three with none over. The
+pair is a valid replicate and we use it, including as an envelope anchor.)
+A margin that appears only at one threshold
 and only at a size we cannot resolve is not evidence that adaptive admission
 works; it is evidence that the question needs more runs than we have. We state
 the conditional version in the abstract, and we flag this as the second thing
@@ -312,10 +323,15 @@ tenants and with each other, and late in the campaign we found that this
 matters more than the pool guard catches. An audit
 (\texttt{gen\_concurrency.py}, data in \texttt{paper/data/concurrency.csv})
 reconstructs, for every run, how many other runs were alive for how long. Runs
-that overlapped three or more others for at least an hour have a per-step cost
-inflated by 25--40\%: the per-request decode interval $\tau_2$, which is
-measured client-side and never touches the sampler, sits at 30.9--33.3\,ms for
-those runs against 23.8--25.7\,ms for the same arms measured alone. Two
+that overlapped three or more others for at least an hour are flagged;
+twelve of ours are. The flag is a risk marker, not a measurement of damage,
+and we treat it that way: three of the twelve (\texttt{F:t85}, \texttt{F:t90},
+\texttt{var\_foyer}) show no aggregate inflation at all, because their overlap
+was short relative to the run. Where the damage is legible it is large---the
+per-request decode interval $\tau_2$, measured client-side and never touching
+the sampler, sits at 30.9--33.3\,ms for the four affected arms in
+Table~\ref{tab:runs} against 23.8--25.7\,ms for the same family measured
+clean. Two
 controls pin the cause to co-tenancy rather than to the configuration. One
 run (\texttt{cap1}) holds $\tau_2$ at 20.3--20.7\,ms for its first five and a
 half hours and jumps to 22.4--27.5\,ms in the minute two other runs start. And
@@ -323,15 +339,26 @@ two independent runs (\texttt{F:t85}, \texttt{F:rl99}) step down from
 $\approx$30\,ms to 22--25\,ms in the same wall-clock minute, when a third run
 ends. Twelve of our runs fall in the affected class. Eight are arms we do not
 report here; four are controller variants in Table~\ref{tab:runs}
-(\texttt{F:bres}, \texttt{F:hz0}, \texttt{F:hz2}, \texttt{F:breshz1}), and
-those four have been re-measured under the same one-run-per-GPU discipline as
-everything else. We report the episode because the failure is silent in a way
-worth knowing about: the engine-side counters---running count, pool occupancy,
-evictions, recomputation---are indistinguishable between the affected runs and
-the clean ones. The contaminated runs' \emph{volume} measurements are
-unaffected: the four affected host-tier arms reuse 0.691--0.694 of the prompt,
-inside the 0.681--0.698 range of the clean host-tier arms, so only their timing
-columns are unusable.
+(\texttt{F:bres}, \texttt{F:hz0}, \texttt{F:hz2}, \texttt{F:breshz1}). Those
+four are being re-measured under the same one-run-per-GPU discipline as
+everything else, and until those runs land we treat their wall-clock, SLO and
+step-cost columns as unusable: the signed distances in
+Table~\ref{tab:runs} for those four rows, the step-cost attribution of
+\S\ref{sec:results:attribution} where it names them, and the route-1
+comparison of \S\ref{sec:results} which rests on \texttt{bres}, are all
+provisional. We flag them rather than quietly dropping the rows so that a
+reader can see which conclusions are still standing on which measurements.
+
+Two things we can already say. First, the failure is silent: the engine-side
+counters---running count, pool occupancy, evictions, recomputation---are
+indistinguishable between the affected runs and the clean ones, so nothing in
+the ordinary telemetry would have caught this. Second, the affected runs'
+\emph{volume} columns look untouched: the four affected host-tier arms reuse
+0.6937--0.6950 of the prompt against 0.6813--0.6988 for the clean host-tier
+arms, a range overlap that is suggestive but not proof---co-tenancy could in
+principle also reorder completions and change eviction order. The re-runs will
+settle it, since they are the same policies measured clean, and we compare
+reuse per round and per session between the pairs rather than only the totals.
 
 One caveat about the controller artifact, which a reader with our code would
 otherwise hit. There is no single controller copy behind this paper: the runs

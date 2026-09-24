@@ -200,74 +200,101 @@ hierarchy---device radix cache plus host tier---so that
 $\text{reuse} + \text{recomputed} = \text{prompt}$, with the prompt fixed at
 28.5\,M by the trace.
 
-Reuse has an empirical ceiling in our data: \emph{no} configuration reuses
-more than 19.9\,M of the 28.5\,M, because that is all the overlap the session
-history contains (the trace's own mean planned hit rate is 0.738, and
-round-one requests have no prefix to reuse at all). The ceiling is a property
-of the workload. \textbf{Whether it is realized is a property of the memory
-tier}, and the two families diverge sharply:
+The bound on reuse has to be defined independently of what we observed,
+or the argument is circular. We take it from the trace: summing the planned
+reusable prefix (\texttt{prefix\_len}) over all 999 rounds of
+\texttt{replay\_pois200\_l04.csv} gives 21{,}540{,}371 tokens against a prompt
+total of 28{,}526{,}871, so no policy can reuse more than 75.5\% of the
+prompt. That is a property of the workload. It is also a bound rather than a
+description: \emph{no configuration we ran reaches it}, and the best realizes
+92.6\%, so the gap between ``planned'' and ``achieved'' exists even in the
+easiest case. What varies across configurations is how much of the bound is
+realized, and that is where the tier enters.
 
 \begin{center}
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
 device-only & $\overline{R}_{\text{busy}}$ & 1.00 & 1.27 & 1.53 & 1.65 & 1.84 \\
-             & reuse (\%)                & 69.8 & 67.7 & 59.6 & 46.0 & 27.4 \\
-             & recomputed (M)            &  8.6 &  9.2 & 11.5 & 15.4 & 20.7 \\
+            & realized (\% of bound) & 92.6 & 89.6 & 78.9 & 60.6 & 36.3 \\
+            & recomputed (M)         &  8.6 &  9.2 & 11.5 & 15.4 & 20.7 \\
 \midrule
-host tier    & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
-             & reuse (\%)                & 69.8 & 68.8 & 68.1 & & \\
-             & recomputed (M)            &  8.6 &  8.9 &  9.1 & & \\
+host tier   & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
+            & realized (\% of bound) & 92.3 & 91.1 & 90.2 & & \\
+            & recomputed (M)         &  8.6 &  8.9 &  9.1 & & \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-On the device-only family reuse collapses from 69.8\% to 27.4\% and the
-shortfall appears one for one as recomputation, 8.6\,M to 20.7\,M. On the
-host-tier family the same ceiling is held across the whole range---69.8\% to
-68.1\% between $\overline{R}_{\text{busy}}$ 1.25 and 1.73---and it holds while
-the \emph{device} misses are larger than the device-only family's at every
+Device-only, realization falls from 92.6\% to 36.3\% and the shortfall is
+recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
+90.2--92.3\% across the whole range our controllers occupy, and it holds
+while the \emph{device} misses more than the device-only family's at every
 point (22.4--27.9\,M against 8.6--20.7\,M), because the host serves
-13--19\,M in front of the recomputation instead of letting the device keep it.
-A reader watching only the device hit rate would conclude the host tier made
-things worse; the reuse column says it is the only configuration that keeps
-the ceiling.
+13--19\,M in front of the recomputation instead of letting the device keep
+it. A reader watching only the device hit rate would conclude the host tier
+made things worse. (The 92.6\% ceiling-on-prompt and the 75.5\% bound are not
+in competition: the first is what we measured, the second is what the trace
+permits; \texttt{reuse.csv} carries both columns and the raw counts.)
 
 This is the same collapse \S\ref{sec:related} reports under a different
-normalization, and the two agree: the round-1-and-later prefix hit rate---%
-which excludes round-zero steps, where there is no prefix to reuse---falls
+normalization. That section quotes the round-1-and-later prefix hit rate---%
+steps restricted to rounds $\ge 1$, unweighted mean over steps---which falls
 from 80.8\% to 32.8\% across the device-only caps and holds at 80.7\% to
-78.7\% with a host tier. The two conventions differ only in the denominator,
-so we use one here (all steps, token-weighted, so that reuse and
-recomputation add to the prompt) and name the other when we quote it.
+78.7\% with a host tier. The two conventions differ in two ways, not one:
+which steps are in the set (round $\ge 1$ against all rounds) and how steps
+are combined (unweighted mean against token-weighted sum). We use the
+token-weighted all-steps convention here because reuse and recomputation must
+add to the prompt, and we name the other whenever we quote it. Both are
+\emph{realized} quantities that vary with the policy; neither is the trace's
+planned rate, which is fixed at 75.5\% and appears in this section only as
+the bound.
 
 Device occupancy does not explain the split. \texttt{cap3\_fixed} and
 \texttt{cap3\_hc} run at nearly the same mean device occupancy (55.8\% and
 55.5\%) and nearly the same running count (1.53 and 1.51), and they realize
-59.6\% and 68.8\% of the ceiling respectively. What differs is not how full
-the device pool is but what happens when it overflows: with no host tier an
+78.9\% and 91.1\% of the bound respectively. What differs is not how full the
+device pool is but what happens when it overflows: with no host tier an
 evicted prefix is gone and must be recomputed; with one it is demoted and read
 back. The pool is the binding resource, the tier sets the pool, and the tier
-therefore sets whether added concurrency is paid for in recomputation.
+therefore sets whether added concurrency is paid for in recomputation. The
+caveat is that this pair is two runs on two different days and two different
+GPUs, not a paired experiment; \S\ref{sec:repro} states what we did to rule
+out co-tenancy and \S\ref{sec:results} reports the capacity-controlled
+version, which holds the card fixed and varies only the pool.
 
 That gives the criterion of \S\ref{sec:criterion} a mechanism rather than a
-correlation, and it makes a falsifiable prediction: because the host tier
-multiplies the effective capacity (ratio 2 against the device pool), the
-reuse collapse should move to roughly three times the running count on the
-host-tier family---beyond any operating point our controllers reach, but
-within reach of a static cap. \S\ref{sec:results} reports the test.
+correlation, and it suggests a prediction we test in \S\ref{sec:results}:
+if the tier acts by multiplying usable capacity (the host pool is twice the
+device pool, so three times in total), then shrinking the device pool alone
+should move the collapse point even with no host tier involved. We do not
+treat the arithmetic as a result---it assumes KV demand grows linearly in the
+running count, which heterogeneous sessions need not satisfy---and the
+\S\ref{sec:results} experiment measures the collapse point directly rather
+than predicting it.
 
 \paragraph{What is left unexplained.} Not everything here is accounted for.
 The host-tier runs sit at a flat 8.6--9.1\,M recomputed tokens \emph{and} a
-flat 68.1--69.8\% reuse, yet $\tau_1$ spans 27.0--35.7\,ms across them. Part of
-that is now explained and part is not. Three of those runs
+flat 90.2--92.3\% realization, yet $\tau_1$ spans 27.0--35.7\,ms across them.
+Part of that is now explained and part is not. Three of those runs
 (\texttt{F:hz2} 33.6, \texttt{F:bres} 34.1, \texttt{F:hz0} 35.7\,ms) were
 measured while three other engine instances shared the host, which inflates
-per-step cost by 25--40\% with no effect on reuse at all
-(\S\ref{sec:repro}); they have been re-run. Excluding them the remaining five
-span 27.0--29.2\,ms at flat recomputation. That residual is small but it is
-not zero, and we do not attribute it. We note that the negative result does
-not rest on it: the cancellation is measured directly, not inferred from the
-mechanism.
+per-step cost by 25--40\% and leaves the volume columns untouched
+(\S\ref{sec:repro}); they are being re-measured and we do not use their
+timing. Excluding them the remaining five span 27.0--29.2\,ms at flat
+recomputation. That residual is small but it is not zero, and we do not
+attribute it. We note that the negative result does not rest on it: the
+cancellation is measured directly, not inferred from the mechanism.
+
+One caution about the strength of the account above, since the arithmetic
+invites overreading. $\text{reuse} + \text{recomputed} = \text{prompt}$ is a
+definition, not a finding, so ``the shortfall reappears as recomputation''
+follows from how we partitioned the prompt and cannot by itself establish the
+mechanism. What is independent of the partition is the pair of engine
+counters: evicted tokens and uncached prefill tokens are separate SGLang
+counters, and on the device-only runs they track within 0.6--0.7\,M on all
+five---which is the observation that licenses reading eviction as the cause
+of recomputation. With a host tier the two come apart by design, and the
+13--19\,M gap between them is the host's contribution.
 
 \paragraph{A refutation we had to withdraw.} An earlier revision withdrew this
 mechanism outright, on two checks that were both wrong. The first was that

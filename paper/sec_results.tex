@@ -86,7 +86,14 @@ appearance of the mechanism that drives the whole frontier.
   \texttt{rg4} 998, and the no-control baseline 997); they are listed with
   their measured values. We flag this because our verdict script excludes
   runs below 999 steps, so the \texttt{$\Delta$} column for these four comes
-  from the table generator rather than from that script.}
+  from the table generator rather than from that script.
+  $^\ddagger$ marks the four runs measured while three other engine
+  instances shared the host, which inflates per-step cost by 25--40\% and
+  makes their wall clock, SLO and $\Delta$ incomparable with the rest of the
+  table. They are listed for completeness and are being re-measured; until
+  those runs land, the claim that no controller reaches the front should be
+  read as resting on the other eight controller arms. \S\ref{sec:repro}
+  gives the audit and the evidence.}
   \label{tab:runs}
   \centering
   \small
@@ -115,11 +122,11 @@ appearance of the mechanism that drives the whole frontier.
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.92 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.25 \\
     horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.73 \\
-    horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
+    horizon$=$2$^\ddagger$ & 306.1 & 2.22 & 86.9 & $-$4.85 \\
     horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.57 \\
-    resident base     & 295.5 & 2.40 & 83.8 & $-$7.81 \\
-    horizon$=$0       & 290.0 & 2.69 & 77.2 & $-$13.65 \\
-    horizon$=$1, no hw & 310.9 & 2.77 & 72.3 & $-$19.52 \\
+    resident base$^\ddagger$ & 295.5 & 2.40 & 83.8 & $-$7.81 \\
+    horizon$=$0$^\ddagger$ & 290.0 & 2.69 & 77.2 & $-$13.65 \\
+    horizon$=$1, no hw$^\ddagger$ & 310.9 & 2.77 & 72.3 & $-$19.52 \\
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.60 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.40 \\
     all throttles off & 415.0 & 2.58 & 46.1 & $-$47.15 \\
@@ -256,10 +263,10 @@ measurably higher cost. Everything else is a residual.
   \midrule
   \texttt{horizon}=1  & 57.8 & 1.524 & 29.2 & residual \\
   \sys{} base         & 49.2 & 1.353 & 28.7 & residual \\
-  \texttt{horizon}=2  & 54.7 & 1.439 & 33.6 & step cost \\
-  \texttt{horizon}=0  & 64.1 & 1.666 & 35.7 & step cost \\
-  \texttt{bres}       & 56.9 & 1.481 & 34.1 & step cost \\
-  \texttt{breshz1}    & 61.4 & 1.632 &  --- & residual \\
+  \texttt{horizon}=2  & 54.7 & 1.439 & 33.6 & step cost$^\ddagger$ \\
+  \texttt{horizon}=0  & 64.1 & 1.666 & 35.7 & step cost$^\ddagger$ \\
+  \texttt{bres}       & 56.9 & 1.481 & 34.1 & step cost$^\ddagger$ \\
+  \texttt{breshz1}    & 61.4 & 1.632 &  --- & residual$^\ddagger$ \\
   no gate, no resv.   & 62.1 & 1.678 &  --- & unused mem. \\
   running gate$=$4    & 62.3 & 1.689 &  --- & residual \\
   all throttles off   & 39.2 & 1.675 &  --- & residual \\
@@ -269,13 +276,26 @@ measurably higher cost. Everything else is a residual.
 \end{tabular}
 \end{center}
 
+$^\ddagger$ marks the arms measured under host co-tenancy
+(Table~\ref{tab:runs}, \S\ref{sec:repro}). This matters more here than
+anywhere else in the paper, and we state it plainly: \emph{every} arm this
+procedure attributes to the step-cost mechanism is one of them, and the
+attribution is made on $\tau_1$, which is exactly the column co-tenancy
+inflates. So the step-cost category currently has no uncontaminated support,
+and we do not claim it has. What survives the flag is the unused-memory
+attribution (\texttt{no gate, no resv.}), which is made on occupancy rather
+than on $\tau$, and the residuals, which claim nothing. The re-runs
+(\S\ref{sec:repro}) are what will decide whether the step-cost category is
+populated at all.
+
 Four of the eleven are attributed. Seven are not: their occupancy and their step
 cost both sit close to their comparison cap's, and their shortfall is real but
 we cannot say from these measurements which mechanism produced it. We publish
 the table rather than a summary because a summary would claim more than we
 have---and because ``two mechanisms explain the negative result'' would be the
-wrong summary. Two mechanisms explain part of it, on four of the eleven arms;
-the rest is a measurement we can make and cannot yet interpret.
+wrong summary. Two mechanisms explain part of it, on four of the eleven arms,
+and on at most one of those four without a co-tenancy caveat; the rest is a
+measurement we can make and cannot yet interpret.
 
 \subsection{Route 1: the accounting base}
 
@@ -290,6 +310,19 @@ rose from 49.2\% to 56.9\% of the pool---and the round-1+ prefix hit rate held a
 4.2 minutes \emph{slower} and lost 6.0\,pp of SLO. Per \S\ref{sec:model}, the
 extra occupancy raised both $\overline{R}$ (1.35 to 1.48) and $\tau_2$
 (23.8\,ms to 31.3\,ms), and the two cancelled.
+
+That last sentence is the one place where this route's conclusion depends on a
+contaminated measurement, and we mark it. The arm that tests this route
+(\texttt{bres}) is one of the four flagged $^\ddagger$ in
+Table~\ref{tab:runs}: its 31.3\,ms $\tau_2$ was measured under host
+co-tenancy, and the same arm measured clean would plausibly sit near 25\,ms
+rather than 31. On that reading the two terms would not cancel and the route
+would look better than we report, not worse---so the direction of the
+correction is against our own conclusion, which is the safe direction to be
+wrong in, but it is still unresolved. The occupancy half of the argument
+(49.2\% to 56.9\%) is a volume measurement and is unaffected. We keep the
+route in the negative column pending the re-run and say so here rather than
+in a footnote.
 
 We note that this claim had already been falsified once by source inspection:
 SGLang's \texttt{token\_usage} subtracts evictable blocks, so a parked

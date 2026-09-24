@@ -1,22 +1,27 @@
-# 前缀复用的天花板 vs 内存梯队 —— 由 scripts/lab/gen_reuse.py 生成，勿手改
-# reuse_dev_M   = prompt - dev_miss       设备侧 radix cache 兑现的复用
-# reuse_host_M  = host 梯队接住的（device-only 恒为 0）
-# reuse_total_M = 两者之和 = 真正没有重算的那部分 prompt
-# reuse_frac    = reuse_total / prompt —— device-only 随 R̄ 塌，hicache 守住
-# 天花板（trace 允许的最大复用）≈ 19.9 M；兑现它与否是【配置】的属性
-# contested: 该 run 是否落在主机争用窗口里（见 concurrency.csv）。CONTESTED 的
-#            tau1_ms 列不可用；reuse_* 是体积比，与时间无关，不受争用影响。
-run,family,Rbar_busy,prompt_M,reuse_dev_M,reuse_host_M,reuse_total_M,reuse_frac,recompute_M,tau1_ms,contested
-cap1,device_only,1.0,28.5,19.9,0.0,19.9,0.698,8.6,28.8,watch
-cap2,device_only,1.271,28.5,19.3,-0.0,19.3,0.677,9.2,27.4,clean
-cap3_fixed,device_only,1.534,28.5,17.0,-0.0,17.0,0.596,11.5,29.7,clean
-cap4,device_only,1.65,28.5,13.1,-0.0,13.1,0.460,15.4,32.4,clean
-cap5,device_only,1.842,28.5,7.8,-0.0,7.8,0.274,20.7,36.7,clean
-pairB_cap2hc,hicache,1.253,28.5,0.6,19.3,19.9,0.698,8.6,27.0,clean
-foyer_hc,hicache,1.353,28.5,1.0,18.9,19.9,0.698,8.6,28.7,clean
-foyer_hz2,hicache,1.439,28.4,1.5,18.2,19.7,0.694,8.7,33.6,CONTESTED
-foyer_bres,hicache,1.481,28.5,1.9,17.8,19.7,0.691,8.7,34.1,CONTESTED
-cap3_hc,hicache,1.509,28.5,2.5,17.1,19.6,0.688,8.9,28.0,clean
-foyer_hz1,hicache,1.524,28.5,2.3,17.5,19.8,0.695,8.7,29.2,clean
-foyer_hz0,hicache,1.666,28.2,3.4,16.1,19.5,0.691,8.7,35.7,CONTESTED
-cap4_hc,hicache,1.729,28.5,6.1,13.3,19.4,0.681,9.1,29.8,clean
+# 前缀复用：trace 定的上界 vs 配置兑现了多少 —— 由 scripts/lab/gen_reuse.py 生成，勿手改
+#
+# trace 上界（独立于观测，从 replay_pois200_l04.csv 求和）:
+#   200 会话 999 步；sum(prefix_len) = 21540371 tokens；prompt 总量 = 28526871 tokens
+#   => 计划复用率 ceiling_frac = 0.7551（这就是论文里那个 75% 的来源）
+#   上界【必须】这样定义。曾经写成「数据里最多复用的量就是天花板」，是循环论证。
+#
+# realized_frac = reuse_tok / trace 上界 —— 这一个数才是「兑现了多少」。
+#   device-only 随 R̄ 一路掉；host tier 在控制器运行区间内守住。
+#   注意【没有任何配置兑现到 1.0】：实测最好也只有 0.9255。
+#
+# 比例一律由未舍入的 *_tok 列算出。曾经拿舍入到 0.1M 的列算，cap1 印成 69.8%%（真值 69.9%%）。
+# contested: 该 run 是否落在主机争用窗口（见 concurrency.csv）；CONTESTED 的 tau1_ms 不可用，
+#            但 reuse/recompute 是体积量，实测与同族干净 run 一致。
+run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,realized_frac,tau1_ms,contested
+cap1,device_only,1.0,28527903,19935879,0,8592024,0.6988,0.9255,28.8,watch
+cap2,device_only,1.271,28503927,19303736,0,9200191,0.6772,0.8962,27.4,clean
+cap3_fixed,device_only,1.534,28483759,16984155,0,11499604,0.5963,0.7885,29.7,clean
+cap4,device_only,1.65,28493898,13051346,0,15442552,0.4580,0.6059,32.4,clean
+cap5,device_only,1.842,28508588,7812935,0,20695653,0.2741,0.3627,36.7,clean
+pairB_cap2hc,hicache,1.253,28500395,19878149,19300000,8622246,0.6975,0.9228,27.0,clean
+foyer_hc,hicache,1.353,28500345,19866710,18900000,8633635,0.6971,0.9223,28.7,clean
+foyer_hz2,hicache,1.439,28392177,19731449,18200000,8660728,0.6950,0.9160,33.6,CONTESTED
+foyer_bres,hicache,1.481,28469904,19749125,17800000,8720779,0.6937,0.9168,34.1,CONTESTED
+cap3_hc,hicache,1.509,28493898,19628999,17100000,8864899,0.6889,0.9113,28.0,clean
+foyer_hz0,hicache,1.666,28219045,19518092,16100000,8700953,0.6917,0.9061,35.7,CONTESTED
+cap4_hc,hicache,1.729,28513552,19426269,13300000,9087283,0.6813,0.9019,29.8,clean

@@ -25,7 +25,12 @@
 import csv, json, os, statistics, sys, glob
 
 HEADER = ["run", "hicache", "prompt_M", "dev_miss_M", "host_hit_M", "uncached_M",
-          "evicted_M", "running", "step_back_ms", "step_perreq_ms"]
+          "evicted_M", "running", "step_back_ms", "step_perreq_ms",
+          # 下面三列是【未舍入】的原始计数，专供下游算比例用。
+          # 为什么必须单列：曾经让下游拿舍入到 0.1M 的列去算百分比，cap1 于是印成
+          # 69.8% 而真值是 19,934,847/28,526,871 = 69.9%（2026-09-24 审稿人从原始
+          # 日志独立求和抓到的）。凡是要算比例的，一律走这三列。
+          "prompt_tok", "reuse_tok", "uncached_tok"]
 SAMPLE_S = 5.0
 
 RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
@@ -119,6 +124,9 @@ def main():
                 "host_hit_M": round((dev_miss - uncached) / 1e6, 1),   # 设备没接住、但也没重算的
                 "running": round(statistics.mean(rn), 2) if rn else "",
                 "step_back_ms": "", "step_perreq_ms": "",
+                "prompt_tok": int(prompt),
+                "reuse_tok": int(prompt - uncached),
+                "uncached_tok": int(uncached),
             })
         except Exception as e:
             bad.append((r, str(e)))
@@ -137,6 +145,7 @@ def main():
         f.write("# host_hit_M 是最关键的一列：无 HiCache 的五条精确为 0.0，有 HiCache 的八条 13~19M。\n")
         f.write("# evicted_M 单列出来只作参照——驱逐量本身不决定重算量，dev_miss 才决定。\n")
         w = csv.DictWriter(f, fieldnames=HEADER)
+        f.write("# prompt_tok/reuse_tok/uncached_tok: 未舍入的原始计数，算比例用这三列\n")
         w.writeheader()
         w.writerows(rows)
     print("写入 %s：%d 行" % (out_path, len(rows)))

@@ -66,18 +66,20 @@ concurrency buys.
 
 The reason $\tau$ moves is recomputation, and whether recomputation happens is
 decided by the memory tier rather than by the policy. A session's prefix is
-worth reusing only while it is still resident, so prefix \emph{reuse} has a
-ceiling set by the workload---in our trace, 19.9\,M of the 28.5\,M prompt
-tokens, the most any configuration in our data reuses. Whether that ceiling is
-realized is set by the tier. With the KV pool on the device alone, reuse
-collapses as concurrency rises---69.8\% at $\overline{R}_{\text{busy}}$ 1.00
-down to 27.4\% at 1.84---and the shortfall reappears one for one as
-recomputation, 8.6\,M to 20.7\,M tokens. With a host tier in front of it, the
-same ceiling holds across the range our controllers occupy---69.8\% to 68.1\%
-between 1.25 and 1.73---even though the \emph{device} misses more. Two
-configurations at the same running count and the same pool occupancy realize
-59.6\% and 68.8\% of the ceiling respectively (\S\ref{sec:model}); what
-separates them is not how full the pool is but what happens when it overflows.
+worth reusing only while it is still resident, so prefix \emph{reuse} is
+bounded by the workload---in our trace, 75.5\% of the prompt tokens, a bound
+no configuration we ran reaches. How much of that bound is realized is where
+the tier enters. With the KV pool on the device alone, realization falls as
+concurrency rises---92.6\% of the bound at $\overline{R}_{\text{busy}}$ 1.00
+down to 36.3\% at 1.84---and the shortfall appears as recomputation, 8.6\,M to
+20.7\,M tokens. With a host tier in front of it, realization holds across the
+range our controllers occupy---90.2\% to 92.3\% between 1.25 and 1.73---even
+though the \emph{device} misses more. Two configurations at the same running
+count and the same pool occupancy realize 78.9\% and 91.1\% of the bound
+respectively (\S\ref{sec:model}); what separates them is not how full the pool
+is but what happens when it overflows. That pair also differs in date and in
+GPU, so \S\ref{sec:results} reports a controlled version that changes the
+pool size alone on one card.
 That is the finding we would carry to another system first, and it is why this
 paper's answer to its own title is a property of the deployment rather than of
 the controller.
@@ -96,26 +98,29 @@ leave and therefore that there is no idle time to recover. There is.
 \subsection{Contributions}
 
 \begin{itemize}
-  \item \textbf{We identify the memory tier as what decides whether added
-        concurrency is paid for in recomputation, and therefore whether
-        admission control has any room.} Prefix reuse has a ceiling set by the
-        workload; whether that ceiling is realized is set by the tier.
-        Device-only, reuse collapses from 69.8\% to 27.4\% of the prompt
-        between $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall
-        reappears as recomputation, 8.6\,M to 20.7\,M tokens; with a host tier
-        the ceiling holds, 69.8\% to 68.1\% over 1.25 to 1.73, while the
-        \emph{device} misses more (\S\ref{sec:model}). Two configurations at
-        the same running count and the same pool occupancy realize 59.6\% and
-        68.8\% of the ceiling, so it is not how full the pool is but what
-        happens when it overflows. The per-step elasticity follows the same
-        line: it passes one above $\overline{R}_{\text{busy}} \approx 1.5$
+  \item \textbf{We identify the memory tier as what decides how much of the
+        achievable prefix reuse survives added concurrency, and therefore
+        whether admission control has any room.} The trace bounds reuse at
+        75.5\% of its prompt tokens, and no configuration we ran reaches that
+        bound---the best realizes 92.6\% of it. What the tier decides is how
+        much of the bound is realized as concurrency rises: device-only,
+        realization falls from 92.6\% to 36.3\% between
+        $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall appears
+        as recomputation, 8.6\,M to 20.7\,M tokens; with a host tier it holds
+        at 90.2--92.3\% over 1.25 to 1.73, while the \emph{device} misses more
+        (\S\ref{sec:model}). Two configurations at the same running count and
+        the same pool occupancy realize 78.9\% and 91.1\% of the bound, so it
+        is not how full the pool is but what happens when it overflows; that
+        pair differs in date and GPU as well, so we also vary the pool alone
+        on one card and report that as the controlled version
+        (\S\ref{sec:results}). The per-step elasticity follows the same line:
+        it passes one above $\overline{R}_{\text{busy}} \approx 1.5$
         device-only and stays below one across the controllers' whole
         operating range with a host tier (\S\ref{sec:criterion}). Two
         measurements that do not share a code path---client-side step timing
-        and engine-side token accounting---give the same answer, which is why
-        we state the criterion as a property of the workload \emph{and} the
-        configuration. This is the finding we would carry to another system
-        first, and it is what the title's question turns on.
+        and engine-side token accounting---give the same answer. This is the
+        finding we would carry to another system first, and it is what the
+        title's question turns on.
   \item We test four routes by which an adaptive admission controller was
         expected to beat a tuned static cap on this workload, and we are
         precise about what each one rests on. Two are falsified by measurement
