@@ -490,6 +490,31 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- §III「未解释」段的回归（τ₁ ~ 重算量，18 条干净 host-tier）----
+    # 2026-09-25 加：此前正文里这个 r 与最大残差**没有任何检查覆盖**，
+    # 我在改条数时把残差猜成了 1.5（真值 1.6）—— 猜出来的数正是要靠检查挡住的。
+    import math as _mm2
+    # ⚠ `load()` 返回的是【列表】不是字典 —— 直接写 `r["run"] in _dx` 恒为 False，
+    # 整块会静默不执行（2026-09-25 加这块时踩到，靠 DEBUG 打印才看见）。
+    _rx = load(os.path.join(ROOT, "paper/data/reuse.csv"))
+    _dx = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    _ex = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/eviction.csv"))}
+    _clean = [r["run"] for r in _rx
+              if r["family"] == "hicache" and r["contested"] != "CONTESTED"
+              and r["run"] in _dx and _dx[r["run"]]["step_back_ms"]]
+    if len(_clean) >= 5:
+        _xs = [float(_ex[k]["uncached_tok"]) / 1e6 for k in _clean]
+        _ys = [float(_dx[k]["step_back_ms"]) for k in _clean]
+        _mx, _my = sum(_xs) / len(_xs), sum(_ys) / len(_ys)
+        _b = sum((x - _mx) * (y - _my) for x, y in zip(_xs, _ys)) / sum((x - _mx) ** 2 for x in _xs)
+        _a = _my - _b * _mx
+        _r = (sum((x - _mx) * (y - _my) for x, y in zip(_xs, _ys))
+              / _mm2.sqrt(sum((x - _mx) ** 2 for x in _xs) * sum((y - _my) ** 2 for y in _ys)))
+        _res = max(abs(y - (_a + _b * x)) for x, y in zip(_xs, _ys))
+        ck("§III 回归的条数", len(_clean), "sec_model.tex")
+        ck("§III 回归的 r", "%+.2f" % _r, "sec_model.tex")
+        ck_near("§III 回归的最大残差", "%.1f" % _res, "sec_model.tex", "straight line")
+
     # ---- §II 的「最佳臂对最近静态锚点」的数 ----
     # 2026-09-25：最佳臂在 hz2_r2 落地后【换人了】—— 原来是 sf0_r2（−0.55），
     # 现在是 hz2_r2（−0.30）。§II 那句跟着换，检查也跟着换；

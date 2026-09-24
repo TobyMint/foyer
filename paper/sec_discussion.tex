@@ -420,11 +420,11 @@ in the half-hour before to 22.3--22.6 in the four after, \texttt{F:rl99} from
 one that resolves the transition and still puts at least twenty steps in every
 bucket quoted; the finer series is noisier and does not support a
 minute-resolution claim, so we do not make one.
-(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; four of them are rows of
-Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:hz2}, \texttt{F:breshz1}, and
+(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; three of them are rows of
+Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:breshz1}, and
 the published-parameter AIMD row) and
-ten are arms we do not report here. The flag is a window, and only two of
-those four are actually damaged---the controller variants whose $\tau_2$
+eleven are arms we do not report here. The flag is a window, and only one of
+those three is actually damaged---the controller variant whose $\tau_2$
 is 30.9--33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
 inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
 Two further rows carried the flag and the damage, and have been re-measured
@@ -547,8 +547,9 @@ not build one that does: nine variants, four routes tested, and of the eight
 whose measurements are clean, none above the interpolated static front---which
 is the strictest of the two baselines we could have used (\S\ref{sec:bg}),
 since it sits above the discrete static points. (Four were measured while
-other jobs shared the host; we have re-measured two of them, which moved 6.5
-and 6.4\,pp closer without crossing, and the other two are still out.) We expected the reason to be a cancellation---admission policy controls
+other jobs shared the host; we have re-measured three of them, which moved
+6.5, 6.4 and 4.5\,pp closer without crossing, and the last one is still
+out.) We expected the reason to be a cancellation---admission policy controls
 how many requests are in flight, the per-step cost rises with that number, and
 the product is what the wall clock sees---and we built a two-part decomposition
 of the wall clock that makes the cancellation measurable. That decomposition

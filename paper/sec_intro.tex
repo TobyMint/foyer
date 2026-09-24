@@ -56,12 +56,12 @@ moved 6.5, 6.4 and 4.5 points closer to the front without crossing it, and
   reimplementation of an independent controller, and of the eight \sys{} variants
   whose measurements are clean, none is above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
-  that verdict is conditional on the threshold. The four points drawn with a
+  that verdict is conditional on the threshold. The three points drawn with a
   hollow ring were measured while three or more other engine instances shared
-  the host (\S\ref{sec:repro}); on two of them the per-request decode
-  interval is inflated by 24--41\% and they are not comparable with the rest,
-  on the other two the flag is a window that left no measurable trace. Those
-  two are being re-measured, and two arms that carried the flag in an
+  the host (\S\ref{sec:repro}); on one of them the per-request decode
+  interval is inflated by 24--41\% and it is not comparable with the rest,
+  on the other two the flag is a window that left no measurable trace. That
+  one is being re-measured, and three arms that carried the flag in an
   earlier version has been re-measured clean and is plotted without a ring.}
   \label{fig:frontier}
 \end{figure}

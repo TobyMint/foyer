@@ -370,16 +370,16 @@ it, and \S\ref{sec:results} reports it once it has run.
 \paragraph{What is left unexplained.} Less than an earlier draft of this
 paragraph claimed. Across the nineteen host-tier runs recomputation spans
 8.6--12.8\,M tokens and realization 72.8--92.5\%, and $\tau_1$ spans
-27.0--36.2\,ms. Two of those runs
-(\texttt{F:hz2} 33.6 and \texttt{F:breshz1} 36.2\,ms) were
+27.0--36.2\,ms. One of those runs
+(\texttt{F:breshz1} 36.2\,ms) was
 measured while three other engine instances shared the host, which inflates
 per-step cost by 24--41\% and leaves the volume columns untouched
 (\S\ref{sec:repro}); they are being re-measured and we do not use their
-timing. Two others (the resident base and \texttt{F:hz0}) were re-measured
-clean and are in the set above with their new values. Across the remaining
-seventeen the $\tau_1$ spread does not look
+timing. Three others (the resident base, \texttt{F:hz0} and \texttt{F:hz2})
+were re-measured clean and are in the set above with their new values. Across
+the remaining eighteen the $\tau_1$ spread does not look
 like a residual: it tracks their recomputation closely (a straight line
-through the seventeen leaves every run within $1.6$\,ms, $r = +0.91$). That is a
+through the eighteen leaves every run within $1.6$\,ms, $r = +0.91$). That is a
 cross-policy association like every other fit in this section, not an
 intervention, and we read it as
 the mechanism of this section holding inside the host tier. We report the association and not the line: the coefficients are
