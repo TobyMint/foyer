@@ -498,6 +498,24 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- elasticity_hc.csv（§IV 的 HiCache 弹性曲线）与 §III 的 excess 区间 ----
+    # 2026-09-25 覆盖普查发现：elasticity_hc.csv 一次都没被检查器提到，
+    # 而 §IV 引它的 ε = +0.19 / +0.46，还引了一次「换锚点后这两个数怎么动」。
+    _eh = load(os.path.join(ROOT, "paper/data/elasticity_hc.csv"))
+    for _r in _eh:
+        if _r["config"] == "hicache":
+            ck("§IV HiCache ε %s→%s" % (_r["from"], _r["to"]),
+               "%.2f" % abs(float(_r["epsilon"])), "sec_criterion.tex")
+    # §III：五个 device-only cap 的 τ₁/τ₂ − 1 区间
+    _dd4 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    _dv = [float(_dd4[k]["excess_pct"]) for k in ("cap1", "cap2", "cap3_fixed", "cap4", "cap5")
+           if k in _dd4 and _dd4[k]["excess_pct"]]
+    if _dv:
+        ck_near("§III device-only 的 excess 下界", "%.1f" % min(_dv),
+                "sec_model.tex", "runs")
+        ck_near("§III device-only 的 excess 上界", "%.1f" % max(_dv),
+                "sec_model.tex", "runs")
+
     # ---- loadtier.csv（图 5 与 §Load Dependence）----
     # 2026-09-25：这张表是 paper/data 里【唯一一张没有生成器】的，而图 5 和正文都引它。
     # 已建 gen_loadtier.py（200 档取 table1.csv、25 档取 thr25_base/thr25_push 现算），
