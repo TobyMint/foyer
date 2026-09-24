@@ -264,9 +264,9 @@ the pool size changed---is queued behind the re-runs and we report it in
 \S\ref{sec:results} when it lands; we do not use it here.
 
 \paragraph{The second trace agrees on direction and not on level.}
-We ran the same accounting on a second workload---117 real Claude agent
-sessions, 390 rounds, the same pool and the same engine---and it reproduces the
-direction: its realization of \emph{its own} bound falls from 74.8\% to 67.5\%
+We ran the same accounting on a second workload, reported in full in
+\S\ref{sec:xtrace}---117 real Claude agent sessions, 390 rounds, the same pool
+and the same engine---and it reproduces the direction: its realization of \emph{its own} bound falls from 74.8\% to 67.5\%
 as the running count rises from 1.08 to 1.29, a steeper per-unit drop than the
 device-only family's. What it does not reproduce is the level, and this is
 worth stating because it bounds what we can claim. That trace runs at a
