@@ -19,6 +19,14 @@
   实测把 all-rows 中位数从 30.6 拖到 27.3）；`gen_eviction` / `gen_repeat_spread`
   各有一份 `SUPERSEDED` 名单，把「被重跑替代的旧测量」排除在判据之外。
 
+**2026-09-25 新增一层独立复算**：`check_paper_numbers.py` 查的是【正文 ↔ `paper/data/*.csv`】，
+而所有 CSV 都由 `scripts/lab/*.py` 生成 —— 若某个生成器的**定义**写错了，正文与 CSV 会
+「一致地错」，检查器看不出来。新增 `scripts/lab/independent_frontier_check.py`：
+**不 import 任何生成器**，从 trace 与 `steps.jsonl` 从头再实现一遍复用上界、
+每个静态锚点的墙钟/SLO、以及静态上左包络与每条臂的 Δ，再与 `table1.csv` 对拍。
+当前结果：**复用上界 21540371/28526871 = 75.51%、四个包络锚点、十条臂的 Δ
+全部逐位相符**。
+
 **已知的、无法消除的边界**：本机镜像不等于实验机全集；凡「对 run 集合计数」的生成器
 必须在实验机上跑。论文引这类数必须同时给出集合规模（已写进 CLAUDE.md）。
 
