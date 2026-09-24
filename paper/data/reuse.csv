@@ -15,7 +15,7 @@
 #   watch     = 同机 >=3 条持续 >=60 分钟，但实测 tau2 未见整体抬升（cap1 即此档）
 #   CONTESTED = 同机 >=4 条持续 >=60 分钟，tau1_ms 这一列不可用；
 #               reuse/recompute 是体积量，实测与同族干净 run 一致。
-run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,realized_frac,tau1_ms,contested
+run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,bound_frac,bound_tok,prompt_total_tok,realized_frac,tau1_ms,contested
 cap1,device_only,1.0,28527903,19935879,521,8592024,0.6988,0.7551,21540371,28526871,0.9255,28.8,CONTESTED
 cap2,device_only,1.271,28503927,19303736,-270,9200191,0.6772,0.7551,21540371,28526871,0.8962,27.4,clean
 cap3_fixed,device_only,1.534,28483759,16984155,-16390,11499604,0.5963,0.7551,21540371,28526871,0.7885,29.7,clean

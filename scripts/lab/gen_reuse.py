@@ -123,7 +123,8 @@ def main():
         "#   watch     = 同机 >=3 条持续 >=60 分钟，但实测 tau2 未见整体抬升（cap1 即此档）",
         "#   CONTESTED = 同机 >=4 条持续 >=60 分钟，tau1_ms 这一列不可用；",
         "#               reuse/recompute 是体积量，实测与同族干净 run 一致。",
-        "run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,realized_frac,tau1_ms,contested"])
+        "run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,"
+        "reuse_frac,bound_frac,bound_tok,prompt_total_tok,realized_frac,tau1_ms,contested"])
     fields = ["run", "family", "Rbar_busy", "prompt_tok", "reuse_tok", "reuse_host_tok",
               "recompute_tok", "reuse_frac", "bound_frac", "bound_tok",
               "prompt_total_tok", "realized_frac", "tau1_ms", "contested"]
