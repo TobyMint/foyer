@@ -54,8 +54,9 @@ rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
 1.73, while the \emph{device} cache misses more. Two configurations at the
 same running count and the same pool occupancy realize 78.9\% and 91.1\% of
 the bound, so it is not how full the pool is but what happens when it
-overflows---though that pair is two runs on two days, which is why we also
-vary the pool size alone on one card as a capacity control. Our controllers run on the host-tier configuration, where
+overflows---though that pair is two runs on two days, so we also vary the pool
+size alone on one card as a capacity control; that experiment is queued and we
+report it when it lands. Our controllers run on the host-tier configuration, where
 $\epsilon$ stays below one across their whole operating range, so the ceiling
 we measure on device-only caps is not what bounded them. It bounds what added concurrency is worth, not what a
 whole run achieves---idle time and the SLO axis are separate. We measure $\epsilon$ on a
@@ -76,10 +77,12 @@ cache's realized hit rate collapses from the trace's planned 75.5\% to
 The question is which selective rule, not whether to be selective. Two
 measurable effects, rather than one we can tune away, account for part of why
 our variants fail---the arm-by-arm attribution of
-\S\ref{sec:results:attribution} covers four of the eleven arms we tested and
-leaves seven as residuals we can measure and cannot yet explain---and every
-one of those four attributions that names a step-cost cause rests on runs
-measured under host co-tenancy, so we flag it rather than count it. They hold
+\S\ref{sec:results:attribution} attributes three of the twelve controller
+arms we tested, leaves six with a step cost that no matched comparison can
+confirm, and leaves three as residuals we can measure and cannot yet
+explain. The single step-cost attribution it does make is on a run flagged
+for host co-tenancy but not measurably damaged by it, and we say which is
+which rather than counting it. They hold
 nearly half
 the pool idle while sessions queue---their own headroom estimate on the base
 configuration is 1.79$\times$ the truth (1.0--4.1$\times$ across all of them)---and the per-step elasticity measured on the

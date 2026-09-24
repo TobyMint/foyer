@@ -1,6 +1,9 @@
 # 并发争用审计 —— 由 scripts/lab/gen_concurrency.py 生成，勿手改
-# 在实验机上跑: python3 gen_concurrency.py /data/xbw/turnstile/results/night paper/data/concurrency.csv
-# 本文件是把实验机产物原样拷回，未做任何手工编辑
+# peak_lanes: 生命周期内同时活着的 run 数峰值（事件扫描，不是重叠对象数+1）
+# min_at_ge4: 同时 >=4 条持续的分钟数 —— 判据用它，因为只有持续争用才抬 τ₂
+# verdict: min_at_ge4>=60 记 CONTESTED（墙钟/SLO 与其余各行不可比，须重测）；
+#          min_at_ge3>=60 记 watch（实测 3 条无一致抬升，但记录在案）
+# tau2_ms: 逐请求 decode 间隔中位（客户端实测，不经采样器）；争用会把它抬高 ~25~40%
 run,peak_lanes,min_at_ge4,min_at_ge3,tau2_ms,verdict
 default,2,0.0,0.0,62.49520107238596,clean
 budget,2,0.0,0.0,44.10678068410453,clean
@@ -80,17 +83,25 @@ load25c_cap3r,2,0.0,0.0,24.587062146892656,clean
 p200_fix_r2,2,0.0,0.0,23.345532656312226,clean
 load25c_cap5r,2,0.0,0.0,25.606010362694295,clean
 pois200_cap3_r2,2,0.0,0.0,25.45634217438657,clean
+aimd2_uh75,1,0.0,0.0,24.26703963254786,clean
+aimd2_paper,1,0.0,0.0,24.733452721366326,clean
+pois200_aimd2,2,0.0,0.0,25.498266106386396,clean
+aimd2_uh06,2,0.0,0.0,24.041548731642187,clean
 realhr_cap3,2,0.0,0.0,20.90777456647399,clean
 pois200_default,2,0.0,0.0,39.23477892756334,clean
 realhr_cap4,2,0.0,0.0,21.9733014354067,clean
+realhr_cap1,2,0.0,0.0,20.09007278051265,clean
+_stale_20260920_pois200_foyer_r2,2,0.0,0.0,23.85365193280052,clean
 pois200_cap5,2,0.0,0.0,31.184144307362676,clean
 pois200_foyer_hc,2,0.0,0.0,23.822689414567733,clean
-pois200_cap1,4,28.8,163.2,20.64109219269103,watch
-pois200_foyer_rl90,4,165.3,301.8,30.74022900763359,CONTESTED
-pois200_foyer_rl99,4,165.3,363.6,32.50995462711709,CONTESTED
+pois200_cap1,4,161.2,163.2,20.64109219269103,CONTESTED
+pois200_aimd2_paper,4,132.5,132.5,24.399699344254252,CONTESTED
+pois200_foyer_rl90,4,297.8,301.9,30.74022900763359,CONTESTED
+pois200_foyer_rl99,4,297.8,363.6,32.50995462711709,CONTESTED
 pois200_foyer_t85,4,165.3,229.2,25.02469275035325,CONTESTED
-pois200_foyer_t90,4,136.6,198.3,24.341759209714866,CONTESTED
-pois200_cap4_hc,2,0.0,0.0,25.694691011235967,clean
+pois200_foyer_t90,4,136.6,202.9,24.341759209714866,CONTESTED
+pois200_cap4_fixed,3,0.0,4.6,22.100234375,clean
+pois200_cap4_hc,3,0.0,4.6,25.694691011235967,clean
 pois200_foyer_rl90fix,2,0.0,0.0,25.088082178411078,clean
 pois200_cap3_fixed,2,0.0,0.0,24.91405553083124,clean
 pois200_foyer_rl99fix,2,0.0,0.0,26.621129985984915,clean
@@ -100,14 +111,20 @@ pois200_pairB_foyerhc,2,0.0,0.0,23.838149785129715,clean
 pois200_pairB_cap2hc,2,0.0,0.0,22.676687779647402,clean
 pois200_foyfix_hc,2,0.0,0.0,27.541239567158385,clean
 pois200_cap3_hc,2,0.0,0.0,24.512221314754317,clean
-_leftover_1721_pois200_foyer_r2,1,0.0,0.0,None,clean
+pois200_cap2_hc,3,0.0,29.0,22.698157099697884,clean
+_leftover_1721_pois200_foyer_r2,3,0.0,29.0,None,clean
+_aborted_1721_pois200_foyer_r2,3,0.0,29.0,21.01139590661976,clean
+pois200_foyer_r2,2,0.0,0.0,None,clean
+pois200_v4_r2,2,0.0,0.0,21.631415929203538,clean
 pois200_foyer_hz1,4,14.4,14.4,24.613489570585518,clean
 pois200_foyer_breshz1,4,296.2,303.2,33.307543618721056,CONTESTED
 pois200_foyer_hz0,4,296.2,297.7,33.11369506962774,CONTESTED
 pois200_foyer_bres,4,296.2,303.2,31.290826261547288,CONTESTED
 pois200_foyer_hz2,4,281.8,287.3,30.883341428219474,CONTESTED
-pois200_foyer_rg4,2,0.0,0.0,26.956948489011026,clean
-pois200_foyer_nogate,2,0.0,0.0,25.61540459937703,clean
+pois200_foyer_rg4,4,37.2,211.0,26.956948489011026,watch
+pois200_foyer_nogate,4,37.2,211.0,25.61540459937703,watch
+pois200_foyer_rg2,4,37.2,209.9,25.280922787193973,watch
+pois200_foyer_rg3,4,37.2,38.2,32.58390977443609,clean
 pois200_cap2_25,2,0.0,0.0,22.5848322147651,clean
 pois200_cap3_25,2,0.0,0.0,23.713298059964732,clean
 pois200_cap4_25,2,0.0,0.0,25.30214285714288,clean
@@ -120,8 +137,11 @@ pois200_var_foyer,4,107.8,108.0,24.551602543056,CONTESTED
 pois200_var_cap3,4,158.4,163.5,27.941926520245254,CONTESTED
 _failed_4lane_pois200_foyer_sf0,4,158.4,159.1,32.145,CONTESTED
 _failed_4lane_pois200_foyer_hc_r2,4,158.4,158.9,31.44622742399032,CONTESTED
-pois200_var_cap2,4,50.6,55.0,23.36940490207622,clean
+pois200_var_cap2,4,50.6,205.2,23.36940490207622,watch
 _failed_4lane_pois200_var_switch2,3,0.0,4.4,None,clean
-pois200_foyer_sf0_r2,2,0.0,0.0,24.293480361208367,clean
-pois200_foyer_hc_r2,2,0.0,0.0,24.054259978278573,clean
+_failed_4lane_pois200_var_switch2b,3,0.0,154.5,22.031223371342698,watch
+pois200_foyer_sf0_r2,3,0.0,154.5,24.293480361208367,watch
+pois200_foyer_hc_r2,3,0.0,4.3,24.054259978278573,clean
 pois200_var_switch2b,2,0.0,0.0,24.32364832140891,clean
+pois200_var_switch2,2,0.0,0.0,24.596385964912283,clean
+realhr_cap5,2,0.0,0.0,23.196101412066753,clean

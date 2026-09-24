@@ -88,13 +88,17 @@ appearance of the mechanism that drives the whole frontier.
   their measured values. We flag this because our verdict script excludes
   runs below 999 steps, so the \texttt{$\Delta$} column for these four comes
   from the table generator rather than from that script.
-  $^\ddagger$ marks the four runs measured while three other engine
-  instances shared the host, which inflates per-step cost by 25--40\% and
-  makes their wall clock, SLO and $\Delta$ incomparable with the rest of the
-  table. They are listed for completeness and are being re-measured; until
-  those runs land, the claim that no controller reaches the front should be
-  read as resting on the other eight controller arms. \S\ref{sec:repro}
-  gives the audit and the evidence.}
+  $^\ddagger$ marks a run measured while three or more other engine
+  instances shared the host for at least an hour. That is a risk flag, not a
+  measurement of damage, and the two come apart in our data: four of the six
+  flagged rows are controller variants whose per-request decode interval is
+  30.9--33.3\,ms against 23.8--25.7 for the same family measured alone, so
+  their wall clock, SLO and $\Delta$ are not comparable with the rest and
+  they are being re-measured. The other two, \texttt{cap1} and the
+  published-parameter AIMD row, are flagged by the window but show no
+  aggregate inflation at all (20.6 and 24.4\,ms), so we keep their numbers
+  and say why. \S\ref{sec:repro} gives the audit, the threshold and the
+  evidence.}
   \label{tab:runs}
   \centering
   \small
@@ -105,7 +109,7 @@ appearance of the mechanism that drives the whole frontier.
     \midrule
     \multicolumn{5}{l}{\emph{Static caps}}\\
     no control        & 288.6 & 1.69 & 3.0 & $-$87.64 \\
-    cap1              & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
+    cap1$^\ddagger$   & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
     cap2              & 304.2 & 1.99 & 89.5 & $-$2.24 \\
     cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$11.78 \\
     cap4              & 249.9 & 3.94 & 55.7 & $-$29.19 \\
@@ -133,7 +137,7 @@ appearance of the mechanism that drives the whole frontier.
     all throttles off & 415.0 & 2.58 & 46.1 & $-$47.11 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
-    AIMD, paper params & 364.3 & 1.91 & 81.4 & $-$11.17 \\
+    AIMD, paper params$^\ddagger$ & 364.3 & 1.91 & 81.4 & $-$11.17 \\
     AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$34.29 \\
     \bottomrule
   \end{tabular}
@@ -257,7 +261,11 @@ clock and compared their occupancy and their step cost. An arm is attributed to
 the unused-memory mechanism if it runs fewer than 92\% of its comparison's
 requests, and to the step-cost mechanism if it runs a comparable number---%
 within 8\%---at a measurably higher cost (more than 8\% higher $\tau_1$).
-Everything else is a residual. The comparability clause is load-bearing and we
+Everything else is a residual. The rule reads the running count and
+$\tau_1$ only; it does not consult occupancy, so the ``unused memory'' label
+is licensed by the running count alone---though the two arms it lands on also
+sit at the low end of the occupancy column, which is why we let the name
+stand. The comparability clause is load-bearing and we
 state it because an earlier version of this table did not enforce it, which
 classified every arm that ran \emph{more} requests than its comparison as
 step-cost purely because $\tau$ rises with the running count.
@@ -269,7 +277,7 @@ step-cost purely because $\tau$ rises with the running count.
   \toprule
   Arm & Occ. & $\overline{R}$ & $\tau_1$ & Attribution \\
   \midrule
-  single-flight off   &  54.5 & 1.26 & 28.9  & unused mem. \\
+  single-flight off   &  54.5 & 1.455 & 28.9  & unused mem. \\
   \texttt{horizon}=1  &  57.8 & 1.524 & 29.2  & residual \\
   \sys{} base         &  49.2 & 1.353 & 28.7  & residual \\
   \texttt{horizon}=2  &  54.7 & 1.439 & 33.6  & $\tau$ high, not matched$^\ddagger$ \\
@@ -277,38 +285,42 @@ step-cost purely because $\tau$ rises with the running count.
   \texttt{bres}       &  56.9 & 1.481 & 34.1  & $\tau$ high, not matched$^\ddagger$ \\
   \texttt{breshz1}    &  61.4 & 1.632 & 36.2  & $\tau$ high, not matched$^\ddagger$ \\
   no gate, no resv.   &  62.1 & 1.678 & 31.5  & unused mem. \\
-  running gate$=$4    &  62.3 & 1.689 & 32.2  & $\tau$ high, not matched$^\ddagger$ \\
-  all throttles off   &  39.2 & 1.675 & 34.8  & $\tau$ high, not matched$^\ddagger$ \\
+  running gate$=$4    &  62.3 & 1.689 & 32.2  & $\tau$ high, not matched \\
+  all throttles off   &  39.2 & 1.675 & 34.8  & $\tau$ high, not matched \\
   AIMD, retuned       &  66.6 & 1.706 & 34.3  & residual \\
-  AIMD, paper params  &  40.3 & 1.357 & 32.4  & step cost \\
+  AIMD, paper params  &  40.3 & 1.357 & 32.4  & step cost$^\ddagger$ \\
   \bottomrule
 \end{tabular}
 \end{center}
 
-$^\ddagger$ marks arms measured under host co-tenancy (Table~\ref{tab:runs},
-\S\ref{sec:repro}). Five of the six ``$\tau$ high, not matched'' rows carry the
-flag, so for those we cannot tell an inflated step cost from an elevated one.
-The sixth and seventh of that group (	exttt{running gate}=4 and all-throttles-off)
-are clean runs, and their $\tau$ elevation is real and unexplained. The single
-step-cost attribution the procedure does make---AIMD with its published
-parameters---is on a clean run, which is the one row in this table that
-attributes a mechanism to a measurement we trust.
+$^\ddagger$ marks runs measured while three or more other engine instances shared
+the host for at least an hour (\S\ref{sec:repro}). In this table the flag bites
+harder than in Table~\ref{tab:runs}, because the classification is made on
+$\tau_1$, which is exactly the column co-tenancy inflates. Four of the six
+$\tau$-high rows carry it, and so does the one step-cost attribution the
+procedure makes---AIMD at its published parameters. That row is flagged by the
+window but not measurably damaged: its $\tau_2$, which does not touch the
+sampler, is 24.4\,ms, inside the clean family's range. We report it as flagged
+rather than calling it clean, because the window is what the audit establishes
+and the absence of damage is an inference from a different column. The two
+$\tau$-high rows that are not flagged (\texttt{running gate}=4 is a watch,
+all-throttles-off is clean) are the ones whose elevation no window explains.
 
-Two of the twelve are attributed to unused memory (	exttt{single-flight off}
-and no-gate-no-reservation), one to step cost, six have a $\tau$ no matched
-comparison can confirm, and three are residuals: their occupancy and their step
-cost both sit close to their comparison cap's, and their shortfall is real but
-we cannot say from these measurements which mechanism produced it. We publish
-the table rather than a summary because a summary would claim more than we
-have---and because ``two mechanisms explain the negative result'' would be the
-wrong summary. Two mechanisms explain part of it, on three of the twelve arms;
-the rest is a measurement we can make and cannot yet interpret. We also flag
-what changed here: an earlier version of this table claimed four attributions
-from eleven rows, and that was an artifact of two errors at once---the
-comparability clause above was not enforced, and six arms had no $\tau_1$
-because the run list behind this table was incomplete. The generator is now the
-only source for these rows (\texttt{attribution.csv}), and it enforces the
-clause.
+3 of the 12 rows are attributed: two to unused memory (\texttt{single-flight
+off} and no-gate-no-reservation), one to step cost, six have a $\tau$ no
+matched comparison can confirm, and three are residuals---their occupancy and
+their step cost both sit close to their comparison cap's, and their shortfall
+is real but we cannot say from these measurements which mechanism produced it.
+We publish the table rather than a summary because a summary would claim more
+than we have---and because ``two mechanisms explain the negative result''
+would be the wrong summary. We also flag what changed here, since an earlier
+version of this table claimed four attributions from eleven rows and that was
+an artifact of two errors at once: the comparability clause above was not
+enforced in the code, and six arms had no $\tau_1$ because the run list behind
+this table was incomplete. The generator is now the only source for these rows
+(\texttt{attribution.csv}), it enforces the clause, and it carries the
+co-tenancy flag rather than having it written in by hand---which is how the
+earlier version came to mark two clean runs.
 
 \subsection{Route 1: the accounting base}
 

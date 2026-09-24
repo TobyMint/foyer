@@ -187,8 +187,8 @@ correspondence breaks---and it breaks in a way that confirms the mechanism
 rather than undermining it. The device cache misses as much as before:
 \texttt{cap4\_hc} misses 22.4\,M tokens on the device, more than the
 device-only \texttt{cap4} misses. But only 9.1\,M of that is recomputed; the
-other 13.3\,M is served from the host tier. Across the eight host-tier runs
-the host serves 13--19\,M tokens each, and across the five device-only runs it
+other 13.3\,M is served from the host tier. Across the ten host-tier runs
+the host serves 12--19\,M tokens each, and across the five device-only runs it
 serves \emph{exactly zero}---the device miss equals the recomputed count to
 within rounding on all five. Recomputation is still what the device cannot
 absorb; the host tier is a second absorber in front of it.
@@ -228,7 +228,10 @@ host tier   & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
 
 Device-only, realization falls from 92.6\% to 36.3\% and the shortfall is
 recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
-90.2--92.3\% across the whole range our controllers occupy, and it holds
+90.2--92.3\% on the static points that span the same range, and at
+83.9--92.3\% across the ten host-tier runs including the controller arms---the
+lowest of those being the arm that disables its own admission gate and
+therefore runs the pool hardest. and it holds
 while the \emph{device} misses more than the device-only family's at every
 point (22.4--27.9\,M against 8.6--20.7\,M), because the host serves
 13--19\,M in front of the recomputation instead of letting the device keep
@@ -271,7 +274,7 @@ and the same engine---and it reproduces the direction: its realization of \emph{
 as the running count rises from 1.08 to 1.29, a steeper per-unit drop than the
 device-only family's. What it does not reproduce is the level, and this is
 worth stating because it bounds what we can claim. That trace runs at a
-\emph{lower} mean device occupancy (15.8\% against 22.4\%) and realizes
+\emph{lower} median device occupancy (15.8\% against 22.4\%) and realizes
 \emph{less}, so realization is not a function of occupancy alone---and a
 statement of the form ``the pool collapses above $x$\% occupancy'' is wrong on
 our own data. Occupancy is instantaneous while reuse depends on history; a
@@ -295,14 +298,15 @@ queued experiment measures the collapse point directly rather than predicting
 it, and \S\ref{sec:results} reports it once it has run.
 
 \paragraph{What is left unexplained.} Not everything here is accounted for.
-The host-tier runs sit at a flat 8.6--9.1\,M recomputed tokens \emph{and} a
-flat 90.2--92.3\% realization, yet $\tau_1$ spans 27.0--35.7\,ms across them.
+The host-tier runs sit at a narrow band of recomputed tokens (8.6--10.4\,M)
+\emph{and} of realization (83.9--92.3\%), yet $\tau_1$ spans 27.0--36.2\,ms
+across them.
 Part of that is now explained and part is not. Three of those runs
 (\texttt{F:hz2} 33.6, \texttt{F:bres} 34.1, \texttt{F:hz0} 35.7\,ms) were
 measured while three other engine instances shared the host, which inflates
 per-step cost by 25--40\% and leaves the volume columns untouched
 (\S\ref{sec:repro}); they are being re-measured and we do not use their
-timing. Excluding them the remaining five span 27.0--29.8\,ms at flat
+timing. Excluding them the remaining six span 27.0--31.5\,ms at flat
 recomputation. That residual is small but it is not zero, and we do not
 attribute it. We note that the negative result does not rest on it: the
 cancellation is measured directly, not inferred from the mechanism.

@@ -5,11 +5,21 @@ Everything so far is one trace family, and a negative result drawn from one
 family invites the objection that the family is the finding. We ran the same
 accounting, the same static sweep and the same controller on a second replay:
 117 real Claude agent sessions, 390 rounds, the same model, the same engine and
-the same 101{,}432-token pool. The two workloads differ in ways that matter for
+the same 101{,}432-token pool. One difference has to be stated up front,
+because it bears on the paper's central variable: \emph{this trace was run
+entirely without a host tier}. Its static points, its envelope and its
+controller are all device-only. That makes the comparison internally fair---both
+sides of the front are the same configuration---but it means this workload
+tests the negative result and not the tier mechanism, and it leaves an
+alternative account of the controller's failure standing: it failed here on the
+configuration where \S\ref{sec:model} says added concurrency is expensive. The two workloads differ in ways that matter for
 this paper, which is why we chose it. Its sessions are smaller (median prompt
-18{,}809 tokens against 23{,}187) and its tool waits are an order of magnitude
-longer: the median inter-round gap is 10.6\,s against 73\,ms on the main trace,
-and the mean is 29.1\,s against 12.7\,s. So the engine is idle far more of the
+18{,}809 tokens against 23{,}187) and its tool waits are two orders of
+magnitude longer at the median: over round transitions---same session,
+adjacent rounds, each session's last round excluded because it has no
+successor---the demanded gap is 20.2\,s against 0.34\,s on the main trace, a
+59.8$\times$ difference, and the mean is 29.1\,s against 15.8\,s
+(\texttt{toolwait.csv}; \texttt{elasticity\_x.csv}). So the engine is idle far more of the
 time, and the running counts are lower.
 
 \subsection{What transfers, and what does not}
@@ -18,11 +28,15 @@ time, and the running counts are lower.
 second trace plans a higher reuse bound than the first---86.3\% of its prompt
 tokens against 75.5\%---and realizes less of it, at a lower device occupancy.
 Realization falls from 74.8\% to 67.5\% as the running count rises from 1.08 to
-1.29, a steeper per-unit drop than the device-only family's ($-34.5$ against
-$-11.1$ points per unit $\overline{R}$), so the direction of \S\ref{sec:model}
-survives. The level does not, and we treat that as a bound on what we can
-claim: this trace realizes \emph{less} at 15.8\% mean occupancy than the main
-trace does at 22.4\%, so realization is not a function of occupancy alone and a
+1.29, so the direction of \S\ref{sec:model} survives. We do not compare the
+two traces' slopes: ours would be computed over different spans of the
+running-count axis, and the device-only family's overall slope
+($-66.8$ points per unit over its whole range) is steeper than this trace's
+three-point span ($-34.5$) anyway, so the comparison would say the opposite of
+what the raw direction does. The level does not, and we treat that as a bound on what we can
+claim: this trace realizes \emph{less} at 15.8\% median device occupancy than the
+main trace does at 22.4\% (both medians of \texttt{sglang:token\_usage}; the
+means are 13.9\% and 25.2\%), so realization is not a function of occupancy alone and a
 rule of the form ``the pool collapses above $x$\% occupancy'' is false on our
 own data. Occupancy is instantaneous; reuse depends on whether a prefix
 survives from one round to the next, which is a history the instantaneous
@@ -30,31 +44,35 @@ number does not carry. We do not measure that history here, and we say so
 rather than fitting the two traces to a common curve.
 
 \paragraph{The elasticity criterion does not transfer, and this is the
-sharper result.} On the main trace the criterion's explanation of our
-controllers' failure is that they sit where $\varepsilon \ge 1$, so added
-concurrency does not pay. On the second trace that explanation cannot apply,
-because the controller never goes there. Its running count during busy time is
+sharper result.} On the main trace the criterion's role is to \emph{rule out} the
+workload-side story---it shows the controllers were not in a segment where
+added concurrency was self-defeating, which is why \S\ref{sec:criterion}
+relocates the failure to the controller. On the second trace even that weaker
+role fails, because the controller never goes near the segment the criterion
+is about. Its running count during busy time is
 1.223, below every static point we ran on that trace (1.077, 1.161, 1.287), and
 the segment it lands in has $\varepsilon(\tau_1) = -0.28$ over
 $\overline{R}$ 1.16--1.29---concurrency is close to free there. The measured
 segments on this trace are $-2.40$ (cap2$\to$cap3) and $-0.28$
-(cap3$\to$cap4), both negative, and the trace's maximum running count never
-reaches the $\overline{R} \approx 1.5$ where the main trace's cliff begins. So
-the criterion's expensive segment is \emph{untested} on the second trace, not
-confirmed and not refuted; what is refuted is the mechanism \S\ref{sec:criterion}
-attributes to our controllers, because here the controller failed without ever
-entering it.
+(cap3$\to$cap4), both negative, and the highest
+running count we measure on this trace---a mean of 1.287 over busy time, with
+an instantaneous peak of four in flight---stays below the
+$\overline{R} \approx 1.5$ where the main trace's cliff begins. So
+the criterion's expensive segment is \emph{untested} here---neither confirmed
+nor refuted---and the one thing this trace does establish is that the criterion
+cannot be doing any explanatory work for this controller either, since the
+controller failed without ever entering the region the criterion is about.
 
 We also record what the noise does to this measurement, because it is the same
 weakness the whole paper has. Recomputing each segment's $\varepsilon$ with
-$\tau_1$ perturbed by $\pm10$\%---the spread our repeat pairs actually show
----gives $[-5.20, +0.41]$ for cap2$\to$cap3 and $[-2.17, +1.61]$ for
+$\tau_1$ perturbed by $\pm10$\%, a perturbation inside the range our repeat
+pairs actually show (1.2--22.4\%), gives $[-5.20, +0.41]$ for cap2$\to$cap3 and $[-2.17, +1.61]$ for
 cap3$\to$cap4. Both bands cross one, so on this trace the criterion's sign is
 not resolvable either.
 
 \paragraph{The controller's verdict transfers, weakly.} \sys{} finishes the
 second trace in 75.6 minutes against 66.9 for the fastest static cap, so it is
-13.2\% slower---but that gap is inside the run-to-run spread we measure
+13.2\% slower (13.15\% at full precision)---but that gap is inside the run-to-run spread we measure
 elsewhere (up to 22.4\% between repeat pairs of the same configuration), so we
 do not claim it lost. What we can say is that it did not win, on either axis:
 its signed distance from the second trace's static envelope is $+0.40$\,pp on
@@ -68,12 +86,11 @@ that nobody violated 10\,s.
 
 It buys a negative result that is not a property of one trace family: on a
 second workload, with a different session-size distribution and a
-tool-wait distribution 145$\times$ longer at the median, the same controller
+tool-wait distribution 60$\times$ longer at the median, the same controller
 still does not beat the same kind of static cap, and the reuse degradation
-still appears. It costs us the transportability of the mechanism. The
-criterion of \S\ref{sec:criterion} was built to say \emph{why} adaptive
-admission fails, and on the second workload it does not say that, because the
-controller is not operating where the criterion says failure comes from. We
+still appears. It costs us the transportability of the mechanism. On the main trace the criterion narrowed the search by excluding the
+workload-side explanation; on this one it cannot even do that, because the
+controller never reaches the region the criterion describes. We
 report both, and we note that the second workload is closer to the regime
 where adaptive control \emph{should} pay---lower concurrency, much longer idle
 gaps---and the controller still did not win there.

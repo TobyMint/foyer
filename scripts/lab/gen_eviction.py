@@ -110,13 +110,28 @@ def main():
             dev_miss = prompt - cached   # 设备侧未命中
 
             rn = col(mp, "sglang:num_running_reqs")
-            # metadata.json 里没有 hicache_enabled 这个键（核过），所以按已知
-            # 配置判定：HiCache 只在这些 run 上开。这比猜 metadata 的键名可靠。
-            HC = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
-                  "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres"}
+            # HiCache 判定：优先读 metadata 的 build.hicache_enabled（新 run 都有），
+            # 读不到再退回硬编码集合。**不能只靠硬编码** —— 原来那份漏了
+            # foyer_breshz1（它 host 接住 14.4M，确实是 host-tier run），
+            # 于是 §III 的"八条 host-tier run"其实是九条，报的区间是从少一个
+            # 成员的集合算的，而漏掉的那个恰是最极端的一点（2026-09-24 审稿人抓）。
+            HC_FALLBACK = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
+                           "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
+                           "foyer_breshz1"}
+            _mj = os.path.join(d, "metadata.json")
+            hc_flag = None
+            if os.path.exists(_mj):
+                try:
+                    hc_flag = json.load(open(_mj)).get("build", {}).get("hicache_enabled")
+                except Exception:
+                    hc_flag = None
+            if hc_flag is None:
+                hicache = r in HC_FALLBACK
+            else:
+                hicache = bool(hc_flag)
             rows.append({
                 "run": r,
-                "hicache": "1" if r in HC else "0",
+                "hicache": "1" if hicache else "0",
                 "prompt_M": round(prompt / 1e6, 1),
 
                 "uncached_M": round(uncached / 1e6, 1),

@@ -28,6 +28,19 @@ def load(p):
     return {r[list(r)[0]]: r for r in csv.DictReader(l for l in open(p) if not l.startswith("#"))}
 
 
+def load_concurrency():
+    import os as _os
+    p = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..",
+                      "paper", "data", "concurrency.csv")
+    if not _os.path.exists(p):
+        return {}
+    return {r["run"]: r["verdict"] for r in
+            csv.DictReader(l for l in open(p) if not l.startswith("#"))}
+
+
+CONC = load_concurrency()
+
+
 def main():
     runs, occ, dec = load(sys.argv[1]), load(sys.argv[2]), load(sys.argv[3])
     # R̄ 一律用 busy 条件口径，与 §IV 的弹性一致 —— 原来这张表用的是
@@ -72,7 +85,10 @@ def main():
             cls = "步成本更高（但对照的在跑数不可比）"
         else:
             cls = "残差（只能报观测）"
-        rows.append({"arm": a, "wall_min": wall, "nearest_static": near,
+        # 争用标记：与表 I 的 ‡ 同源（都读 concurrency.csv），不再手写 ——
+        # 手写过一次，把 rg4/foyfix 也标了，而审计里它们是 clean（2026-09-24 审稿人抓）。
+        rows.append({"arm": a, "contested": CONC.get("pois200_" + a, "?"),
+                     "wall_min": wall, "nearest_static": near,
                      "occ_pct": o_a, "running": r_a, "tau1_ms": t_a,
                      "static_occ_pct": o_n, "static_running": r_n,
                      "static_tau1_ms": t_n, "class": cls})
@@ -83,6 +99,7 @@ def main():
         f.write("# 每个控制器臂对照墙钟最接近的静态臂\n")
         f.write("# class: 内存没用满 = 在跑数明显低于对照；步成本更高 = 在跑数相当但 τ 高；\n")
         f.write("#        残差 = 两个机制都不显著，只能作为观测报告\n")
+        f.write("# contested: 与表 I 的 ‡ 同源（concurrency.csv）；CONTESTED 的 tau 列不可用\n")
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
     print("->", out)

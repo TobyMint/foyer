@@ -12,9 +12,13 @@ busy 条件均值 = 全时段均值 / busy 占比，与 gen_decomp.py 里 τ₁ 
 """
 import csv, os, statistics, sys
 
-ARMS = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
-        "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc",
-        "aimd2", "aimd2_paper"]
+# sf0_r2 与 hc_r2 必须在里面：归因表引用 sf0 的在跑数，而它原来不在本表里，
+# gen_attribution 于是静默回退到 occupancy.csv 的【全时段均值】口径（1.26），
+# 而其余 11 行都是 busy 条件口径（sf0 的 busy 值是 1.45）—— 口径混用（2026-09-24 审稿人抓）。
+# 这就是 CLAUDE.md 纪律 3 的又一个实例：生成器的 run 列表不全会静默改变下游口径。
+ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2",
+        "foyer_hz0", "foyer_bres", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
+        "foyfix_hc", "aimd2", "aimd2_paper"]
 STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
           "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap4_hc_r2"]
 

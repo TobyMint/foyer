@@ -70,8 +70,9 @@ wall clock but measures only decode, so it cannot be dropped into a throughput
 equation that includes prefill.
 
 We tested whether the curve transfers to a second workload and it does not
-obviously do so. On a real agent trace (117 sessions, tool waits of seconds
-rather than the 95\,ms of the synthetic trace, three static caps and one
+obviously do so. On a real agent trace (117 sessions, median inter-round
+waits of 20.2\,s against 0.34\,s on the synthetic trace,
+\texttt{toolwait.csv}, three static caps and one
 controller arm), the model-consistent elasticity is negative across the measured
 range---$-2.40$ then $-0.28$, at $\overline{R}_{\text{busy}}$ 1.08 to 1.29---and
 the controller arm there runs at 1.22, below every one of the nine arms above,

@@ -50,17 +50,38 @@ def tau2(root, run):
 
 def main():
     root, out_path = sys.argv[1], sys.argv[2]
-    rows = []
+    rows, skipped = [], []
     for d in glob.glob(os.path.join(root, "*", "metadata.json")):
         try:
             m = json.load(open(d))
         except Exception:
             continue
         s, f = m.get("started"), m.get("finished")
+        # finished 缺失时【回退】到 started + wall_s，不能直接 continue ——
+        # 静默跳过会让数据文件少了 run，而正文还在引用它：pois200_aimd2 与
+        # pois200_aimd2_paper 就因此不在本表里，而 §V 用后者论证"唯一的步成本
+        # 归因在干净 run 上"（2026-09-24 审稿人查不到那一行）。本项目的
+        # 「生成器静默丢 run」已经栽过两次（foyer_hz1、这里）。
+        fallback = ""
+        if not f and m.get("wall_s"):
+            f = s + float(m["wall_s"]); fallback = "wall_s"
+        if not f:
+            # 最后回退：从 steps.jsonl 的首末时间戳推窗口 —— frontier.py 用的同一个来源。
+            # pois200_aimd2 / pois200_aimd2_paper 的 metadata 里 finished 与 wall_s
+            # 都是 None（run 却跑完了、有 summary.json），只靠 wall_s 回退仍会丢它们。
+            sp = os.path.join(os.path.dirname(d), "steps.jsonl")
+            if s and os.path.exists(sp):
+                try:
+                    st = [json.loads(l) for l in open(sp) if l.strip()]
+                    f = max(x["complete_timestamp"] for x in st); fallback = "steps.jsonl"
+                except Exception:
+                    pass
         if not s or not f:
+            skipped.append(os.path.basename(os.path.dirname(d)))
             continue
         rows.append({"run": os.path.basename(os.path.dirname(d)),
-                     "started": s, "finished": f, "gpu": m.get("gpu")})
+                     "started": s, "finished": f, "gpu": m.get("gpu"),
+                     "window_src": fallback or "metadata"})
     rows.sort(key=lambda r: r["started"])
 
     # 关键：并发数必须是【同时活着的条数】，不是"重叠对象数+1"。
@@ -121,7 +142,14 @@ def main():
 
     nbad = sum(1 for r in rows if r["verdict"] == "CONTESTED")
     nw = sum(1 for r in rows if r["verdict"] == "watch")
-    print("写入 %s：%d 行，CONTESTED %d 行，watch %d 行" % (out_path, len(rows), nbad, nw))
+    if skipped:
+        print("!! 以下 run 的 metadata 既没有 finished 也没有 wall_s，未能纳入（会静默丢数据）：")
+        for n in skipped:
+            print("   %s" % n)
+    from collections import Counter
+    c = Counter(r.get("window_src") for r in rows)
+    print("写入 %s：%d 行，CONTESTED %d 行，watch %d 行；窗口来源 %s"
+          % (out_path, len(rows), nbad, nw, dict(c)))
     for r in rows:
         if r["verdict"] == "CONTESTED":
             print("  CONTESTED %-30s 峰值%d条  >=4条共%.0f分钟  τ₂=%.1f" % (
