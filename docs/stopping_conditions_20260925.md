@@ -7,7 +7,7 @@
 
 **现状：满足，且这一条有机械护栏。**
 
-- `check_paper_numbers.py`：**331 项检查、0 MISS**（56 项是「论文只印聚合值」的次要档，
+- `check_paper_numbers.py`：**351 项检查、0 MISS**（56 项是「论文只印聚合值」的次要档，
   逐条列出供扫一眼）。查的是【正文 ↔ 数据文件】的逐项一致。
   **2026-09-25 共新增 69 项**：归因表 12 行三列连查（此前**完全没有**检查）、
   §III 的三个例证、重复对散布、`replicates.csv` 区间、`superseded.csv`、
@@ -32,7 +32,7 @@
 
 ## 二、每一轮审查提的问题都已处置，或明确说明为何不处置
 
-**现状：满足到第 15 轮；第 16 轮（复读，只核处置）在跑。**
+**现状：满足到第 19 轮（全稿），全部处置。**
 
 | 轮次 | 记录 | 结果 |
 |---|---|---|
@@ -41,7 +41,8 @@
 | 第 13 轮（子 agent 复核 + codex） | `docs/finding_review_r13_disposition_20260924.md` | 7 条 major + 9 条 minor 全部处置；未处置项写明理由 |
 | 第 14 轮（codex） | `docs/finding_review_r14_disposition_20260924.md` | 3 项 MATCH、2 处改、2 处表述 |
 | 第 15 轮（codex + 子 agent 第 7 轮） | `docs/finding_review_r15_disposition_20260925.md` | 四条 major + 六条 minor 全部处置；codex 给 5–15%，主要驱动是 §III 一段残留 |
-| 第 16 轮（codex 复读） | `reviews/codex_r16_20260925.md` | 只核四条 major 是否处置到位 |
+| 第 16/17/18 轮（codex 复读） | `reviews/codex_r1[678]_20260925.md` | 逐轮核「九条判决」的限定是否到位；最后一轮 6 处里 5 处 RESOLVED、1 处 PARTIALLY，已再改 |
+| **第 19 轮（codex 全稿）** | `docs/finding_review_r19_disposition_20260925.md` | 5 条 major + 5 条 minor 全部处置；**其中两条 major 是我自己在这一轮引入的** |
 
 **本轮（bres_r2 落地）的处置**记在 `docs/finding_rerun_bres_20260925.md`，12 条连锁改动。
 
