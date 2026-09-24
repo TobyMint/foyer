@@ -56,6 +56,25 @@ def legend_below(ax, ncol=2, y=-0.26):
 
 
 # ---------------------------------------------------------------- 图 1：前沿
+
+# ------------------------------------------------- 受同机争用影响的 run
+def contested_runs():
+    """同机争用审计里判 CONTESTED 的 run（短名），用于在图上打标记。
+
+    为什么图 2/3 也要标：图 2 画的是 busy/idle 时长，而争用抬高 τ 会让 busy
+    变长；图 3 画的直接就是步时间。所以这两张图里那几条 run 的柱子/标记
+    本身就是被污染的读数，不标出来会让图比实际更干净（图 1 已先改过）。
+    """
+    import csv as _csv
+    p = os.path.join(HERE, "..", "data", "concurrency.csv")
+    try:
+        return {r["run"].replace("pois200_", "")
+                for r in _csv.DictReader(l for l in open(p) if not l.startswith("#"))
+                if r["verdict"] == "CONTESTED"}
+    except Exception:
+        return set()
+
+
 def fig_frontier():
     """C4：九条 Foyer 变体零条越过静态前沿。
 
@@ -145,7 +164,13 @@ def fig_decomp():
     ax.barh(y, idle, left=busy, color="#E8A33D",
             label="idle (no request in flight)", height=0.66)
     ax.set_yticks(list(y))
-    ax.set_yticklabels([short(r["run"]) for r in rows], fontsize=6.5)
+    _bad = contested_runs()
+    ax.set_yticklabels([short(r["run"]) + ("$^\\ddagger$" if r["run"] in _bad else "")
+                        for r in rows], fontsize=6.5)
+    for i, r in enumerate(rows):
+        if r["run"] in _bad:      # 受争用影响的柱子打斜线，与干净的一眼看得出
+            ax.barh(i, float(r["busy_min"]) + float(r["idle_min"]), height=0.66,
+                    color="none", edgecolor="0.25", hatch="////", lw=0.0, zorder=4)
     ax.invert_yaxis()
     ax.set_xlabel("sampled span (min)", labelpad=1)
     ax.set_xlim(0, 620)
@@ -188,8 +213,10 @@ def fig_steptime():
     ax.scatter([float(r["step_perreq_ms"]) for r in rows], y, marker="x", s=22,
                color=C_STATIC, linewidths=1.0, zorder=3,
                label="per-request (independent)")
+    _bad = contested_runs()
     ax.set_yticks(y)
-    ax.set_yticklabels([short(r["run"]) for r in rows], fontsize=6.5)
+    ax.set_yticklabels([short(r["run"]) + ("$^\\ddagger$" if r["run"] in _bad else "")
+                        for r in rows], fontsize=6.5)
     ax.invert_yaxis()
     ax.set_xlabel("step time (ms)", labelpad=1)
     ax.set_xlim(13, 39)
