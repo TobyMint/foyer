@@ -13,6 +13,24 @@
 判据：本脚本的输出必须与 `paper/data/runs_precise.csv` / `table1.csv` 逐位相符
 （容差 1e-3）。**跑完自己比对，不一致就以本脚本为准去查生成器。**
 
+## 「独立」到什么程度 —— 别把它读强了（2026-09-25 codex 第 21 轮）
+
+它**只独立在实现上**：不 import 任何生成器，插值、包络、墙钟、SLO 都另写一遍。
+所以它能抓到的分歧是【实现 bug】与【抄录错误】这两类 —— 那次 `short()` 把
+`pois200_` 前缀吃掉、以及手抄汇总表抄错列，都属这一类。
+
+它**独立不了的是假设**，因为它与 `frontier.py` 共用下面这些【输入与定义】：
+
+  - 同一批 `steps.jsonl`（同一份原始日志，谁都没做第二份测量）；
+  - 同样的字段口径（墙钟 = max(complete) − min(submit)；SLO = first_token_ms < 10s）；
+  - 同一份【预选好的】静态池 STATIC 与候选臂 ARMS —— 这两个列表本身就是判断，
+    不是从数据推出来的；
+  - 同一套「上左包络 + 分段线性插值」的前沿定义。
+
+也就是说：**如果前沿的定义选错了、或者该进 STATIC 的 run 漏了，本脚本会与生成器
+一致地错**，它不会报警。这一层只能靠人来质疑（§II 已经写明前沿是插值线而非实测点）。
+上界那一段现在会与 `reuse.csv` 的 `bound_tok` 对拍，不再只是打印。
+
 用法: python3 independent_frontier_check.py <trace.csv> <results_dir>
 """
 import csv, json, os, sys
@@ -47,6 +65,28 @@ def main():
     trace_p, root = sys.argv[1], sys.argv[2]
     pre, tot = bound(trace_p)
     print("复用上界 = %d / %d = %.4f  = %.2f%%" % (pre, tot, pre / tot, 100 * pre / tot))
+
+    # 上界也要【对拍】，不能只打印（codex 第 21 轮指出：这一段原来只 print，
+    # 于是上界算错了也没人拦）。reuse.csv 的 bound_tok / bound_frac 是正文那个
+    # 75.51% 的落盘处 —— 两边必须严格相等。
+    _rp = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "..", "..", "paper", "data", "reuse.csv")
+    if os.path.exists(_rp):
+        _rf = [r for r in csv.DictReader(l for l in open(_rp) if not l.startswith("#"))]
+        if _rf:
+            _bt = int(_rf[0]["bound_tok"])
+            _bf = _rf[0]["bound_frac"]
+            # bound_frac 是 4 位小数的【字符串】列，比到那一位为止 ——
+            # 拿 1e-9 去比 0.7551 与 0.755091 只会得到一次假警报（刚踩过）。
+            if _bt != pre or _bf != "%.4f" % (pre / tot):
+                raise SystemExit("!! 上界与 reuse.csv 不符：本脚本 %d / %.4f，"
+                                 "reuse.csv %d / %s —— 以本脚本为准去查 gen_reuse.py"
+                                 % (pre, pre / tot, _bt, _bf))
+            print("   与 reuse.csv 的 bound_tok/bound_frac 逐位相符（%d / %s）" % (_bt, _bf))
+        else:
+            print("   !! reuse.csv 里没有数据行，上界没对拍上")
+    else:
+        print("   !! 找不到 reuse.csv，上界没对拍上")
 
     pts = sorted((*wall_slo(root, "pois200_" + r), r) for r in STATIC)
     env, best = [], -1.0

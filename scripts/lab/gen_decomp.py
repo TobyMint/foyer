@@ -129,6 +129,19 @@ def busy_stats(rows_m, tokens):
     return span_min, busy_min, idle_min, idle_pct, running_all, running, step_back
 
 
+def busy_fraction(rows_m):
+    """busy 占比的【唯一实现】= busy 分钟 / 采样跨度分钟（按相邻采样实际间隔积分）。
+
+    `gen_arm_running.py` 与 `gen_a100.py` 都调它。原来这两个脚本各写了一份
+    「数 num_running>0 的采样个数 / 总采样数」，那等于假定采样间隔严格均匀 ——
+    正常时两个口径一致，但在边界与断档处会分叉（codex 第 21 轮实测 cap1：
+    区间积分 0.998027 对计数法 1.000000）。同一个量、两条管线，必须共用定义
+    （CLAUDE.md 纪律 2）。
+    """
+    span_min, busy_min, _idle, _pct = decompose(rows_m)
+    return busy_min / span_min if span_min else 0.0
+
+
 def main():
     root = sys.argv[1]
     out_path = sys.argv[2]

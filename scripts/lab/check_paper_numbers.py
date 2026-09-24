@@ -302,6 +302,17 @@ def main():
         if r.get("run") == "bres_r2":
             ck("§VI bres 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
 
+    # ---- elasticity.csv 表头：§IV 那句「覆盖整个控制器运行区间（1.35 到 1.69）」----
+    # 这个区间是【九条 Foyer 臂】的，不是 controller 族全体的（后者含重复臂 hz1_r2，
+    # R̄ 到 2.10）。表头两个集合都写出来了，这里查九条那个 —— 集合选错正是本项目
+    # 反复栽的坑，所以把它钉住。
+    _el = open(os.path.join(ROOT, "paper/data/elasticity.csv"), encoding="utf-8").read()
+    _mn = re.search(r"^# nine_foyer_arms_Rbar_min,([\d.]+)", _el, re.M)
+    _mx = re.search(r"^# nine_foyer_arms_Rbar_max,([\d.]+)", _el, re.M)
+    if _mn and _mx:
+        ck("§IV 控制器运行区间下界", "%.2f" % float(_mn.group(1)), "sec_criterion.tex")
+        ck("§IV 控制器运行区间上界", "%.2f" % float(_mx.group(1)), "sec_criterion.tex")
+
     # ---- elasticity_x.csv：§VI 的 realhr 控制器臂（含它那个不复现的越线）----
     for r in load(os.path.join(ROOT, "paper/data/elasticity_x.csv")):
         if r.get("kind") == "arm" and r["name"].startswith("realhr_foyer"):

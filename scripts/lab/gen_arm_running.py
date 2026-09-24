@@ -12,6 +12,9 @@ busy 条件均值 = 全时段均值 / busy 占比，与 gen_decomp.py 里 τ₁ 
 """
 import csv, os, statistics, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_decomp as _GD  # noqa: E402  busy 占比的共用定义
+
 # sf0_r2 与 hc_r2 必须在里面：归因表引用 sf0 的在跑数，而它原来不在本表里，
 # gen_attribution 于是静默回退到 occupancy.csv 的【全时段均值】口径（1.26），
 # 而其余 11 行都是 busy 条件口径（sf0 的 busy 值是 1.45）—— 口径混用（2026-09-24 审稿人抓）。
@@ -33,7 +36,12 @@ def one(path):
     if not rn:
         return None
     allm = statistics.mean(rn)
-    busy_frac = sum(1 for v in rn if v > 0) / len(rn)
+    # busy 占比走 gen_decomp.busy_fraction（相邻采样的实际间隔积分），
+    # **不**再自己数非零采样 —— 同一个量两条管线必须共用定义（CLAUDE.md 纪律 2）。
+    # 2026-09-25 codex 第 21 轮：计数法在这条表上给 cap1 1.000000、
+    # gen_decomp 给 0.998027。改动后 arm_running.csv 的 R̄busy 会动第 3 位小数，
+    # 正文印到 2 位，不受影响。
+    busy_frac = _GD.busy_fraction(_GD.read_metrics(path))
     return allm, (allm / busy_frac if busy_frac else 0.0), busy_frac
 
 

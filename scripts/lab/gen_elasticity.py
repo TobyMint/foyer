@@ -46,6 +46,11 @@ def main():
             if r["family"] == "controller" and not r["run"].startswith("aimd"):
                 cr.append(float(r["running_busy"]))
     assert cr, "读不到 arm_running.csv，先跑 gen_arm_running.py"
+    # 正文 §IV 的「九条 Foyer 臂」—— 与打印段共用同一个列表，不另写一份
+    NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
+            "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
+    nb = [float(r["running_busy"]) for r in csv.DictReader(
+        l for l in open(arm_csv) if not l.startswith("#")) if r["run"] in NINE]
     print()
     print("九条控制器的 Foyer 臂 R̄busy: %.2f ~ %.2f" % (min(cr), max(cr)))
     segs = [(1.00, 1.27, -0.21), (1.27, 1.53, 0.43), (1.53, 1.65, 1.15), (1.65, 1.85, 1.14)]
@@ -63,8 +68,18 @@ def main():
         f.write("# 故本曲线不用于解释控制器失败。\n")
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
+        # 【两个集合都报，并写清各是哪个】。2026-09-25：正文引的「控制器运行区间
+        # 1.35~1.69」是【九条 Foyer 臂】的区间，而 cr 是更宽的「controller 族、
+        # 非 aimd」—— 它含 foyer_hz1_r2（一条重复臂，R̄ 2.10）。只印一个 max
+        # 而不写集合，下一个人会以为正文区间写错了（或反过来照它去改正文）。
         f.write("# controller_arms_Rbar_min,%f\n" % min(cr))
         f.write("# controller_arms_Rbar_max,%f\n" % max(cr))
+        f.write("# controller_arms_set,controller 族且非 aimd（%d 条，含重复臂 hz1_r2/hc_r2 与 pairA/pairB_foyerhc）\n" % len(cr))
+        if nb:
+            f.write("# nine_foyer_arms_Rbar_min,%f\n" % min(nb))
+            f.write("# nine_foyer_arms_Rbar_max,%f\n" % max(nb))
+            f.write("# nine_foyer_arms_set,正文 §IV 引的那九条（不含 aimd / pair*_foyerhc / foyfix / 重复臂）\n")
+            f.write("# nine_foyer_arms_ge_1.53,%d\n" % sum(1 for x in nb if x >= 1.53))
     print("->", out)
 
 
