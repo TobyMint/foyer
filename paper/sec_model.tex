@@ -261,9 +261,11 @@ while the \emph{device} misses more than the device-only family's at every
 point (22.3--27.9\,M against 8.6--20.7\,M), because the host serves
 13--19\,M in front of the recomputation instead of letting the device keep
 it. A reader watching only the device hit rate would conclude the host tier
-made things worse. (The 92.6\% ceiling-on-prompt and the 75.5\% bound are not
-in competition: the first is what we measured, the second is what the trace
-permits; \texttt{reuse.csv} carries both columns and the raw counts.)
+made things worse. (Two denominators appear here and we name them: the 75.5\%
+is the trace's bound as a share of the prompt, and 92.6\% is the best observed
+reuse as a share of \emph{that bound}---the same run reuses 69.9\% of its
+prompt. \texttt{reuse.csv} carries \texttt{reuse\_frac} and
+\texttt{realized\_frac} side by side so the two cannot be confused.)
 
 This is the same collapse \S\ref{sec:related} reports under a different
 normalization. That section quotes the round-1-and-later prefix hit rate---%
