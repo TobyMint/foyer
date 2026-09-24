@@ -314,6 +314,15 @@ off} and no-gate-no-reservation), one to step cost, six have a $\tau$ no
 matched comparison can confirm, and three are residuals---their occupancy and
 their step cost both sit close to their comparison cap's, and their shortfall
 is real but we cannot say from these measurements which mechanism produced it.
+Two limits on what that buys, both of which we want read before the number is
+quoted. First, the comparison is a static cap matched on \emph{wall clock},
+and the arms that finish near 260 minutes are matched against \texttt{cap5},
+whose SLO is 27.1\%---so the classification describes an arm relative to a
+wall-clock peer, not relative to the static \emph{front}, and it cannot say
+why the arm fails to beat the front. Second, the two unused-memory rows run
+fewer requests than their comparison, which is a description of what they did,
+not a demonstration that doing otherwise would have won; \S\ref{sec:results}
+is the section that establishes the loss, and this table only sorts it.
 We publish the table rather than a summary because a summary would claim more
 than we have---and because ``two mechanisms explain the negative result''
 would be the wrong summary. We also flag what changed here, since an earlier

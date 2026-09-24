@@ -54,8 +54,8 @@ rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
 1.73, while the \emph{device} cache misses more. Two configurations at the
 same running count and the same pool occupancy realize 78.9\% and 91.1\% of
 the bound, so it is not how full the pool is but what happens when it
-overflows---though that pair is two runs on two days, so we also vary the pool
-size alone on one card as a capacity control; that experiment is queued and we
+overflows---though that pair is two runs on two days, so we also have a
+capacity control in the queue that changes the pool size alone on one card; we
 report it when it lands. Our controllers run on the host-tier configuration, where
 $\epsilon$ stays below one across their whole operating range, so the ceiling
 we measure on device-only caps is not what bounded them. It bounds what added concurrency is worth, not what a
@@ -64,8 +64,10 @@ memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
 four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
 system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
 
-The verdict that criterion returns here is negative, and we report it at that
-strength. Nine controller variants spanning four routes, plus a
+The verdict on the controllers is negative, and we report it at that
+strength. (The criterion of \S\ref{sec:criterion} is a diagnostic and does
+not return this verdict; \S\ref{sec:criterion} is explicit that it does not
+explain the failure.) Nine controller variants spanning four routes, plus a
 reimplementation of an independent congestion-based controller, none is
 above the static Pareto front at the latency threshold interactive serving
 cares about---the best misses it by under a point, on the below side of our

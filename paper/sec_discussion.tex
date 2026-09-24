@@ -325,7 +325,7 @@ matters more than the pool guard catches. An audit
 (\texttt{gen\_concurrency.py}, data in \texttt{paper/data/concurrency.csv})
 reconstructs, for every run, how many other runs were alive for how long. Runs
 that overlapped three or more others for at least an hour are flagged;
-twelve of ours are. The flag is a risk marker, not a measurement of damage,
+fourteen of ours are, two of which are failed runs we do not report. The flag is a risk marker, not a measurement of damage,
 and we treat it that way: three of the twelve (\texttt{F:t85}, \texttt{F:t90},
 \texttt{var\_foyer}) show no aggregate inflation at all, because their overlap
 was short relative to the run. Where the damage is legible it is large---the
