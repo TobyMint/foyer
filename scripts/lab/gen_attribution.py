@@ -95,10 +95,11 @@ def main():
         print("%-14s %7s %7s %8s %8s %9s %s" % (
             a, (runs[a]["slo_pct"]), o_a, r_a, t_a, near, cls))
     with open(out, "w", newline="") as f:
-        f.write("# 九臂逐项归因 —— 由 scripts/lab/gen_attribution.py 生成\n")
+        f.write("# 十二臂逐项归因 —— 由 scripts/lab/gen_attribution.py 生成\n")
         f.write("# 每个控制器臂对照墙钟最接近的静态臂\n")
-        f.write("# class: 内存没用满 = 在跑数明显低于对照；步成本更高 = 在跑数相当但 τ 高；\n")
-        f.write("#        残差 = 两个机制都不显著，只能作为观测报告\n")
+        f.write("# class 的阈值与正文逐字对应：在跑数 < 对照的 92% -> 内存没用满；\n")
+        f.write("#   τ₁ > 对照的 108% 且在跑数相差 <=8% -> 步成本更高；\n")
+        f.write("#   τ₁ 超 108% 但在跑数不可比 -> 步成本更高（但对照的在跑数不可比）；其余 -> 残差。\n")
         f.write("# contested: 与表 I 的 ‡ 同源（concurrency.csv）；CONTESTED 的 tau 列不可用\n")
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
