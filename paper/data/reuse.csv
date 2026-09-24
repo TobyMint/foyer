@@ -10,8 +10,11 @@
 #   注意【没有任何配置兑现到 1.0】：实测最好也只有 0.9255。
 #
 # 比例一律由未舍入的 *_tok 列算出。曾经拿舍入到 0.1M 的列算，cap1 印成 69.8%%（真值 69.9%%）。
-# contested: 该 run 是否落在主机争用窗口（见 concurrency.csv）；CONTESTED 的 tau1_ms 不可用，
-#            但 reuse/recompute 是体积量，实测与同族干净 run 一致。
+# contested: 该 run 是否落在主机争用窗口（见 concurrency.csv）。三档含义：
+#   clean     = 生命周期内同机 <3 条，未受影响
+#   watch     = 同机 >=3 条持续 >=60 分钟，但实测 tau2 未见整体抬升（cap1 即此档）
+#   CONTESTED = 同机 >=4 条持续 >=60 分钟，tau1_ms 这一列不可用；
+#               reuse/recompute 是体积量，实测与同族干净 run 一致。
 run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,realized_frac,tau1_ms,contested
 cap1,device_only,1.0,28527903,19935879,521,8592024,0.6988,0.9255,28.8,watch
 cap2,device_only,1.271,28503927,19303736,-270,9200191,0.6772,0.8962,27.4,clean

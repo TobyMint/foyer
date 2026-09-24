@@ -24,8 +24,9 @@ configuration in the table gets above the line, and the tightest pair we have
 is what makes us willing to say the near misses are misses. A fifth pair, two runs of \texttt{cap3}+HiCache, \emph{is} used, and an
 earlier draft of this paper wrongly set it aside saying one of them exceeded
 its own cap. That was a different run: the over-cap one is the device-only
-\texttt{cap3} repeat (peak in-flight five against a cap of three, 126
-over-cap samples), while both HiCache runs peak at three with none. The
+\texttt{cap3} repeat (peak in-flight five against a cap of three; at our
+300-point in-flight sample grid, 126 samples sit over the cap, a count that
+scales with the grid rather than with the run), while both HiCache runs peak at three with none. The
 repeat is also both faster and higher on SLO (230.3 minutes, 81.9\% against
 236.4 and 81.1\%), so by the same rule that displaced \texttt{cap4}+HiCache's
 first run it displaces this one---and moving that anchor is what puts our
