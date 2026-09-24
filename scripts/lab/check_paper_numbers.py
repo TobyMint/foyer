@@ -47,7 +47,11 @@ def has(text, v):
     try:
         float(s)
     except ValueError:
-        return s in text
+        # 非数字的复合串：**空白一律弹性**。LaTeX 源码会在词与词之间换行
+        # （「170.5, 173.2\nand 191.5」），字面查会莫名其妙地对不上
+        # （2026-09-25 改不放假窗口那三条时踩到）。
+        import re as _re2
+        return _re2.search(r"\s+".join(_re2.escape(w) for w in s.split()), text) is not None
     if "." in s:
         for d in (1, 2, 3, 4):
             t = "%.*f" % (d, float(s))
@@ -269,10 +273,27 @@ def main():
            "sec_results.tex")
 
     # ---- stall.csv：§V 的「不放行窗口」（2026-09-24 复核时原数字复现不出来，改用本表）----
-    for r in load(os.path.join(ROOT, "paper/data/stall.csv")):
-        if r["run"] in ("foyer_hz0", "foyer_breshz1", "foyer_rg4"):
-            ck("stall %s 窗口时长" % r["run"], r["max_s"], "sec_results.tex")
-            ck("stall %s 占墙钟%%" % r["run"], r["pct_wall"], "sec_results.tex")
+    # 正文把那三条写成【一句】：「170.5, 173.2 and 191.5\,s, 0.9--1.1\% of the run's
+    # wall clock」。逐条查 0.9 / 1.0 / 1.08 这种短值会撞车（--audit: "0.9" 出现 15 次），
+    # 所以照正文那句的形态拼一下再查。
+    _st = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/stall.csv"))}
+    _three = [r for r in ("foyer_hz0", "foyer_breshz1", "foyer_rg4") if r in _st]
+    if len(_three) == 3:
+        _s = sorted((float(_st[k]["max_s"]), float(_st[k]["pct_wall"])) for k in _three)
+        _e = sorted(float(_st[k]["pct_wall"]) for k in _three)
+        # 正文按这个顺序印三个时长（191.5 最后），先照数值升序拼，两种顺序都试
+        _a = "%.1f, %.1f and %.1f" % (_s[0][0], _s[1][0], _s[2][0])
+        _b = "%.1f, %.1f and %.1f" % (_s[2][0], _s[1][0], _s[0][0])
+        checks += 1
+        if not (has(P["sec_results.tex"], _a) or has(P["sec_results.tex"], _b)):
+            fails.append(("§V 三条臂的不放行窗口时长（升序或降序都试过）", _a, "sec_results.tex"))
+        ck("§V 三条臂的不放行窗口占墙钟区间",
+           "%.1f--%.1f" % (_e[0], _e[2]), "sec_results.tex")
+        # foyfix_hc 的「九条、合计 12%」：查复合串
+        if "foyfix_hc" in _st:
+            ck("§V 关掉全部节流的臂：九条窗口",
+               "%s of them" % {9: "nine"}.get(int(_st["foyfix_hc"]["n_windows"]), "?"),
+               "sec_results.tex")
 
     # ---- budget_sweep.csv（Route 3 的两条臂）----
     for r in load(os.path.join(ROOT, "paper/data/budget_sweep.csv")):
