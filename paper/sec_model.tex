@@ -49,8 +49,10 @@ direction or the other.
 Neither example is one of the damaged runs of \S\ref{sec:repro}; both are
 clean in the co-tenancy audit. Neither is a member of the controller family
 whose clean step-cost range that section quotes, either---the baseline is not
-a controller at all, and its 39.3\,ms comes with the highest running count we
-measure (1.91), while the throttle-free arm runs a different controller. The
+a controller at all, and its 39.2\,ms comes with the highest running count
+among the runs whose step cost we report (1.91), while the throttle-free arm
+runs a different controller. (The \texttt{horizon}=1 repeat reads 2.10, but its
+$\tau$ columns are the ones we exclude above.) The
 charge-free base arm is a third case, whose split we give in
 \S\ref{sec:results} with the re-measured numbers.
 
@@ -114,8 +116,9 @@ and take the median over steps with $\text{output\_len} \ge 32$.
 
 The two do not agree exactly, and the disagreement is informative rather than
 embarrassing. $\tau_1$ exceeds $\tau_2$ on every run we accept, by 7.7--39.7\%
-(\texttt{decomp.csv}, column \texttt{excess\_pct}), which in
-absolute terms is 2.6--8.2\,ms of a 27--37\,ms step. (The one run we exclude
+(\texttt{decomp.csv}, column \texttt{excess\_pct}, over the 27 runs that remain
+once the repeat excluded below is dropped), which in absolute terms is
+2.6--8.8\,ms of a 20.6--39.2\,ms step. (The one run we exclude
 from the reuse accounting, the \texttt{horizon}=1 repeat, reads 66.3\% here
 against its original's 18.5\%. The anomaly sits in the engine's token counters
 and in everything derived from them, so that is the scope of the exclusion:

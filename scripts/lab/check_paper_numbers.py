@@ -85,6 +85,34 @@ def main():
         else:
             fails.append((desc, val, where or "全篇"))
 
+    def ck_near(desc, val, where, keyword, window=260, tier="P"):
+        """值必须出现在【关键词附近】—— 补 `ck` 的假通过。
+
+        为什么要有：`ck` 是字符串级的，它只问「这个数在不在正文里」。
+        2026-09-25 抓到一个实例：§III 写基线步成本「39.3 ms」，而统一 τ₂ 定义后
+        `decomp.csv` 里它已经是 **39.2** —— `ck` 却通过了，因为「39.2」在
+        §V 的归因表里作为另一条臂的 Occ. 出现过。**同一个数在别处出现，
+        不等于它用在了这里。** 这正是本项目「从错的列抄数」那一类的镜像。
+        """
+        nonlocal checks
+        checks += 1
+        src = P.get(where, "") if where else alltext
+        i = src.find(str(keyword))
+        hit = False
+        while i >= 0:
+            lo, hi = max(0, i - window), i + window
+            if has(src[lo:hi], val):
+                hit = True
+                break
+            i = src.find(str(keyword), i + 1)
+        if hit:
+            if VERBOSE:
+                print("  OK   %-58s %s（近 %s）" % (desc, val, keyword))
+        elif tier == "S":
+            secondary.append((desc, val, where or "全篇"))
+        else:
+            fails.append((desc + "（须在「%s」附近）" % keyword, val, where or "全篇"))
+
     # ---- reuse.csv：兑现率 ----
     for r in load(os.path.join(ROOT, "paper/data/reuse.csv")):
         # 兑现率：表 2 印了 device-only 五行与 host tier 三个静态点，其余臂只进区间
@@ -311,6 +339,30 @@ def main():
             ck("§VI base 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
         if r.get("run") == "bres_r2":
             ck("§VI bres 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
+
+    # ---- §III 的 τ₁/τ₂ 三个派生区间（2026-09-25 发现集合没点名、值也对不上）----
+    # 原来写「2.6--8.2 ms of a 27--37 ms step」，而 decomp.csv 里排除 hz1_r2 后
+    # 差值是 2.6--8.8、τ₂ 是 20.6--39.2。**集合从来没写出来**，所以谁也没法复算。
+    _acc = [r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))
+            if r["run"] != "foyer_hz1_r2" and r["excess_pct"]]
+    if _acc:
+        _ex = [float(r["excess_pct"]) for r in _acc]
+        _gp = [float(r["step_back_ms"]) - float(r["step_perreq_ms"]) for r in _acc]
+        _t2 = [float(r["step_perreq_ms"]) for r in _acc]
+        ck("§III excess_pct 下界", "%.1f" % min(_ex), "sec_model.tex")
+        ck("§III excess_pct 上界", "%.1f" % max(_ex), "sec_model.tex")
+        ck_near("§III τ₁−τ₂ 下界", "%.1f" % min(_gp), "sec_model.tex", "absolute terms")
+        ck_near("§III τ₁−τ₂ 上界", "%.1f" % max(_gp), "sec_model.tex", "absolute terms")
+        ck_near("§III τ₂ 下界", "%.1f" % min(_t2), "sec_model.tex", "absolute terms")
+        ck_near("§III τ₂ 上界", "%.1f" % max(_t2), "sec_model.tex", "absolute terms")
+
+    # ---- §III 基线步成本那句：值必须出现在「baseline」附近 ----
+    # 2026-09-25：这句原来写 39.3，而统一 τ₂ 定义后 decomp.csv 里 default 的
+    # step_perreq_ms 是 39.2。`ck` 因为 39.2 在别处出现过而放过了它。
+    _dc = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    if "default" in _dc and _dc["default"]["step_perreq_ms"]:
+        ck_near("§III 基线步成本（τ₂）", _dc["default"]["step_perreq_ms"],
+                "sec_model.tex", "baseline")
 
     # ---- §VII 重写后新引的机制读数（闸门归因 + 占用投影）----
     # 2026-09-25 中立子 agent 第 9 轮指出：正文原来用「队列深 + 引擎只跑一个」
