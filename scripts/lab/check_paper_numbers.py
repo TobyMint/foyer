@@ -390,6 +390,20 @@ def main():
                "sec_discussion.tex")
             ck("§VII %s 队列最大" % _r, _bl[_r]["waiting_max"], "sec_discussion.tex")
 
+    # ---- §IV 的 HiCache 弹性曲线（首跑）与「换成重复也不改结论」那句 ----
+    import math as _m
+    _dd = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    _aa = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arm_running.csv"))}
+    def _eps(a0, a1):
+        t0 = float(_dd[a0]["step_back_ms"]); t1 = float(_dd[a1]["step_back_ms"])
+        r0 = float(_aa[a0]["running_busy"]); r1 = float(_aa[a1]["running_busy"])
+        return _m.log(t1 / t0) / _m.log(r1 / r0)
+    if {"pairB_cap2hc", "cap3_hc", "cap4_hc"} <= set(_dd) | set(_aa):
+        ck("§IV HiCache 首跑段 1", "%.2f" % _eps("pairB_cap2hc", "cap3_hc"), "sec_criterion.tex")
+        ck("§IV HiCache 首跑段 2", "%.2f" % _eps("cap3_hc", "cap4_hc"), "sec_criterion.tex")
+        ck("§IV HiCache 重复段 1", "%.2f" % _eps("pairB_cap2hc", "cap3_hc_r2"), "sec_criterion.tex")
+        ck("§IV HiCache 重复段 2", "%.2f" % _eps("cap3_hc_r2", "cap4_hc_r2"), "sec_criterion.tex")
+
     # ---- toolwait.csv ----
     for r in load(os.path.join(ROOT, "paper/data/toolwait.csv")):
         for c in ("demand_med_s", "demand_mean_s", "measured_mean_s"):
