@@ -2,6 +2,30 @@
 
 接手先读这一页。**当前在跑什么、下一步做什么、哪些数还不能用，都在这。**
 
+## 〇0、**A100 方向 D 跑起来了**（2026-09-25 02:47）
+
+之前两页说「A100 跑不了」，**两条理由都是错的，已更正**（`docs/a100_toolchain_20260925.md`）：
+
+1. 「A100 上没有 coder+YaRN 模型」—— 我只搜了 `/data/models`；模型其实在
+   `/data/xbw/turnstile/models/`，**trace md5 与 3090 侧逐位一致**。
+2. 「没有窗口」—— 旧判据的 `foreign` 是**全机合计**（GPU2 上有别人的 76G 就永远判不出来）。
+   新看门狗 02:25:11 判出真窗口，持续二十多分钟。
+
+真正的拦路石是 **SGLang 的 JIT kernel 要 C++20、而 A100 上只有 gcc 8/9**。
+修法：conda 装 gcc-12 + `NVCC_PREPEND_FLAGS="-ccbin ..."`（**只设 CUDAHOSTCXX 不够**，
+ninja 里写死了 nvcc 路径）。
+
+**跑的是**：`a100_cap4 → a100_cap3 → a100_cap5 → a100_cap2`，GPU0，
+device-only、memfrac 0.85、`EXPECT_POOL=0`（故意关守卫）。
+**池子 983,728 = 3090 的 9.70 倍** —— 同模型、同 trace、同引擎、同 memfrac，只改卡。
+
+预注册预测与判据写在 `docs/a100_toolchain_20260925.md`；
+分析脚本 `scripts/lab/gen_a100.py` → `paper/data/a100.csv`（**不进主表前沿**）。
+
+**顺带查到一条**：3090 的 `~/.cache/tvm-ffi/` 里是 **9 月 7 日编译的 kernel**，
+它跑的是陈旧缓存 —— 用今天这份源码它大概也编不过。与「四个 running copy 的 hash
+都与仓库不一致」同类。
+
 ## 〇a、审查状态（2026-09-25 00:5x）
 
 - **codex 第 15 轮：5–15%**（上一轮 20–35%）。四条 major，**两条是我改漏的**：
