@@ -122,6 +122,23 @@ def main():
             ck("foyer_hc 投影倍数", r["ratio"])
             ck("foyer_hc free%", r["free_pct"])
 
+    # ---- 图是否比数据旧 ----
+    # 2026-09-24 碰巧发现：数据在 19:05/19:22 改过而图停在 18:43，正文的数与图对不上，
+    # 而没有任何东西会提醒。图的输入是 decomp.csv / runs.csv / occupancy.csv 等。
+    figs = glob.glob(os.path.join(ROOT, "paper", "figs", "fig*.pdf"))
+    if figs:
+        newest_data = max((os.path.getmtime(f) for f in glob.glob(
+            os.path.join(ROOT, "paper", "data", "*.csv"))), default=0)
+        stale = [os.path.basename(f) for f in figs if os.path.getmtime(f) < newest_data]
+        checks += 1
+        if stale:
+            import datetime as _dt
+            fails.append(("图比 paper/data 旧（需重跑 make_figs.py）",
+                          "%d 张" % len(stale),
+                          _dt.datetime.fromtimestamp(newest_data).strftime("%H:%M")))
+        elif VERBOSE:
+            print("  OK   图不比数据旧")
+
     print("共 %d 项检查，%d 项没在正文里找到：" % (checks, len(fails)))
     for desc, val, where in fails:
         print("  MISS %-56s %-12s (%s)" % (desc, val, where))
