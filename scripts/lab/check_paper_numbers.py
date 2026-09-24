@@ -382,6 +382,14 @@ def main():
                 or (float(r["slo_pct"]) > _s0 and float(r["wall_min"]) <= _w0)]
         ck("摘要「not dominated」：支配 sf0_r2 的静态行数", str(len(_dom)), "main.tex")
 
+    # ---- backlog.csv：§VII 的「中位 66 对 16、最大 135 对 25」----
+    _bl = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/backlog.csv"))}
+    for _r in ("pois200_foyer_hc", "pois200_foyer_push_25"):
+        if _r in _bl:
+            ck("§VII %s 队列中位" % _r, "%.0f" % float(_bl[_r]["waiting_p50"]),
+               "sec_discussion.tex")
+            ck("§VII %s 队列最大" % _r, _bl[_r]["waiting_max"], "sec_discussion.tex")
+
     # ---- toolwait.csv ----
     for r in load(os.path.join(ROOT, "paper/data/toolwait.csv")):
         for c in ("demand_med_s", "demand_mean_s", "measured_mean_s"):
