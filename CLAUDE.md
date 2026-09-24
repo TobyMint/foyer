@@ -54,6 +54,15 @@
   症状：`steps.jsonl` 里 `connection closed before message completed` 在某个时刻
   突然成簇出现，`status=FAILED`；server 日志里 `Subprocess scheduler_0 crashed
   with exit code -15`。**这个 SIGTERM 是结果不是原因，别去查谁发的。**
+- **2026-09-24 追加：四条车道就算没被杀，数据也已经废了。** 审计（`scripts/lab/gen_concurrency.py`
+  → `paper/data/concurrency.csv`）查明：同机同时 ≥4 条 run 且持续 ≥60 分钟，
+  会把**逐请求 decode 间隔中位 τ₂ 抬高 25~40%**（30.9~33.3 ms vs 同族干净值 23.8~25.7）。
+  2~3 条不抬（pairB_foyerhc 3 条跑 277 分钟，τ₂=23.8，正常）。
+  **危险之处：引擎侧所有指标都看不出异常** —— `num_running_reqs`、占用率、驱逐量、
+  重算量在这四条臂上与干净 run 不可区分，只有客户端实测的 τ₂ 露馅。
+  四条控制器臂（bres/hz0/hz2/breshz1）因此作废并重跑（新名加 `_r2`）。
+  详见 `docs/finding_concurrency_contamination_20260924.md`。
+  **判据要按时长不按峰值**：`foyer_hz1` 峰值到过 4 条但只有 14 分钟，τ₂ 正常。
 - **跑实验时必须挂 `gpu_watch.py`**（2026-09-24 用户提出，已接入 `run_matrix.py`）：
   池子守卫只管【启动那一刻】，跑到一半别人往同一张卡上挂进程会静默污染这一段的
   tau / SLO / 墙钟，而数据看上去完全正常。watcher 每 15 秒记一次该卡的显存、
