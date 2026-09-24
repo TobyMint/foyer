@@ -165,10 +165,13 @@ contexts of live sessions, plus a reserve for their growth---at a median of
 occupancy at the same instants is 49{,}875 tokens: 48.2\% of that budget, or
 50.8\% of the pool, is idle. The
 projection is 1.79$\times$ the truth on this configuration. Across the
-seventeen controller runs we have projection logs for, the ratio runs from 1.24
-to 4.11 with a median of 1.59 (\texttt{projection.csv}), so 1.79 is this arm's
-value, not a constant of the design; the set is named here because the median
-moves with it---over every run in that file it is 1.40. Two terms produce the gap: charging every
+controller runs we have projection logs for, the ratio runs from 1.24 to 2.00
+with a median of 1.75 on this trace, and from 1.24 to 4.11 with a median of
+1.75 once the second trace's controller arm is included (\texttt{projection.csv};
+the second trace is the 4.11). So 1.79 is this arm's value, not a constant of
+the design, and we name the set because the range depends on it---over every
+run in that file, including the flash-crowd family and the 25-session tier, it
+is 1.01 to 4.11 with a median of 1.35. Two terms produce the gap: charging every
 live session its full context, when a parked session's KV is evictable and
 therefore absent from the engine's count, and the growth reserve, which alone
 is 26{,}762 tokens, 28\% of the budget.

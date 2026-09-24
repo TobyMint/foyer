@@ -85,7 +85,9 @@ for host co-tenancy but not measurably damaged by it, and we say which is
 which rather than counting it. They hold
 nearly half
 the pool idle while sessions queue---their own headroom estimate on the base
-configuration is 1.79$\times$ the truth (1.0--4.1$\times$ across all of them)---and the per-step elasticity measured on the
+configuration is 1.79$\times$ the truth (1.24--2.00$\times$ across the
+controller arms on this trace, and 1.01--4.11$\times$ over every controller run
+we logged, across all three trace families)---and the per-step elasticity measured on the
 configuration they actually run stays below one across their whole operating
 range, so the engine had room they did not take: the ceiling we measure on
 device-only caps does not survive on the host-tier configuration the
