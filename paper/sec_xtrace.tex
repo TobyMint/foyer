@@ -27,8 +27,17 @@ time, and the running counts are lower.
 \paragraph{The reuse accounting transfers in direction, not in level.} The
 second trace plans a higher reuse bound than the first---86.3\% of its prompt
 tokens against 75.5\%---and realizes less of it, at a lower device occupancy.
-Realization falls from 74.8\% to 67.5\% as the running count rises from 1.08 to
-1.29, so the direction of \S\ref{sec:model} survives. We do not compare the
+Realization falls from 74.8\% to 64.0\% as the running count rises from 1.08 to
+1.41, so the direction of \S\ref{sec:model} survives. What does \emph{not}
+survive is the shape. On the main trace the decline is a threshold: the
+per-unit slope is $-10.8$, $-41.0$, then $-157.4$ and $-126.7$ points per unit
+as the running count passes 1.53, which is the cliff \S\ref{sec:criterion}
+measures. Here the slope is roughly constant---$-31.3$, $-36.6$, $-28.4$---over
+a span that reaches 1.41, so at 1.41 this trace has lost more of its bound
+than the main trace had at 1.53 (36\% against 21\%) and has not yet begun to
+fall off a cliff. The cliff is a threshold that this trace has not reached at
+the running counts its own offered load produces; whether it has one at all,
+and where, is what the rest of the sweep is for. We do not compare the
 two traces' slopes: ours would be computed over different spans of the
 running-count axis, and the device-only family's overall slope
 ($-66.8$ points per unit over its whole range) is steeper than this trace's
