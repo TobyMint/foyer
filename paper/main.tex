@@ -34,16 +34,16 @@ The Memory Tier Sets the Cost of Concurrency in Agentic LLM Serving}
 \maketitle
 
 \begin{abstract}
-Agentic LLM sessions are long, multi-round jobs whose KV footprint grows every
-round, and on a memory-constrained accelerator the pool is the binding
+An agentic LLM session is a long, multi-round job whose KV footprint grows
+every round, and on a memory-constrained accelerator the pool is the binding
 resource. Admission control therefore looks like the obvious lever: a
 controller that reads engine telemetry and admits on measured capacity should
-beat a static cap. We give a measurement that says how much
-room there is, and show what happens when you build against it. Throughput during busy time is
+beat a static cap. We give a measurement that says how much room there is, and
+show what happens when you build against it. Busy-time throughput is
 $\overline{R}/\tau$---running requests over per-step cost---so raising
 concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
-$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero, busy-time throughput keeps
-converting; near one it does not. It is a property of the workload \emph{and}
+$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$: near zero it keeps
+converting, near one it does not. It is a property of the workload \emph{and}
 the engine configuration, not of the controller, and in our data what it tracks
 is the memory tier. The trace bounds reuse at 75.5\% of its prompt tokens, and no
 configuration we ran reaches that bound---the best realizes 92.5\% of it.
@@ -53,24 +53,23 @@ rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
 20.7\,M tokens); with a host tier the static points hold at 90.2--92.4\%
 between 1.25 and 1.73, and across the nineteen host-tier runs that completed
 this trace realization never falls below 72.8\%, while the \emph{device} cache
-misses more. Two configurations at the
-same running count and the same pool occupancy realize 79.0\% and 91.3\% of
-the bound, so it is not how full the pool is but what happens when it
-overflows---though that pair is two runs on two days, so we also have a
-capacity control in the queue that changes the pool size alone on one card; we
-report it when it lands. Our controllers run on the host-tier configuration, where
-$\epsilon$ stays below one across their whole operating range, so the ceiling
-we measure on device-only caps is not what bounded them: it bounds what added
-concurrency is worth, not what a whole run achieves---idle time and the SLO
-axis are separate. We measure $\epsilon$ on a
-memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
-four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
-system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
+misses more. Two configurations at the same running count and the same pool
+occupancy realize 79.0\% and 91.3\%---so it is not how full the pool is but
+what happens when it overflows. That pair is two runs on two days, and a
+capacity control that changes the pool size alone on one card is queued; we
+report it when it lands. Our controllers run on the host-tier configuration,
+where $\epsilon$ stays below one across their whole operating range, so the
+device-only ceiling is not what bounded them---it bounds what added concurrency
+is worth, not what a whole run achieves, since idle time and the SLO axis are
+separate. On a memory-bound agentic replay (200 sessions, one 24\,GB GPU, a
+pool that holds four median sessions) we measure $\epsilon$ at $0.38$ to
+$0.61$ depending on which step cost a system can observe: every 10\% of added
+concurrency buys 4--6\% of throughput.
 A second, real agent trace (117 Claude sessions, same engine and pool)
 reproduces both measurements in direction, neither in level: realization falls
-there too, and the elasticity there also turns positive---rising to 1.0 where
-the main trace's reaches 1.15---at a different running count and by an amount
-our own perturbation study cannot pin down.
+there too, and the elasticity there turns positive at a different running
+count---reaching 1.0 where the main trace reaches 1.15---by an amount our own
+perturbation study cannot pin down.
 
 The verdict on the controllers is negative, and we report it at that
 strength. (The criterion of \S\ref{sec:criterion} is a diagnostic; that
@@ -101,27 +100,22 @@ confirm, and leaves three as residuals we can measure and cannot yet
 explain. The single step-cost attribution it does make is on a run flagged
 for host co-tenancy but not measurably damaged by it, and we say which is
 which rather than counting it. A fourth flagged variant has been re-measured:
-it moved from 7.8 points below the front to 1.3, still below. They hold
-nearly half
-the pool idle while sessions queue---their own headroom estimate on the base
-configuration is 1.79$\times$ the occupancy the engine reports (1.32--1.90$\times$
-across the sixteen controller runs that finished on this trace, and
-1.01--4.11$\times$ over every finished controller run we logged), of which the
-growth reserve alone is 28\% of the budget---and the per-step elasticity measured on the
-configuration they actually run stays below one across their whole operating
-range, so the ceiling we measure on device-only caps is not what stopped them:
-they lost where added concurrency was still cheap. That rules an explanation
-out; it does not show they could have taken the room (\S\ref{sec:results}). The wall
-clock splits into busy and idle time; admission policy moves only the running
-count, and $\tau$ rises with it. The idle component (7.3--41.9\% of the
-sampled span) comes from gaps the tool waits set---an agent session issues no
-request while a tool runs,
-and that wait averages 16.85\,s over the controller's run against the
-15.82\,s the trace demands---the harness is exact on the run with no
-controller, so we attribute the extra 1.03\,s to admission delay rather than to
-the sub-second figure the trace's median suggests. How many such gaps a run
-collects is partly the policy's, since a policy sets how many sessions stay
-live. On device-only configurations we can account for the rise token for
+it moved from 7.8 points below the front to 1.3, still below. They hold nearly half the pool idle while sessions queue---their headroom
+estimate on the base configuration is 1.79$\times$ the occupancy the engine
+reports (1.32--1.90$\times$ over the sixteen controller runs that finished on
+this trace), of which the growth reserve alone is 28\% of the
+budget---and the per-step elasticity on the configuration they actually run
+stays below one across their whole operating range, so the device-only ceiling
+is not what stopped them: they lost where added concurrency was still cheap.
+That rules an explanation out; it does not show they could have taken the room
+(\S\ref{sec:results}). The wall clock splits into busy and idle time;
+admission policy moves only the running count, and $\tau$ rises with it. The idle component (7.3--41.9\% of the sampled span) comes from gaps the tool
+waits set---an agent session issues no request while a tool runs, and that wait
+averages 16.85\,s over the controller's run against the 15.82\,s the trace
+demands. The harness is exact on the run with no controller, so we attribute
+the extra 1.03\,s to admission delay rather than to the sub-second figure the
+trace's median suggests; how many such gaps a run collects is partly the
+policy's, since a policy sets how many sessions stay live. On device-only configurations we can account for the rise token for
 token; on host-tier ones part of it is co-tenancy we found late and part we
 still cannot attribute, and we say which is which. We also report the six of
 our own claims we retracted along the way, and the boundary of the verdict: at
