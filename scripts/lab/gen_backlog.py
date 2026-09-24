@@ -28,7 +28,8 @@ RUNS = ["pois200_foyer_hc", "pois200_foyer_hz1", "pois200_foyer_hz2",
         "load25c_budget3"]                # 更早一代的 25 档，正文引作 9--11 那条
 
 
-def waiting(d):
+def cycles(d):
+    """返回 [(ts, waiting_n)] —— 控制器每个 2 s 周期记一次。"""
     p = os.path.join(d, "controller.jsonl")
     v = []
     for line in open(p):
@@ -39,9 +40,27 @@ def waiting(d):
             x = json.loads(line)
         except ValueError:
             continue
-        if "waiting_n" in x:
-            v.append(x["waiting_n"])
+        if "waiting_n" in x and x.get("ts") is not None:
+            v.append((float(x["ts"]), x["waiting_n"]))
     return v
+
+
+def run_window(d):
+    """(最早提交, 最后完成) —— 从 steps.jsonl 取，与其它脚本的墙钟口径一致。"""
+    st = [json.loads(l) for l in open(os.path.join(d, "steps.jsonl")) if l.strip()]
+    subs = [s["submit_timestamp"] for s in st if s.get("submit_timestamp")]
+    comps = [s["complete_timestamp"] for s in st if s.get("complete_timestamp")]
+    if not subs or not comps:
+        return None
+    return min(subs), max(comps)
+
+
+def stats(v):
+    v_sorted = sorted(v)
+    return dict(samples=len(v), waiting_p50=statistics.median(v),
+                waiting_p90=v_sorted[int(0.9 * (len(v_sorted) - 1))],
+                waiting_max=max(v),
+                pct_nonzero="%.1f" % (100.0 * sum(1 for x in v if x > 0) / len(v)))
 
 
 def main():
@@ -61,31 +80,40 @@ def main():
         if d is None:
             missing.append(r)
             continue
-        v = waiting(d)
-        if not v:
+        cy = cycles(d)
+        if not cy:
             missing.append(r + "（日志里没有 waiting_n）")
             continue
-        v_sorted = sorted(v)
-        rows.append(dict(
-            run=os.path.basename(d), samples=len(v),
-            waiting_p50=statistics.median(v),
-            waiting_p90=v_sorted[int(0.9 * (len(v_sorted) - 1))],
-            waiting_max=max(v),
-            # 非零周期的占比：队列为空说明那一刻没有积压，是另一回事
-            pct_nonzero="%.1f" % (100.0 * sum(1 for x in v if x > 0) / len(v))))
+        # 【两个窗口都报】。codex 第 21 轮指出：只报「全部控制周期」会把
+        # 首个请求提交之前的空队列周期算进来（200 档 188/8784、25 档 112/931），
+        # 而那一段里队列必然为 0 —— 它拉低的是 25 档的中位（16 → 18）。
+        # 正文要比的是【运行期间】的队列长度，所以 run 窗口那一行才是主张的直接读数；
+        # 全周期那一行保留，是因为「这一次 run 从头到尾的队列有多长」本身也有人在问。
+        # 两个窗口 + 分母一起给，读者自己就能复算，不必猜我们挑了哪个。
+        win = run_window(d)
+        variants = [("all", [w for _, w in cy])]
+        if win:
+            variants.append(("run", [w for t, w in cy if win[0] <= t <= win[1]]))
+        for tag, v in variants:
+            if not v:
+                continue
+            rows.append(dict(run=os.path.basename(d), window=tag, **stats(v)))
     with open(out, "w", newline="") as f:
         f.write("# 准入队列长度（每个 2 s 控制周期记一次的 waiting_n）—— gen_backlog.py 生成，勿手改\n")
         f.write("# 用途：§VII 的「200 档等待会话中位 66 / 最大 135，同代 25 档中位 16 / 最大 25」，\n")
         f.write("#   以及「更早一代的 25 档读 9--11」。取舍：中位、p90、最大一起报（中位会骗人）。\n")
-        f.write("# 口径：全部控制周期，不做筛选 —— 它是「队列由节流制造」这个论点的读数本身。\n")
-        w = csv.DictWriter(f, fieldnames=["run", "samples", "waiting_p50", "waiting_p90",
-                                          "waiting_max", "pct_nonzero"])
+        f.write("# 口径：两个窗口都报，不挑一个 ——\n")
+        f.write("#   window=all  全部控制周期（含首个请求提交之前的空队列段）\n")
+        f.write("#   window=run  只算 [最早提交, 最后完成] 之间的周期（正文之比用这个）\n")
+        f.write("# 两个窗口的分母都在 samples 列里，读者可复算。\n")
+        w = csv.DictWriter(f, fieldnames=["run", "window", "samples", "waiting_p50",
+                                          "waiting_p90", "waiting_max", "pct_nonzero"])
         w.writeheader()
         w.writerows(rows)
     print("写入 %s：%d 行" % (out, len(rows)))
     for r in rows:
-        print("  %-20s 采样 %-6s 中位 %-5s p90 %-5s 最大 %-5s（非零 %s%%）" % (
-            r["run"], r["samples"], r["waiting_p50"], r["waiting_p90"],
+        print("  %-20s %-5s 采样 %-6s 中位 %-5s p90 %-5s 最大 %-5s（非零 %s%%）" % (
+            r["run"], r["window"], r["samples"], r["waiting_p50"], r["waiting_p90"],
             r["waiting_max"], r["pct_nonzero"]))
     if missing:
         print("!! 没写进去（本地镜像没有，或日志里没这个字段）：")

@@ -404,13 +404,32 @@ def main():
                 or (float(r["slo_pct"]) > _s0 and float(r["wall_min"]) <= _w0)]
         ck("摘要「not dominated」：支配 sf0_r2 的静态行数", str(len(_dom)), "main.tex")
 
-    # ---- backlog.csv：§VII 的「中位 66 对 16、最大 135 对 25」----
-    _bl = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/backlog.csv"))}
+    # ---- backlog.csv：§VII 的队列长度 ----
+    # 每个 run 两行：window=run（[最早提交, 最后完成]，与全篇墙钟同一窗口）与
+    # window=all（全部控制周期）。**正文主张用 run 那一行**；all 那一行是稳健性对照，
+    # 只以「4.1 而不是 3.7」和两个分母的形式出现。
+    # 2026-09-25 codex 第 21 轮指出：只报全周期会把首个请求提交之前的空队列算进来，
+    # 而 25 档短，那一段占它 12% 的周期（200 档只占 2%），于是中位从 18 掉到 16。
+    # 键改成 (run, window) —— 原来按 run 建字典会静默只留后一行。
+    _bl = {(r["run"], r["window"]): r
+           for r in load(os.path.join(ROOT, "paper/data/backlog.csv"))}
     for _r in ("pois200_foyer_hc", "pois200_foyer_push_25"):
-        if _r in _bl:
-            ck("§VII %s 队列中位" % _r, "%.0f" % float(_bl[_r]["waiting_p50"]),
+        if (_r, "run") in _bl:
+            _k = _bl[(_r, "run")]
+            ck("§VII %s 队列中位（运行窗口）" % _r, "%.0f" % float(_k["waiting_p50"]),
                "sec_discussion.tex")
-            ck("§VII %s 队列最大" % _r, _bl[_r]["waiting_max"], "sec_discussion.tex")
+            ck("§VII %s 队列最大（运行窗口）" % _r, _k["waiting_max"], "sec_discussion.tex")
+            # 运行窗口的周期数正文不逐条印（印的是全周期数 + 窗口外的条数，
+            # 两者相减就是它）。降为次要档，别拿「没印」当 MISS。
+            ck("§VII %s 周期数（运行窗口）" % _r, _k["samples"], "sec_discussion.tex", tier="S")
+        if (_r, "all") in _bl:
+            _a = _bl[(_r, "all")]
+            ck("§VII %s 队列中位（全周期）" % _r, "%.0f" % float(_a["waiting_p50"]),
+               "sec_discussion.tex")
+            ck("§VII %s 队列最大（全周期）" % _r, _a["waiting_max"], "sec_discussion.tex")
+            ck("§VII %s 周期数（全周期）" % _r, _a["samples"], "sec_discussion.tex")
+            ck("§VII %s 窗口外的周期数" % _r,
+               int(_a["samples"]) - int(_k["samples"]), "sec_discussion.tex")
 
     # ---- §IV 的 HiCache 弹性曲线（首跑）与「换成重复也不改结论」那句 ----
     import math as _m
