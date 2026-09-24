@@ -498,10 +498,12 @@ of the wall clock that makes the cancellation measurable. That decomposition
 holds, and the cost it measures is real, but it is not the whole reason and on
 the configuration our controllers run it is not the binding one: there the
 elasticity stays below one across the operating range, so added concurrency was
-still cheap and the engine had room. Our controllers did not take it. What we
+still cheap---they did not lose where concurrency was expensive, though that is
+not the same as showing they could have won elsewhere. What we
 can say at the end is narrower than what we set out to say: on this hardware and
 this workload, the admission rules we could build and tune did not beat a static
-cap, the capacity estimate they act on is 1.79$\times$ the truth, and a
+cap, the capacity estimate they act on is 1.79$\times$ the occupancy the engine
+reports, and a
 structural idle component that no policy we built recovers at a profit remains.
 The regime in which adaptivity should have paid---where the same switch is worth
 $+51\%$ on the light tier and $-42\%$ on the heavy one, a comparison that spans

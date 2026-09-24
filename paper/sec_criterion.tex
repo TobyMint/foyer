@@ -50,10 +50,11 @@ recomputation effect: \S\ref{sec:model} measures that those runs recompute what
 they evict, while under HiCache the host tier absorbs it. The cliff does not
 survive on the configuration our controllers actually use. So the criterion
 does \emph{not} explain why they lose---on their own configuration they were
-not in a region where added concurrency was self-defeating, and the engine had
-room they did not take. What the measurement does is rule one explanation out.
-The failure is not that this workload denies admission control its lever; it is
-that our controllers do not pull the lever they have, which is what
+not in a region where added concurrency was self-defeating. What the
+measurement does is rule one explanation out. It does not establish the
+opposite (\S\ref{sec:results}); the failure is not that this workload denies
+admission control its lever, but that we could not build a rule that uses it well,
+which is what
 \S\ref{sec:results:idle-memory} and the attribution of
 \S\ref{sec:results:attribution} measure directly.
 
