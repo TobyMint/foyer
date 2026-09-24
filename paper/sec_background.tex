@@ -118,27 +118,26 @@ more than once ranges from 0.5\,pp to 5.1\,pp, so for some configurations
 the band is generous and for others it is far too narrow. We flag this as a
 weakness of the criterion, not a defence of it. One further property of the
 envelope deserves flagging, because
-three of the rows in Table~\ref{tab:runs}'s controller section finish slower
-than 295 minutes---two of the nine variants plus the all-throttles-off arm,
+two of the rows in Table~\ref{tab:runs}'s controller section finish slower
+than 295 minutes---one of the nine variants plus the all-throttles-off arm,
 which runs a different controller. Its
 right-hand segment runs from \texttt{cap2}+HiCache at 295 minutes to
 \texttt{cap1} at 527, and \texttt{cap1} is the only anchor there that runs
-\emph{without} HiCache. Those three---\texttt{hz2},
-\texttt{breshz1} and \texttt{foyfix}---are therefore judged against an
+\emph{without} HiCache. Those two---\texttt{breshz1}
+and \texttt{foyfix}---are therefore judged against an
 interpolation between one host-tier point and one device-only point. If the
 envelope is drawn from the host-tier anchors alone, that segment does not exist
-and those three cannot be adjudicated at all; drawn from device-only anchors
+and those two cannot be adjudicated at all; drawn from device-only anchors
 alone, they sit further below. We report the conservative reading and note that
-the honest statement about those three is \emph{below the front as we defined
-it}, not \emph{below every static configuration}. A fourth arm,
-\texttt{bres}, sat in the same position in an earlier version of this
-paper; its re-measured value is 265.9 minutes, which puts it back inside the
-device-only range, so the class has three members and not four. Two of the
-three
-(\texttt{hz2}, \texttt{breshz1}) were also measured under host
-co-tenancy and are marked $^\ddagger$ in Table~\ref{tab:runs}; whether they
-are slower than 295 minutes at all is one of the things the re-runs will
-settle. The front and every
+the honest statement about those two is \emph{below the front as we defined
+it}, not \emph{below every static configuration}. Three arms sat in the same
+position in earlier versions of this paper---\texttt{bres}, \texttt{hz0} and
+\texttt{hz2}---and their re-measured values, 265.9, 264.2 and 271.0 minutes,
+put all three back inside the device-only range, so the class has two members
+and not five. Of those two, \texttt{breshz1} was
+also measured under host co-tenancy and is marked $^\ddagger$ in
+Table~\ref{tab:runs}; whether it is slower than 295 minutes at all is one of
+the things the re-runs will settle. The front and every
 controller's signed distance are computed by one script from the raw per-step
 logs; the table generator computes the distance for the four runs that did not
 complete all 999 steps---both are named in \S\ref{sec:repro}---and that

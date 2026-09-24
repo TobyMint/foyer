@@ -1,7 +1,10 @@
-# horizon 扫描：增长预留宁可留几轮（默认 3）
-# 同代码代；foyer_hz0=995 步、foyer_hz2=997 步（未跑满），foyer_hz1/foyer_hc=999 步
+# growth reserve 的 horizon 扫描 —— gen_horizon.py 生成，勿手改
+# 四个点只改 horizon= 这一个参数；数据源是 table1.csv（已含重跑后的值）。
+# ⚠ 这张表原来【没有生成器】、是手维护的，于是重跑落地后它和图 6 都留着旧读数，
+#   图注里「两轮比三轮慢 15 分钟」在新数据下是反的（2026-09-25 codex 第 23 轮）。
+# conc 列与表 I 同一口径（live 会话数，不是 sglang:num_running_reqs）。
 horizon,run,wall_min,slo_pct,conc
-0,foyer_hz0,290.0,77.2,2.69
+0,foyer_hz0_r2,264.2,79.8,2.64
 1,foyer_hz1,255.8,84.8,2.58
-2,foyer_hz2,306.1,86.9,2.22
+2,foyer_hz2_r2,271.0,87.7,2.28
 3,foyer_hc,291.3,89.8,2.06

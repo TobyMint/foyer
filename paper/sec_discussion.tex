@@ -400,7 +400,7 @@ and we treat it that way: five of the twelve (\texttt{F:t85}, \texttt{F:t90},
 no aggregate inflation at all, because their overlap was short relative to the
 run or did not touch their decode interval. Where the damage is legible it is large---the
 per-request decode interval $\tau_2$, measured client-side and never touching
-the sampler, sits at 30.9--33.3\,ms for the three affected arms still carrying
+the sampler, sits at 30.9--33.3\,ms for the one affected arm still carrying
 the flag in
 Table~\ref{tab:runs} against 23.7--25.0\,ms across the seven clean runs of the
 same controller family. That is an inflation of 24 to 41\% \emph{across arms},
@@ -427,12 +427,14 @@ eleven are arms we do not report here. The flag is a window, and only one of
 those three is actually damaged---the controller variant whose $\tau_2$
 is 30.9--33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
 inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
-Two further rows carried the flag and the damage, and have been re-measured
+Three further rows carried the flag and the damage, and have been re-measured
 alone under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
-$\tau_2$ is 24.8\,ms, and \texttt{horizon}=0 at 25.5\,ms. Their rows in
+$\tau_2$ is 24.8\,ms, \texttt{horizon}=0 at 25.5\,ms, and
+\texttt{horizon}=2 at 24.0\,ms. Their rows in
 Table~\ref{tab:runs} now carry the clean numbers, and the conclusions that
 rested on them---\texttt{bres}'s step-cost attribution and the route-1
-comparison of \S\ref{sec:results}, and \texttt{horizon}=0's move out of the
+comparison of \S\ref{sec:results}, and the move of \texttt{horizon}=0 and
+\texttt{horizon}=2 out of the
 $\tau$-high column into \texttt{unused mem.} in
 \S\ref{sec:results:attribution}---are restated in those sections rather than
 left provisional. The remaining two damaged rows are still being re-measured,

@@ -23,9 +23,10 @@ is not dominated either.)
 We take the envelope as the baseline because it is the stricter of the two
 readings, and \S\ref{sec:bg} states what that choice costs us.
 
-The six, and why not the other three: those carry the co-tenancy flag of
-Table~\ref{tab:runs}, their wall clock, SLO and $\Delta$ are not comparable
-with the rest, and their verdict is \emph{provisional}. The one re-measurement we have moved our way---co-tenancy
+The eight, and why not the other one: it carries the co-tenancy flag of
+Table~\ref{tab:runs}, its wall clock, SLO and $\Delta$ are not comparable
+with the rest, and its verdict is \emph{provisional}. The three re-measurements
+we have moved our way---co-tenancy
 inflates the step cost, which pushes an arm \emph{down}, so their measured
 distances overstate how far
 below the line they are---but that is one data point, and co-tenancy could in
@@ -138,8 +139,8 @@ appearance of the mechanism that drives the whole frontier.
   \S\ref{sec:results}, an earlier cap-3 run, and the two matched-pair arms
   whose numbers \S\ref{sec:results} cites as extra repeats of the base
   configuration. Where we cite any of them we name them.
-  Four runs stopped short of 999 (\texttt{hz0} 995, \texttt{hz2} 997,
-  \texttt{rg4} 998, and the no-control baseline 997); they are listed with
+  Two runs stopped short of 999 (\texttt{rg4} 998 and the no-control
+  baseline 997); they are listed with
   their measured values. Our verdict script excludes runs below 999 steps
   from its verdict table, so these four are not judged against the front
   there; their \texttt{$\Delta$} here is computed from the same
@@ -220,10 +221,10 @@ of four, at 209.1 minutes---runs at 71.9\%, and its first run at 70.2\%. Occupan
 and running requests track each other reliably across the arms we have (the two
 columns in \texttt{occupancy.csv} rank the twenty-three arms we have almost
 identically, Spearman $\rho=0.95$), but
-running count does \emph{not} order wall clock: \texttt{horizon}=2 runs 1.25
+running count does \emph{not} order wall clock: \texttt{horizon}=2 runs 1.21
 requests against the base arm's 1.14 (the all-samples mean, the column
 \texttt{occupancy.csv} carries; \S\ref{sec:model} uses the busy-conditional
-one) and finishes 15 minutes slower. That gap is
+one) and finishes 20 minutes faster. That gap is
 what the next subsection is about.
 
 The controller believes it is nearly full. Its own decision log records the
@@ -334,8 +335,9 @@ The second is that under-use does \emph{not} order the outcomes, so it is not
 the whole explanation either. \texttt{horizon}=1 and \texttt{cap3}+HiCache sit
 at the same median occupancy (57.8\% of the pool) and the same mean running
 count (1.52 against 1.51 on the busy-time measure of \S\ref{sec:model}), and
-the cap is 19 minutes faster. \texttt{hz0} runs
-at 64.1\%, higher than that cap, and is 54 minutes slower. Occupancy buys
+the cap is 19 minutes faster. Its re-measured
+\texttt{horizon}=0 arm runs at 58.1\%, below that cap, and is 28 minutes
+slower. Occupancy buys
 running requests reliably---\texttt{occupancy.csv}'s occupancy and
 running-count columns track
 each other across all twenty-three arms---but converting running requests into wall
@@ -360,8 +362,8 @@ requests, and to the step-cost mechanism if it runs a comparable number---%
 within 8\%---at a measurably higher cost (more than 8\% higher $\tau_1$).
 Everything else is a residual. The rule reads the running count and
 $\tau_1$ only; it does not consult occupancy, so the ``unused memory'' label
-is licensed by the running count alone---though the three arms it lands on also
-sit well below their comparison's occupancy (54.5, 56.2 and 62.1 against
+is licensed by the running count alone---though the five arms it lands on also
+sit below their comparison's occupancy (52.4 to 62.1 against
 74.3\%), which is why we let the name stand. The comparability clause is load-bearing and we
 state it because an earlier version of this table did not enforce it, which
 classified every arm that ran \emph{more} requests than its comparison as
@@ -393,8 +395,8 @@ step-cost purely because $\tau$ rises with the running count.
 $^\ddagger$ marks runs measured while three or more other engine instances shared
 the host for at least an hour (\S\ref{sec:repro}). In this table the flag bites
 harder than in Table~\ref{tab:runs}, because the classification is made on
-$\tau_1$, which is exactly the column co-tenancy inflates. Two of the three
-$\tau$-high rows carry it, and so does the one step-cost attribution the
+$\tau_1$, which is exactly the column co-tenancy inflates. One of the three
+$\tau$-high rows carries it, and so does the one step-cost attribution the
 procedure makes---AIMD at its published parameters. That row is flagged by the
 window but not measurably damaged: its $\tau_2$, which does not touch the
 sampler, is 24.4\,ms, inside the clean family's range. We report it as flagged
@@ -416,7 +418,7 @@ quoted. First, the comparison is a static cap matched on \emph{wall clock},
 and the arms that finish near 260 minutes are matched against \texttt{cap5},
 whose SLO is 27.1\%---so the classification describes an arm relative to a
 wall-clock peer, not relative to the static \emph{front}, and it cannot say
-why the arm fails to beat the front. Second, the three unused-memory rows run
+why the arm fails to beat the front. Second, the five unused-memory rows run
 fewer requests than their comparison, which is a description of what they did,
 not a demonstration that doing otherwise would have won; \S\ref{sec:results}
 is the section that establishes the loss, and this table only sorts it.
@@ -493,11 +495,13 @@ over rounds $\ge 1$ in the trace), so the controller reserves
 capacity for the next \texttt{horizon} rounds. We swept the horizon over
 $\{0,1,2,3\}$ and the reserve is not a free parameter to be minimised:
 Fig.~\ref{fig:horizon} shows the response is non-monotone. Removing the
-reserve entirely costs 12.6\,pp of SLO, and a reserve of two rounds is
-15 minutes \emph{slower} than three. The optimum is at one round, and there it comes closest to the
-static front---0.93\,pp below it, inside the tie band---and that single point is
-the one this paper spends the most words on, because it does not reproduce: the
-repeat of this configuration lands 5.6\,pp below the line
+reserve entirely costs 10.0\,pp of SLO. The response is non-monotone in wall
+clock too---one round is the fastest point here, two rounds is 20 minutes
+\emph{faster} than three, and none of the four beats the base on the SLO
+axis---and the point that comes closest to the static front is
+\texttt{horizon}=2 at $0.30$\,pp below it, inside the tie band. The one round
+optimum is the point this paper spends the most words on, because it does not
+reproduce: the repeat of that configuration lands 5.6\,pp below the line
 (\S\ref{sec:results}). Read the sweep as a shape, not as a result at its
 minimum.
 
@@ -628,10 +632,12 @@ a tightening is another cap.
   \centering
   \includegraphics[width=\columnwidth]{figs/fig6_horizon.pdf}
   \caption{The growth reserve is not a free parameter. Removing it costs
-  12.6\,pp of SLO; two rounds is 15 minutes slower than three. The optimum at
-  one round comes closest to the static front, 0.9\,pp below it---and is the
-  one point here that does not reproduce on a repeat (it lands 5.6\,pp
-  below).
+  10.0\,pp of SLO, and the response is non-monotone in wall clock: one round
+  is fastest, and two rounds is 20 minutes \emph{faster} than three. The point
+  that comes closest to the static front is two rounds, 0.30\,pp below
+  it---while the one-round optimum, the fastest point here, is 0.9\,pp below
+  and is the one point that does not reproduce on a repeat (it lands
+  5.6\,pp below).
   The other three settings were each run once, so the shape is better
   supported than any single point on it.}
   \label{fig:horizon}

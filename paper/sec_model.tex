@@ -63,8 +63,8 @@ charge-free base arm is a third case, whose split we give in
   \S\ref{sec:model} and \S\ref{sec:results}, ordered by total duration. Idle is 7.3\% for the fastest configuration and
   36.3\% for the slowest. Note the no-control baseline: it sits sixth of
   twenty-eight on idle share (11.4\%) and yet sixteenth on duration, because
-  its busy time grows with everything it admits. Five bars are hatched---the
-  same $^\ddagger$ flag as in Table~\ref{tab:runs}: three of the five have a
+  its busy time grows with everything it admits. Three bars are hatched---the
+  same $^\ddagger$ flag as in Table~\ref{tab:runs}: one of the three has a
   measurably inflated step cost and two are flagged windows that left no
   measurable trace (\S\ref{sec:repro}).}
   \label{fig:decomp}
@@ -154,9 +154,9 @@ exists in our data; instrumenting this is future work.
   decode interval. They do not agree---$\tau_1$ exceeds $\tau_2$ by 8--40\%---
   and the gap is consistent with the prefill share, not measurement error;
   \S\ref{sec:model} bounds that share rather than identifying it. The dotted line is
-  the cost of reading the weights once; every run sits above it. Five rows are
+  the cost of reading the weights once; every run sits above it. Three rows are
   marked $^\ddagger$---measured while other jobs shared the host
-  (\S\ref{sec:repro})---and three of the five have a measurably inflated step
+  (\S\ref{sec:repro})---and one of the three has a measurably inflated step
   cost, which is why the marked rows cluster at the high end; the other two
   carry the flag without measurable damage.}
   \label{fig:steptime}
@@ -175,7 +175,7 @@ $\varepsilon = 0.38$ for $\tau_1$ and $0.61$ for $\tau_2$
 
 The relation is a trend, not a law. Two host-tier configurations with similar
 running counts behave differently: \texttt{cap4\_hc} runs 1.73 requests at
-29.8\,ms while \texttt{F:hz0} runs 1.66 at 35.7\,ms. Running count sets a
+29.8\,ms while \texttt{F:hz0} runs 1.58 at 30.2\,ms. Running count sets a
 floor and a trend, not a value---and on the host-tier family, as we show below,
 it does not set the value at all.
 
@@ -442,9 +442,12 @@ and the number of gaps is partly the policy's.
 We note one claim we had to drop here. An earlier draft reported that idle
 fraction falls monotonically with mean concurrency. With the full data it does
 not: on the busy-conditional measure this section uses throughout,
-\texttt{F:hz0} at $\overline{R}_{\text{busy}}$ 1.66 idles 15.2\% while
-\texttt{cap4} at 1.65 idles 10.4\%---more concurrency and \emph{more} idle,
-the reverse of the reported trend. (The two arms read 1.41 and 1.48 on the
+\texttt{no gate, no resv.} at $\overline{R}_{\text{busy}}$ 1.68 idles 20.7\%
+while \texttt{cap4} at 1.65 idles 10.4\%---more concurrency and \emph{more}
+idle, the reverse of the reported trend. (The arm we used for this example in
+an earlier draft, \texttt{horizon}=0, no longer serves: re-measured clean it
+reads 1.58 and 16.9\%, i.e.\ \emph{less} concurrency and more idle, which
+demonstrates nothing either way.) (The two arms read 1.33 and 1.48 on the
 all-samples mean, where the ordering happens to run the other way;
 \texttt{arm\_running.csv} carries both conventions side by side, and we name
 the one each claim uses.) The weaker statement that survives is the one we use---%

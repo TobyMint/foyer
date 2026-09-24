@@ -490,6 +490,47 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- §III 的两个例证（重测后都换过/改过数）----
+    # 2026-09-25 codex 第 23 轮：这两处原来用旧 hz0 的数，而重测后
+    # ①「两个相似在跑数」那例变成 1.58 / 30.2 ms；
+    # ②**非单调反例失效了** —— 旧 hz0（1.66）比 cap4（1.65）并发高且空转多，
+    #   新 hz0_r2 是 1.58 / 16.9%，成了「并发更低、空转更多」，什么也证明不了。
+    #   换成 no gate（1.68 / 20.7%）对 cap4（1.65 / 10.4%）。
+    _a3 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arm_running.csv"))}
+    _d3 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    for _k in ("foyer_nogate", "cap4", "foyer_hz0_r2", "cap4_hc"):
+        if _k in _a3 and _k in _d3:
+            ck_near("§III %s 的空转%%" % _k, "%.1f" % float(_d3[_k]["idle_pct"]),
+                    "sec_model.tex", "idle")
+            # ⚠ 关键词不要带反斜杠 —— 在 heredoc 里 `\t` 会变成制表符，
+            # 匹配不上还看不出来（2026-09-25 刚踩）。用纯文本词。
+            ck_near("§III %s 的 R̄busy（两位）" % _k, "%.2f" % float(_a3[_k]["running_busy"]),
+                    "sec_model.tex",
+                    "idles" if _k in ("foyer_nogate", "cap4") else "requests at")
+
+    # ---- horizon 扫描（图 6）----
+    # 2026-09-25 codex 第 23 轮：这张表原来【没有生成器】、是手维护的，
+    # hz0/hz2 被重跑替代后它和图 6 都还留着旧读数，图注里「两轮比三轮慢 15 分钟」
+    # 在新数据下是【反的】。现已由 gen_horizon.py 从 table1.csv 生成，这里逐项钉住。
+    _hz = load(os.path.join(ROOT, "paper/data/horizon.csv"))
+    if _hz:
+        _base = [r for r in _hz if r["horizon"] == "3"]
+        _h0 = [r for r in _hz if r["horizon"] == "0"]
+        _h1 = [r for r in _hz if r["horizon"] == "1"]
+        _h2 = [r for r in _hz if r["horizon"] == "2"]
+        if _base and _h0:
+            ck("图6 去掉预留损失的 SLO（10.0）",
+               "%.1f" % (float(_base[0]["slo_pct"]) - float(_h0[0]["slo_pct"])), "sec_results.tex")
+        if _base and _h2:
+            ck("图6 两轮对三轮的墙钟差（快 20 分）",
+               "%.0f" % abs(float(_h2[0]["wall_min"]) - float(_base[0]["wall_min"])),
+               "sec_results.tex")
+        if _h1:
+            ck("图6 一轮的墙钟", _h1[0]["wall_min"], "sec_results.tex")
+        # ⚠ 不要为图 6 的四个墙钟各加一条 ck_near —— 图注本来就不逐条印它们，
+        # 硬钉只会得到假 MISS（2026-09-25 加这块时先写错了，四条全 MISS）。
+        # 图与 horizon.csv 的一致性由「图不比 paper/data 旧」那条覆盖。
+
     # ---- §III「未解释」段的回归（τ₁ ~ 重算量，18 条干净 host-tier）----
     # 2026-09-25 加：此前正文里这个 r 与最大残差**没有任何检查覆盖**，
     # 我在改条数时把残差猜成了 1.5（真值 1.6）—— 猜出来的数正是要靠检查挡住的。
