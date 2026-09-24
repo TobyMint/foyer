@@ -37,12 +37,25 @@ def main():
                 "realized0_pct": "%.1f" % (f0 * 100), "realized1_pct": "%.1f" % (f1 * 100),
                 "slope_pp_per_unit": "%.1f" % ((f1 - f0) * 100 / (r1 - r0)),
             })
-    rows.sort(key=lambda x: (x["trace"], float(x["r0"])))
+    # 全范围斜率单独出两行：正文用它与另一条 trace 比"整体陡不陡"。
+    # ⚠ 必须全范围对全范围 —— 曾经拿 realhr 的【三点】斜率(-34.5)去比主 trace 的
+    # 全范围(-66.8)，区间不可比，而且 realhr 自己的全范围其实是 -32.3。
+    for tr, pts in by.items():
+        pts.sort()
+        r0, f0, n0 = pts[0]; r1, f1, n1 = pts[-1]
+        rows.append({"trace": tr, "from_run": n0, "to_run": n1,
+                     "r0": "%.3f" % r0, "r1": "%.3f" % r1,
+                     "realized0_pct": "%.1f" % (f0 * 100),
+                     "realized1_pct": "%.1f" % (f1 * 100),
+                     "slope_pp_per_unit": "%.2f" % ((f1 - f0) * 100 / (r1 - r0))})
+    rows.sort(key=lambda x: (x["trace"], float(x["r0"]), float(x["r1"])))
     header = "\n".join([
         "# 兑现率的逐段斜率 —— 由 scripts/lab/gen_slope.py 生成，勿手改",
         "# slope = Δrealized / ΔR̄，单位「百分点每单位忙时在跑数」",
         "# 用途：§VI 说两条 trace 的【形状】不同 —— 主 trace 是阈值（悬崖），",
         "#   xtrace 在同一段跨度内斜率基本恒定、还没到悬崖。",
+        "# 每组的【最后一行】是该 trace 的全范围斜率（正文比整体陡不陡必须用这两行，",
+        "# 不能拿一条的三点斜率去比另一条的全范围 —— 2026-09-24 犯过）。",
         "trace,from_run,to_run,r0,r1,realized0_pct,realized1_pct,slope_pp_per_unit"])
     fields = ["trace", "from_run", "to_run", "r0", "r1", "realized0_pct",
               "realized1_pct", "slope_pp_per_unit"]

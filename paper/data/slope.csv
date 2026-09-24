@@ -2,11 +2,15 @@
 # slope = Δrealized / ΔR̄，单位「百分点每单位忙时在跑数」
 # 用途：§VI 说两条 trace 的【形状】不同 —— 主 trace 是阈值（悬崖），
 #   xtrace 在同一段跨度内斜率基本恒定、还没到悬崖。
+# 每组的【最后一行】是该 trace 的全范围斜率（正文比整体陡不陡必须用这两行，
+# 不能拿一条的三点斜率去比另一条的全范围 —— 2026-09-24 犯过）。
 trace,from_run,to_run,r0,r1,realized0_pct,realized1_pct,slope_pp_per_unit
 main,cap1,cap2,1.000,1.271,92.5,89.6,-10.8
+main,cap1,cap5,1.000,1.842,92.5,36.3,-66.84
 main,cap2,cap3_fixed,1.271,1.534,89.6,78.8,-41.0
 main,cap3_fixed,cap4,1.534,1.650,78.8,60.6,-157.4
 main,cap4,cap5,1.650,1.842,60.6,36.3,-126.7
 xtrace,realhr_cap2,realhr_cap3,1.076,1.160,74.8,72.2,-31.3
+xtrace,realhr_cap2,realhr_cap5,1.076,1.409,74.8,64.0,-32.28
 xtrace,realhr_cap3,realhr_cap4,1.160,1.287,72.2,67.5,-36.6
 xtrace,realhr_cap4,realhr_cap5,1.287,1.409,67.5,64.0,-28.4

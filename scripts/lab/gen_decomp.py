@@ -16,7 +16,10 @@
 import csv, json, os, statistics, sys, glob
 
 HEADER = ["run", "wall_min", "span_min", "idle_min", "busy_min", "idle_pct",
-          "running", "running_all", "step_back_ms", "step_perreq_ms"]
+          "running", "running_all", "step_back_ms", "step_perreq_ms",
+          # τ₁/τ₂ 的超出比例 —— §III 引用「τ₁ 比 τ₂ 高 7.9~39.8%」这个区间。
+          # 它是两个导出量之比，此前不落盘（审计报成"找不到源头"）。
+          "excess_pct"]
 
 # 采样周期。metrics.csv 每 5 秒一行。
 SAMPLE_S = 5.0
@@ -157,6 +160,9 @@ def main():
                 "step_back_ms": round(step_back, 1) if step_back else "",
                 "step_perreq_ms": (round(step_perreq_ms(steps), 1)
                                    if step_perreq_ms(steps) else ""),
+                # τ₁/τ₂ 超出比例。两个量都非空才算，否则留空。
+                "excess_pct": (round(100 * (step_back / step_perreq_ms(steps) - 1), 1)
+                               if (step_back and step_perreq_ms(steps)) else ""),
             })
         except Exception as e:
             bad.append((r, str(e)))

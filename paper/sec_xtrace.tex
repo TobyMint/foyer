@@ -40,12 +40,16 @@ a span that reaches 1.41, so at 1.41 this trace has lost more of its bound
 than the main trace had at 1.53 (36\% against 21\%) and has not yet begun to
 fall off a cliff. The cliff is a threshold that this trace has not reached at
 the running counts its own offered load produces; whether it has one at all,
-and where, is what the rest of the sweep is for. We do not compare the
-two traces' slopes: ours would be computed over different spans of the
-running-count axis, and the device-only family's overall slope
-($-66.8$ points per unit over its whole range) is steeper than this trace's
-three-point span ($-34.5$) anyway, so the comparison would say the opposite of
-what the raw direction does. The level does not, and we treat that as a bound on what we can
+and where, is what the rest of the sweep is for. We do compare the two
+traces' overall slopes, which is the one slope comparison the data supports
+because both are taken over their full measured ranges
+(\texttt{slope.csv}): the device-only family runs from 92.5\% to 36.3\% over
+$\overline{R}$ 1.000--1.842, a whole-range slope of $-66.8$ points per unit,
+and this trace from 74.8\% to 64.0\% over 1.076--1.409, a slope of $-32.3$.
+So per unit of running count, the main trace loses its bound twice as fast
+over its range---but the comparison is between ranges of different length and
+different absolute level, and we do not lean on it. The claim we do lean on is
+the shape one below. The level does not, and we treat that as a bound on what we can
 claim: this trace realizes \emph{less} at 15.8\% median device occupancy than the
 main trace does at 22.4\% (both medians of \texttt{sglang:token\_usage}; the
 means are 13.9\% and 25.2\%), so realization is not a function of occupancy alone and a

@@ -102,13 +102,14 @@ $(\text{total\_duration} - \text{first\_token}) / (\text{output\_len} - 1)$,
 and take the median over steps with $\text{output\_len} \ge 32$.
 
 The two do not agree exactly, and the disagreement is informative rather than
-embarrassing. $\tau_1$ exceeds $\tau_2$ on every run, by 7.9--39.8\%, which in
+embarrassing. $\tau_1$ exceeds $\tau_2$ on every run, by 7.7--39.7\%
+(\texttt{decomp.csv}, column \texttt{excess\_pct}), which in
 absolute terms is 2.6--8.2\,ms of a 27--37\,ms step. The gap is
 \emph{consistent with} engine steps that are prefill and
 therefore emit no output token---we can bound it, not identify it, because
 subtracting a median from a mean does not isolate a component. All we can form
 from these two is their ratio: the excess $\tau_1/\tau_2 - 1$ runs
-17.6--39.8\% across the five device-only configurations. Two things follow, and
+17.7--39.7\% across the five device-only configurations. Two things follow, and
 we separate them. First, it is a ratio of \emph{times}, not of steps, and we
 have no measurement of the fraction of step \emph{counts} that are prefill---
 chunked prefill makes those two different numbers. Second, even as a time
