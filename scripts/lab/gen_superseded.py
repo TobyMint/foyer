@@ -16,6 +16,11 @@
 """
 import csv, json, os, statistics, sys
 
+# 同目录下的 gen_decomp —— busy/τ₁ 的共用定义（CLAUDE.md 纪律 2）。
+# 以 `python3 scripts/lab/gen_superseded.py` 方式运行时 sys.path[0] 就是本目录。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_decomp  # noqa: E402
+
 # 被判争用污染、已由同名 + _r2 替代的旧测量。与 gen_eviction.py / gen_repeat_spread.py
 # 的 SUPERSEDED 同一份名单；这里额外记录【为什么】以及替代它的新 run。
 PAIRS = [
@@ -29,9 +34,10 @@ FIELDS = ["run", "role", "wall_min", "slo_pct", "occ_p50_pct", "occ_mean_pct",
 
 
 def one(d):
-    """与 gen_decomp.py / gen_occupancy.py 同一套口径 —— 不另写一份实现：
+    """与 gen_decomp.py / gen_occupancy.py 同一套口径 —— **busy/τ₁ 直接 import gen_decomp.busy_stats**：
     wall = max(complete) − min(submit)；占用取 sglang:token_usage 的比例中位；
     R̄_busy = 全时段均值 / busy 占比；τ₁ = busy_min·R̄busy/tokens；τ₂ = 逐请求 decode 间隔中位。
+    （2026-09-25 之前 τ₁ 是自己写的，与 gen_decomp 差 0.1ms —— 见下面的注释。）
     """
     st = [json.loads(l) for l in open(os.path.join(d, "steps.jsonl")) if l.strip()]
     subs = [s["submit_timestamp"] for s in st if s.get("submit_timestamp")]
@@ -39,19 +45,17 @@ def one(d):
     wall = (max(comps) - min(subs)) / 60.0
 
     rd = list(csv.DictReader(open(os.path.join(d, "metrics.csv"))))
-    rn = [float(x["sglang:num_running_reqs"]) for x in rd if x.get("sglang:num_running_reqs")]
     occ = [float(x["sglang:token_usage"]) for x in rd if x.get("sglang:token_usage")]
-    busy_frac = sum(1 for v in rn if v > 0) / len(rn) if rn else 0.0
-    running_all = statistics.mean(rn) if rn else 0.0
-    running_busy = running_all / busy_frac if busy_frac else 0.0
-
-    ts = [x["ts"] for x in rd if x.get("ts")]
-    span_min = (max(float(t) for t in ts) - min(float(t) for t in ts)) / 60.0 if ts else 0.0
-    idle_min = sum(1 for v in rn if v == 0) * 5.0 / 60.0
-    busy_min = span_min - idle_min
-
     tokens = sum(s.get("output_len_actual") or 0 for s in st)
-    tau1 = busy_min * 60.0 * running_busy / tokens * 1000.0 if tokens else 0.0
+
+    # busy 时间与 τ₁ 走 gen_decomp.busy_stats —— **共用定义，不另写一份**（CLAUDE.md 纪律 2）。
+    # 这里原来自己实现了一遍：把每个 num_running==0 的采样固定算成 5 秒，
+    # 而 gen_decomp 是按相邻采样的实际时间戳间隔归类。于是同一条旧 bres
+    # 在本脚本给 34.2 ms、在 gen_decomp 给 34.1 ms（codex 第 21 轮抓出），
+    # 而本文件的注释当时还写着「与 gen_decomp.py 同一套口径 —— 不另写一份实现」。
+    _span, _busy, _idle, _pct, _rall, running_busy, tau1 = gen_decomp.busy_stats(
+        gen_decomp.read_metrics(os.path.join(d, "metrics.csv")), tokens)
+    tau1 = tau1 or 0.0
 
     durs = []
     for s in st:

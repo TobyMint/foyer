@@ -13,7 +13,7 @@
 用法: python3 check_paper_numbers.py          # 全部检查
       python3 check_paper_numbers.py -v       # 连通过的一起列
 """
-import csv, glob, os, re, sys
+import csv, glob, importlib.util, json, os, re, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 TEX = sorted(glob.glob(os.path.join(ROOT, "paper", "*.tex")))
@@ -252,6 +252,28 @@ def main():
     for r in load(os.path.join(ROOT, "paper/data/superseded.csv")):
         ck("superseded %s 复用占比" % r["run"], r["reuse_frac"], "sec_discussion.tex")
         ck("superseded %s τ₂" % r["run"], r["tau2_ms"], "sec_discussion.tex")
+
+        # τ₁ 必须与 gen_decomp 的 step_back_ms **逐位一致** —— 同一个量，两条管线，
+        # 必须共用定义（CLAUDE.md 纪律 2）。2026-09-25 codex 第 21 轮发现它们差 0.1 ms
+        # （旧 bres 这条管线给 34.2、gen_decomp 给 34.1），原因是 gen_superseded 自己
+        # 又写了一份实现，把每个零样本固定算成 5 秒。修完之后两边都走
+        # gen_decomp.busy_stats；下面这段就是那次事故的回归护栏。
+        _d = os.path.join(ROOT, "results/night", "pois200_" + r["run"])
+        if os.path.isdir(_d):
+            _iu = importlib.util
+            _sp = _iu.spec_from_file_location(
+                "_gd", os.path.join(ROOT, "scripts/lab/gen_decomp.py"))
+            _GD = _iu.module_from_spec(_sp)
+            _sp.loader.exec_module(_GD)
+            _steps = [json.loads(l) for l in open(os.path.join(_d, "steps.jsonl")) if l.strip()]
+            _tok = sum(s.get("output_len_actual") or 0 for s in _steps)
+            if _tok:
+                _sb = "%.1f" % _GD.busy_stats(
+                    _GD.read_metrics(os.path.join(_d, "metrics.csv")), _tok)[6]
+                if _sb != r["tau1_ms"]:
+                    fails.append(("superseded %s τ₁ ＝ gen_decomp 的步成本" % r["run"],
+                                  "%s vs %s" % (r["tau1_ms"], _sb),
+                                  "scripts/lab/gen_decomp.py（共用定义被破坏了）"))
 
     # ---- §VI 的两个 +0.40（realhr 控制器臂的重复佐证）----
     _rx = load(os.path.join(ROOT, "paper/data/reuse_x.csv"))

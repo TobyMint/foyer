@@ -5,5 +5,5 @@
 # 旧 run 已被 gen_eviction.py / gen_repeat_spread.py 的 SUPERSEDED 排除在
 #   各自集合外，所以这几列在 reuse.csv / eviction.csv 里查不到 —— 这里补上。
 run,role,wall_min,slo_pct,occ_p50_pct,occ_mean_pct,running_busy,tau1_ms,tau2_ms,reuse_tok,prompt_tok,reuse_frac,note
-foyer_bres,superseded,295.5,83.8,56.9,54.3,1.4810,34.2,31.3,19806092,28526871,0.6943,同机 >=4 条车道 >=60 分钟，τ₂ 被抬到 31.3ms（干净值 24.8）
+foyer_bres,superseded,295.5,83.8,56.9,54.3,1.4786,34.1,31.3,19806092,28526871,0.6943,同机 >=4 条车道 >=60 分钟，τ₂ 被抬到 31.3ms（干净值 24.8）
 foyer_bres_r2,replacement,265.9,85.9,56.2,52.4,1.4811,29.5,24.8,19695203,28526871,0.6904,

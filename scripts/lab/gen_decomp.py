@@ -104,6 +104,31 @@ def step_perreq_ms(steps):
     return statistics.median(vals) if vals else None
 
 
+def busy_stats(rows_m, tokens):
+    """busy 时间、条件在跑均值与 τ₁ 的【唯一实现】。
+
+    下游（`gen_superseded.py` 等）必须 import 这个，**不许各写一份** —— CLAUDE.md 纪律 2。
+    2026-09-25 的教训：`gen_superseded.py` 曾自己写一份，把每个零样本固定算成 5 秒，
+    于是同一条旧 bres 在那边给 34.2ms、在这边给 34.1ms（codex 第 21 轮抓出），
+    而脚本的注释还写着「与 gen_decomp.py 同一套口径 —— 不另写一份实现」。
+    返回 (span_min, busy_min, idle_min, idle_pct, running_all, running, step_back)。
+    """
+    span_min, busy_min, idle_min, idle_pct = decompose(rows_m)
+    running_all = statistics.mean(v for _, v in rows_m if v is not None)
+    # τ 的分母必须是【busy 期间的条件均值】，不是全时段均值。
+    #
+    # 式子 W_busy ≈ G/R̄ · τ 里，R̄ 是「每一步在跑几个请求」；而全时段
+    # 采样均值把空转的那些 0 也算进去了，等于 R̄_busy × busy 占比。
+    # 拿它乘 busy 时间，得到的 τ 会系统性地【低】一个 busy 占比：
+    # cap1 空转 36.3%，于是 18.5ms 而不是真实的 ~28.9ms。
+    # 这个错误曾经让「两个测量相差 12% 以内」这句话成立 —— 其实是
+    # 两个错误互相抵消。
+    busy_frac = busy_min / span_min if span_min else 1.0
+    running = running_all / busy_frac if busy_frac > 0 else running_all
+    step_back = (busy_min * 60 * running / tokens * 1000) if tokens else None
+    return span_min, busy_min, idle_min, idle_pct, running_all, running, step_back
+
+
 def main():
     root = sys.argv[1]
     out_path = sys.argv[2]
@@ -117,9 +142,14 @@ def main():
         d = os.path.join(root, r)
         try:
             rows_m = read_metrics(os.path.join(d, "metrics.csv"))
-            span_min, busy_min, idle_min, idle_pct = decompose(rows_m)
             steps = read_steps(os.path.join(d, "steps.jsonl"))
             tokens = sum(s.get("output_len_actual") or 0 for s in steps)
+
+            # 必须在这里算：下面的采样跨度校验要用 span_min。
+            # 2026-09-25 重构时把它挪到了校验之后，于是 27 个 run 全部因 span_min
+            # 未绑定落进 bad，decomp.csv 被写成 0 行（跑了两遍才发现）。
+            span_min, busy_min, idle_min, idle_pct, running_all, running, step_back = \
+                busy_stats(rows_m, tokens)
 
             # 墙钟的口径必须和 run_summary.py 逐字一致，否则图 2 的柱子长度
             # 和图 1 的横坐标就是两个数。见 run_summary.py:91：
@@ -136,19 +166,6 @@ def main():
                 bad.append((r, "采样跨度 %.1f 分与墙钟 %.1f 分差 %.1f 分，超出容许的 0-12 分"
                             % (span_min, wall_min, span_min - wall_min)))
                 continue
-
-            running_all = statistics.mean(v for _, v in rows_m if v is not None)
-            # τ 的分母必须是【busy 期间的条件均值】，不是全时段均值。
-            #
-            # 式子 W_busy ≈ G/R̄ · τ 里，R̄ 是「每一步在跑几个请求」；而全时段
-            # 采样均值把空转的那些 0 也算进去了，等于 R̄_busy × busy 占比。
-            # 拿它乘 busy 时间，得到的 τ 会系统性地【低】一个 busy 占比：
-            # cap1 空转 36.3%，于是 18.5ms 而不是真实的 ~28.9ms。
-            # 这个错误曾经让「两个测量相差 12% 以内」这句话成立 —— 其实是
-            # 两个错误互相抵消。
-            busy_frac = busy_min / span_min if span_min else 1.0
-            running = running_all / busy_frac if busy_frac > 0 else running_all
-            step_back = (busy_min * 60 * running / tokens * 1000) if tokens else None
             rows.append({
                 "run": r.replace("pois200_", ""),
                 "wall_min": round(wall_min, 1),
