@@ -292,6 +292,16 @@ def main():
            "%.1f" % (float(_t1["foyer_hz1"]["slo_pct"]) - float(_t1["cap3_hc"]["slo_pct"])),
            "sec_background.tex")
 
+    # ---- §III 的层级匹配对（三列：占用均值 / R̄busy / 兑现率）----
+    _oc = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/occupancy.csv"))}
+    _ar = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arm_running.csv"))}
+    _ru = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/reuse.csv"))}
+    for _r in ("cap3_fixed", "cap3_hc", "cap3_hc_r2"):
+        if _r in _oc and _r in _ar and _r in _ru:
+            ck("§III %s 占用均值" % _r, _oc[_r]["occ_mean_pct"], "sec_model.tex")
+            ck("§III %s R̄busy" % _r, "%.2f" % float(_ar[_r]["running_busy"]), "sec_model.tex")
+            ck("§III %s 兑现" % _r, "%.1f" % (100 * float(_ru[_r]["realized_frac"])), "sec_model.tex")
+
     # ---- attribution.csv：§V 的十二行归因表（2026-09-25 补：此前这张表完全没有检查）----
     at = load(os.path.join(ROOT, "paper/data/attribution.csv"))
     if at:

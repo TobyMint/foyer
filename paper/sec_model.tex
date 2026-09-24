@@ -313,7 +313,12 @@ the bound.
 Device occupancy does not explain the split. \texttt{cap3\_fixed} and
 \texttt{cap3\_hc} run at nearly the same mean device occupancy (55.8\% and
 55.5\%) and nearly the same running count (1.53 and 1.51), and they realize
-79.0\% and 91.3\% of the bound respectively. What differs is not how full the
+79.0\% and 91.3\% of the bound respectively. The host-tier side of that
+comparison is not one run: \texttt{cap3}+HiCache has a repeat which sits at the
+same occupancy (57.4\%) and the same count (1.53) and realizes 91.1\%, so the
+12-point gap is not one lucky run on the host-tier side. The device-only side
+is one run, and we say so rather than implying a distribution. What differs is
+not how full the
 device pool is but what happens when it overflows: with no host tier an
 evicted prefix is gone and must be recomputed; with one it is demoted and read
 back. The pool is the binding resource; the tier sets the pool; and in these two
