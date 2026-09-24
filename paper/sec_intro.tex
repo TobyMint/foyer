@@ -75,11 +75,11 @@ bounded by the workload---in our trace, 75.5\% of the prompt tokens, a bound
 no configuration we ran reaches. How much of that bound is realized is where
 the tier enters. With the KV pool on the device alone, realization falls as
 concurrency rises---92.6\% of the bound at $\overline{R}_{\text{busy}}$ 1.00
-down to 36.3\% at 1.84---and the shortfall appears as recomputation, 8.6\,M to
+down to 36.4\% at 1.84---and the shortfall appears as recomputation, 8.6\,M to
 20.7\,M tokens. With a host tier in front of it, realization holds across the
 range our controllers occupy---90.2\% to 92.3\% between 1.25 and 1.73---even
 though the \emph{device} misses more. Two configurations at the same running
-count and the same pool occupancy realize 78.9\% and 91.1\% of the bound
+count and the same pool occupancy realize 79.0\% and 91.3\% of the bound
 respectively (\S\ref{sec:model}); what separates them is not how full the pool
 is but what happens when it overflows. That pair also differs in date and in
 GPU, so a capacity control that changes the pool size alone on one card is
@@ -120,12 +120,12 @@ leave and therefore that there is no idle time to recover. There is.
         75.5\% of its prompt tokens, and no configuration we ran reaches that
         bound---the best realizes 92.6\% of it. What the tier decides is how
         much of the bound is realized as concurrency rises: device-only,
-        realization falls from 92.6\% to 36.3\% between
+        realization falls from 92.6\% to 36.4\% between
         $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall appears
         as recomputation, 8.6\,M to 20.7\,M tokens; with a host tier it holds
-        at 90.2--92.3\% over 1.25 to 1.73, while the \emph{device} misses more
+        at 90.2--92.4\% over 1.25 to 1.73, while the \emph{device} misses more
         (\S\ref{sec:model}). Two configurations at the same running count and
-        the same pool occupancy realize 78.9\% and 91.1\% of the bound, so it
+        the same pool occupancy realize 79.0\% and 91.3\% of the bound, so it
         is not how full the pool is but what happens when it overflows; that
         pair differs in date and GPU as well, so a capacity control that
         varies the pool alone on one card is queued; \S\ref{sec:results}

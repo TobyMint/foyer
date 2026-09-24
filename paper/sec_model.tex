@@ -241,20 +241,20 @@ realized, and that is where the tier enters.
 \begin{tabular}{lcccccc}
 \toprule
 device-only & $\overline{R}_{\text{busy}}$ & 1.00 & 1.27 & 1.53 & 1.65 & 1.84 \\
-            & realized (\% of bound) & 92.6 & 89.6 & 78.9 & 60.6 & 36.3 \\
+            & realized (\% of bound) & 92.6 & 89.7 & 79.0 & 60.7 & 36.4 \\
             & recomputed (M)         &  8.6 &  9.2 & 11.5 & 15.4 & 20.7 \\
 \midrule
 host tier   & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
-            & realized (\% of bound) & 92.3 & 91.1 & 90.2 & & \\
+            & realized (\% of bound) & 92.4 & 91.3 & 90.2 & & \\
             & recomputed (M)         &  8.6 &  8.9 &  9.1 & & \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Device-only, realization falls from 92.6\% to 36.3\% and the shortfall is
+Device-only, realization falls from 92.6\% to 36.4\% and the shortfall is
 recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
-90.2--92.3\% on the static points that span the same range, and at
-83.9--92.3\% across the ten host-tier runs including the controller arms---the
+90.2--92.4\% on the static points that span the same range, and at
+84.2--92.4\% across the ten host-tier runs including the controller arms---the
 lowest of those being the arm that disables its own admission gate and
 therefore runs the pool hardest. and it holds
 while the \emph{device} misses more than the device-only family's at every
@@ -281,7 +281,7 @@ the bound.
 Device occupancy does not explain the split. \texttt{cap3\_fixed} and
 \texttt{cap3\_hc} run at nearly the same mean device occupancy (55.8\% and
 55.5\%) and nearly the same running count (1.53 and 1.51), and they realize
-78.9\% and 91.1\% of the bound respectively. What differs is not how full the
+79.0\% and 91.3\% of the bound respectively. What differs is not how full the
 device pool is but what happens when it overflows: with no host tier an
 evicted prefix is gone and must be recomputed; with one it is demoted and read
 back. The pool is the binding resource, the tier sets the pool, and the tier
@@ -324,7 +324,7 @@ it, and \S\ref{sec:results} reports it once it has run.
 
 \paragraph{What is left unexplained.} Not everything here is accounted for.
 The host-tier runs sit at a narrow band of recomputed tokens (8.6--10.4\,M)
-\emph{and} of realization (83.9--92.3\%), yet $\tau_1$ spans 27.0--36.2\,ms
+\emph{and} of realization (84.2--92.4\%), yet $\tau_1$ spans 27.0--36.2\,ms
 across them.
 Part of that is now explained and part is not. Four of those runs
 (\texttt{F:hz2} 33.6, \texttt{F:bres} 34.1, \texttt{F:hz0} 35.7,

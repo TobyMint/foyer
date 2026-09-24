@@ -58,14 +58,14 @@ def main():
         rows.append({
             "run": r,
             "sessions": nsess, "steps": len(steps),
-            "Rbar_busy": "%.3f" % (statistics.mean(busy) if busy else 0),
+            "Rbar_busy": "%.6f" % (statistics.mean(busy) if busy else 0),
             "occ_p50_pct": "%.1f" % (statistics.median(occ) * 100 if occ else 0),
             "prompt_tok": prompt,
             "reuse_tok": reuse,
             "recompute_tok": unc,
             "reuse_frac": "%.4f" % (reuse / prompt) if prompt else "",
             "bound_frac": "%.4f" % bound,
-            "realized_frac": "%.4f" % (reuse / pre),
+            "realized_frac": "%.6f" % (reuse / pre),
         })
 
     rows.sort(key=lambda x: float(x["Rbar_busy"]))

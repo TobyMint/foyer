@@ -84,7 +84,7 @@ def main():
         rows.append({
             "run": run,
             "family": "hicache" if e["hicache"] == "1" else "device_only",
-            "Rbar_busy": a["running_busy"],
+            "Rbar_busy": "%.6f" % float(a["running_busy"]),
             "prompt_tok": prompt,
             "reuse_tok": reuse,
             "reuse_host_tok": host_hit,
@@ -98,7 +98,7 @@ def main():
             # 而它们原来只在注释里（审计跳过注释行）。
             "bound_tok": ce["ceiling_tok"],
             "prompt_total_tok": ce["prompt_tok"],
-            "realized_frac": "%.4f" % (reuse / ce["ceiling_tok"]),   # 占 trace 上界 <<< 关键列
+            "realized_frac": "%.6f" % (reuse / ce["ceiling_tok"]),   # 占 trace 上界 <<< 关键列
             "tau1_ms": d["step_back_ms"],
             "contested": conc.get(run, "?"),
         })

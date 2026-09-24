@@ -52,6 +52,9 @@ def main():
         rows.append(dict(run=run, samples=len(L), budget=b,
                          proj_p50=pm, occ_p50=om,
                          proj_pct=100.0 * pm / b, occ_pct=100.0 * om / b,
+                         # free = 预算里还空着的百分比。论文 §V 的「7.6% free」
+                         # 就是这个数 —— 此前不落盘，审计报成找不到源头。
+                         free_pct=100.0 - 100.0 * pm / b,
                          ratio=(pm / om) if om else float("nan")))
     rows.sort(key=lambda r: -r["ratio"])
     print("%-26s %7s %9s %9s %9s %8s" % ("run", "采样", "投影中位", "占用中位", "投影%", "倍数"))
@@ -61,11 +64,12 @@ def main():
     with open(out, "w") as f:
         f.write("# 控制器占用投影 —— gen_projection.py 生成\n")
         f.write("# projection = max(resident, ctx_sum) + growth_sum（绕开被候选循环重绑的 base 字段）\n")
-        f.write("run,samples,budget,proj_p50,occ_p50,proj_pct_of_budget,occ_pct_of_budget,ratio\n")
+        f.write("run,samples,budget,proj_p50,occ_p50,proj_pct_of_budget,"
+                "occ_pct_of_budget,free_pct,ratio\n")
         for r in rows:
-            f.write("%s,%d,%d,%.0f,%.0f,%.1f,%.1f,%.2f\n" % (
+            f.write("%s,%d,%d,%.0f,%.0f,%.1f,%.1f,%.1f,%.2f\n" % (
                 r["run"], r["samples"], r["budget"], r["proj_p50"], r["occ_p50"],
-                r["proj_pct"], r["occ_pct"], r["ratio"]))
+                r["proj_pct"], r["occ_pct"], r["free_pct"], r["ratio"]))
     print("-> %s" % out)
 
 if __name__ == "__main__":

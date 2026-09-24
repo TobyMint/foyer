@@ -85,18 +85,24 @@ def main():
             missing.append(r)
             continue
         try:
-            prompt = last_value(mp, "sglang:prompt_tokens_total")
+            # ⚠ prompt 必须与 uncached **同源**，否则 reuse = prompt - uncached 是拿
+            # 两个不同来源相减。原来这里取 metrics.csv 的 sglang:prompt_tokens_total，
+            # 而 uncached 是 steps.jsonl 的求和 —— cap3_fixed 上两者差 43,112 tokens
+            # （0.15%），兑现率因此从 78.9% 变 79.0%（2026-09-24 审稿人抓）。
+            # 下面的断言 1 本来就要求 prompt == 计划 prefill（1% 内），直接用它即可。
+            steps = [json.loads(l) for l in open(sp) if l.strip()]
+            prompt = sum(s.get("prompt_len") or 0 for s in steps)
             cached = last_value(mp, "sglang:cached_tokens_total")
             evicted = last_value(mp, "sglang:evicted_tokens_total")
-            steps = [json.loads(l) for l in open(sp) if l.strip()]
             uncached = sum(s.get("server_uncached_prompt_tokens") or 0 for s in steps)
-            plan = sum(s.get("prompt_len") or 0 for s in steps)
+            plan = prompt
 
             # 断言 1：prompt_tokens_total 必须等于计划 prefill —— 这是恒等式，
             # 挡住的是列读错（读错列不会有这个性质）
-            assert prompt and abs(prompt - plan) / plan < 0.01, \
+            _mp_tot = last_value(mp, "sglang:prompt_tokens_total")
+            assert _mp_tot and abs(_mp_tot - plan) / plan < 0.01, \
                 "prompt_tokens_total %.1fM 与计划 %.1fM 不符，列可能读错了" % (
-                    (prompt or 0) / 1e6, plan / 1e6)
+                    (_mp_tot or 0) / 1e6, plan / 1e6)
 
             # 断言 2：cached 必须是 prompt 的一部分（不是独立的量）
             assert cached is not None and 0 <= cached <= prompt * 1.01, \

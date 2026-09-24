@@ -165,7 +165,7 @@ per-step logs), unweighted mean over rounds $\ge 1$; the planned rate is the
 trace constant 80.9\% and does not move with the cap. \S\ref{sec:model} uses
 a different convention---all steps, token-weighted, so that reuse and
 recomputation partition the prompt---under which the same collapse reads
-92.6\%$\to$36.3\% of the trace's bound for the device-only caps and
+92.6\%$\to$36.4\% of the trace's bound for the device-only caps and
 92.3\%$\to$90.2\% with a host tier. We state both because the paper's earlier
 drafts mixed them. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
@@ -371,7 +371,7 @@ counters---running count, pool occupancy, evictions, recomputation---are
 indistinguishable between the affected runs and the clean ones, so nothing in
 the ordinary telemetry would have caught this. Second, the affected runs'
 \emph{volume} columns look untouched: the four damaged host-tier arms reuse
-0.6785--0.6950 of the prompt against 0.6347--0.6975 for the six clean
+0.6791--0.6959 of the prompt against 0.6355--0.6978 for the six clean
 host-tier arms, a range overlap that is suggestive but not proof---co-tenancy could in
 principle also reorder completions and change eviction order. The re-runs will
 settle it, since they are the same policies measured clean, and we compare
