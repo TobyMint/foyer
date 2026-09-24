@@ -10,7 +10,7 @@ import json, os, statistics, sys, glob
 THRESH = [5.0, 10.0, 20.0]
 # cap3_hc_r2 / cap4_hc_r2 是重复 run，2026-09-24 起按其重复顶掉首次的规矩一并纳入
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap3_hc_r2","cap4_hc","cap4_hc_r2",
-        "foyer_hc","foyer_hz1","foyer_hz2","foyer_hz0","foyer_bres_r2","foyer_breshz1",
+        "foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz1_r2","foyer_sf0_r2","foyer_hz2","foyer_hz0","foyer_bres_r2","foyer_breshz1",
         "foyer_nogate","foyer_rg4","foyfix_hc","aimd2","aimd2_paper"]
 
 
@@ -39,11 +39,27 @@ def main():
 
     # 三个阈值下的静态前沿，看排序是否稳定
     print()
+    # ⚠ 墙钟一律从 table1.csv 读【全精度】值。以前这里写死的是舍入到 0.1 分的数，
+    # 于是同一个 Δ 在本表和表 I / §V 里差一位小数（sf0_r2 的 10s 距离：−0.6 vs −0.55）
+    # —— 又是「两条管线算同一个量必须共用定义」那一条（2026-09-25 自查发现）。
+    _t1 = {}
+    _t1p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                        "paper", "data", "table1.csv")
+    if os.path.exists(_t1p):
+        _t1 = {r["run"]: float(r["wall_min"]) for r in
+               __import__("csv").DictReader(l for l in open(_t1p) if not l.startswith("#"))}
     stat = {"cap1": 527.4, "cap2": 304.2, "cap3_fixed": 258.7, "cap4": 249.9,
             "cap5": 260.9, "pairB_cap2hc": 295.0, "cap3_hc": 236.4, "cap3_hc_r2": 230.3,
             "cap4_hc": 213.0, "cap4_hc_r2": 209.1}
+    stat = {k: _t1.get(k, v) for k, v in stat.items()}
+    # ⚠ 锚点集合必须与表 I / §V 的 FRONT 一致 —— 那些锚点是在【10 s 阈值】下
+    # 取的上左包络，换阈值时锚点集合不变、只换它们的纵坐标。以前这里是自己
+    # 从 stat 字典重建一遍包络，于是同一条臂在两张表里有两个 Δ（2026-09-25 自查发现）。
+    import importlib.util as _iu
+    _sp = _iu.spec_from_file_location("_fr_slo", os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontier.py"))
+    _FR = _iu.module_from_spec(_sp); _sp.loader.exec_module(_FR)
     for t in THRESH:
-        pts = sorted((stat[k], out[k][3][t]) for k in stat if k in out)
+        pts = sorted((w, out[name][3][t]) for w, _, name in _FR.FRONT if name in out)
         env, best = [], -1
         for w, s in pts:
             if s > best:
@@ -57,10 +73,16 @@ def main():
                     return s0 + (w - w0) / (w1 - w0) * (s1 - s0)
             return None
         deltas = []
-        for r in ["foyer_hz1", "foyer_hc", "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]:
+        # 臂列表必须含【重复】与【最接近前沿的那条】：hz1_r2 是论文唯一「越线」
+        # （20s 下 +1.5pp）那条臂的重复，sf0_r2 是全表 Δ 最小的一条 —— 两条都不在
+        # 表里时，正文引的「越线」与「最近」都无法复核（2026-09-25 补）。
+        for r in ["foyer_hz1", "foyer_hz1_r2", "foyer_hc", "foyer_hc_r2", "foyer_sf0_r2",
+                  "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]:
             if r in out:
-                w = {"foyer_hz1": 255.8, "foyer_hc": 291.3, "foyer_bres_r2": 265.9,
-                     "foyer_nogate": 272.3, "aimd2_paper": 364.3}[r]
+                w = {"foyer_hz1": 255.8, "foyer_hz1_r2": 260.8, "foyer_hc": 291.3,
+                     "foyer_hc_r2": 293.2, "foyer_sf0_r2": 263.3, "foyer_bres_r2": 265.9,
+                     "foyer_nogate": 272.3, "aimd2_paper": 364.3}
+                w = _t1.get(r, w[r])
                 f = front_slo(w)
                 if f is not None:
                     deltas.append("%s %+.1f" % (r.replace("foyer_", ""), out[r][3][t] - f))
@@ -75,7 +97,8 @@ def main():
             w.writerow(["# 阈值敏感性 —— slo_sensitivity.py 生成"])
             w.writerow(["# 每个阈值下各控制器相对该阈值静态前沿的有符号距离（pp）"])
             w.writerow(["run"] + ["slo%d_pp" % t for t in THRESH])
-            names = ["foyer_hz1", "foyer_hc", "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]
+            names = ["foyer_hz1", "foyer_hz1_r2", "foyer_hc", "foyer_hc_r2", "foyer_sf0_r2",
+                     "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]
             for r in names:
                 row = [r.replace("foyer_", "")]
                 for t in THRESH:

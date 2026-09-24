@@ -235,6 +235,39 @@ def main():
         ck("superseded %s 复用占比" % r["run"], r["reuse_frac"], "sec_discussion.tex")
         ck("superseded %s τ₂" % r["run"], r["tau2_ms"], "sec_discussion.tex")
 
+    # ---- §VI 的两个 +0.40（realhr 控制器臂的重复佐证）----
+    _rx = load(os.path.join(ROOT, "paper/data/reuse_x.csv"))
+    if _rx:
+        import importlib.util as _iu
+        _sp = _iu.spec_from_file_location("_fr2", os.path.join(ROOT, "scripts/lab/frontier.py"))
+        _FR = _iu.module_from_spec(_sp); _sp.loader.exec_module(_FR)
+        _FR.RESULTS = os.path.join(ROOT, "results/night")
+        for _r in ("realhr_foyer", "realhr_foyer_r2"):
+            _s = _FR.summarise(_r)
+            if _s:
+                _f = _FR.front_slo_xtrace(_s["wall"]) if hasattr(_FR, "front_slo_xtrace") else None
+                if _f is None:
+                    # realhr 的前沿在 gen_elasticity_x 里建，frontier.py 不管这条 trace；
+                    # 这里至少把墙钟与 SLO 本身钉住（正文引的是它们派生的 Δ）。
+                    ck("%s 的 SLO" % _r, "%.1f" % _s["slo"], "sec_xtrace.tex") if _s["slo"] < 99.95 else None
+
+    # ---- slo_sensitivity.csv：§VI 阈值段的「越线不复现」（hz1 +1.5 / hz1_r2 -2.3）----
+    for r in load(os.path.join(ROOT, "paper/data/slo_sensitivity.csv")):
+        if r.get("run") == "hz1":
+            ck("§VI hz1 在 20s 的距离", r["slo20_pp"], "sec_discussion.tex")
+        if r.get("run") == "hz1_r2":
+            ck("§VI hz1_r2 在 20s 的距离", r["slo20_pp"], "sec_discussion.tex")
+        if r.get("run") == "hc":
+            ck("§VI base 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
+        if r.get("run") == "bres_r2":
+            ck("§VI bres 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
+
+    # ---- elasticity_x.csv：§VI 的 realhr 控制器臂（含它那个不复现的越线）----
+    for r in load(os.path.join(ROOT, "paper/data/elasticity_x.csv")):
+        if r.get("kind") == "arm" and r["name"].startswith("realhr_foyer"):
+            ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
+            ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
+
     # ---- §II 的两条「对最近静态锚点」的数（2026-09-25 补：此前 0.93 是旧值）----
     _t1 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
     if {"foyer_sf0_r2", "cap3_hc_r2", "cap3_hc", "foyer_hz1"} <= set(_t1):

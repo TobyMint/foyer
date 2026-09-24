@@ -42,8 +42,13 @@ FAMILIES = [
       ("cap6", "realhr_cap6"), ("cap8", "realhr_cap8")], 4),
 ]
 # 控制器臂（每族一条主臂）
+# 控制器臂（每族一条主臂 + 该族的重复对，若有）
+#   realhr_foyer_r2 是 2026-09-24 补的重复 run。§VI 引「+0.40 与 +0.40」这个
+#   重复佐证，所以要落盘 —— 否则正文里的 +0.4017 在数据文件里查不到
+#   （2026-09-25 自查时发现，正是 codex 反复抓的那一类）。
 ARMS = [("main", "Foyer+HiCache", "pois200_foyer_hc", 200),
-        ("realhr", "Foyer", "realhr_foyer", 117)]
+        ("realhr", "Foyer", "realhr_foyer", 117),
+        ("realhr", "Foyer (repeat)", "realhr_foyer_r2", 117)]
 # 数据不足以入表的 run，明确列出来而不是删掉
 EXCLUDED = [("realhr_cap1", "static=1", "84/390 步（27/117 会话），无 summary.json、"
              "metadata 无 wall_s，run 被截断；R-bar 与 tau 只在残段上算得，且 cap=1 时 "

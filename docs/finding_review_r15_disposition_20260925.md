@@ -133,3 +133,37 @@ time-slicing two caps approximates any point on the segment between them」—�
 **连锁改名要按【数字】清点，不只按【名字】清点。** §III 末段没有任何 `bres` 字样，
 只有「17 分钟」这个数，名字扫描扫不到；两条独立审查线都抓到了它，说明这类残留
 只能靠「把每个数当线索回去找它属于谁」。已加进 CLAUDE.md。
+
+
+---
+
+## 七、自查发现的两处（不是审查提的，是自己扫出来的）
+
+### 7.1 论文唯一那条「越线」经不起它自己的重复
+
+补 `slo_sensitivity.py` 的臂列表时（原来缺 `hz1_r2` 与 `sf0_r2`），发现：
+
+**`horizon=1` 在 20 s 阈值下读 +1.5 pp（论文唯一一处「有控制器越线」），
+它自己的重复读 −2.3 pp** —— 不只是落回带内，而是落到线**下方**、在带外。
+两条同配置 run 在这条轴上差 3.8 pp（SLO 94.4% vs 91.1%），判决的符号随之翻转。
+
+这改了三处：
+- 摘要：「at a loose latency threshold one variant appears above the front in a
+  single measurement, and that variant's own repeat lands 2.3 points below it,
+  so the crossing does not reproduce」；
+- §VI 阈值表：加了一行 `horizon=1 (repeat)`，−6.8 / −5.6 / −2.3；
+- §VI 段：把「越线」的论证从「裕度不可分辨」升级为「**越线不复现**」，
+  两条理由并列（旧的那条保留，因为它是锚点散布的问题，与这条不同）。
+
+**这是加强而不是削弱**：论文的立场本来就是「零条越过」，现在连那条唯一的例外
+都有了自己重复的反证。
+
+### 7.2 `slo_sensitivity.py` 自己重建了一遍前沿
+
+同一个 Δ 在它和表 I 里差一位小数：**它写死舍入到 0.1 分的墙钟、又自己从
+`stat` 字典重建包络**，而表 I / §V 用的是 `frontier.py` 的 `FRONT`。改成
+**import `frontier.py` 的 `FRONT`、墙钟从 `table1.csv` 读全精度**之后，
+两条臂的 10 s 距离变了（base −1.3→−1.2、bres −1.4→−1.3），已同步正文。
+
+这又是 CLAUDE.md 纪律 2 那一条（两条管线算同一个量必须共用定义），
+**这次是自查扫出来的，不是审查抓的** —— 说明那条纪律要主动去查，不能等。

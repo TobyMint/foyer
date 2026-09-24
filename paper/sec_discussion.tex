@@ -220,10 +220,11 @@ controllers sit relative to them, and at the loose end one of them crosses:
   \toprule
   SLO threshold & 5\,s & 10\,s & 20\,s \\
   \midrule
-  \texttt{horizon}=1        & $-2.9$ & $-0.9$ & $+1.5$ \\
-  \sys{} base               & $-2.3$ & $-1.3$ & $+0.6$ \\
-  \texttt{bres}             & $-3.6$ & $-1.4$ & $+0.3$ \\
-  Concur-style AIMD        & $-14.2$ & $-11.2$ & $-6.5$ \\
+  \texttt{horizon}=1          & $-2.9$ & $-0.9$ & $+1.5$ \\
+  \texttt{horizon}=1 (repeat) & $-6.8$ & $-5.6$ & $-2.3$ \\
+  \sys{} base                 & $-2.3$ & $-1.2$ & $+0.6$ \\
+  \texttt{bres}               & $-3.6$ & $-1.3$ & $+0.3$ \\
+  Concur-style AIMD           & $-14.2$ & $-11.2$ & $-6.5$ \\
   \bottomrule
 \end{tabular}
 \end{center}
@@ -231,16 +232,26 @@ controllers sit relative to them, and at the loose end one of them crosses:
 Two readings, and we give both. The first is that our headline claim is
 conditional: at the strict threshold that interactive serving actually cares
 about, none of the cleanly measured controllers reaches the static front; at a
-loose one, one does. The
-second is that the crossing is still not a win, though the reason is more
-awkward than we first wrote. $+1.5$\,pp at 20\,s is larger than the replicate
+loose one, one measurement of one of them does. The
+second is that the crossing is not a win, and there are now two independent
+reasons to say so. The first we gave an earlier draft of this paragraph: the
+margin is not resolvable. $+1.5$\,pp at 20\,s is larger than the replicate
 SLO spread of the three tightest pairs we have---0.5\,pp for the base
 controller, 0.8\,pp for \texttt{cap3}+HiCache and 1.0\,pp for
 \texttt{cap2}+HiCache---but smaller than the two widest, 3.9\,pp for the best
 arm's own repeat and 5.1\,pp for \texttt{cap4}+HiCache, and those two are
 anchors. It is the anchors, not the controllers, that set the line the margin
 is measured against, so the comparison that matters is the one against the
-widest anchor---where the margin is not resolvable. (An earlier revision discarded
+widest anchor---where the margin is not resolvable. The second reason is
+harder to argue with, and we found it only when the arm's repeat landed:
+\emph{the crossing does not reproduce}. \texttt{horizon}=1 reads $+1.5$\,pp at
+$20$\,s and its own repeat reads $-2.3$---not merely inside the band, but below
+it, on the other side of the line the first run crossed. Two runs of one
+configuration, 3.8\,pp apart on this axis ($+1.5$ against $-2.3$, from 94.4\%
+and 91.1\% of requests served under 20\,s), and the sign of the verdict flips
+with them.
+So the loose-threshold crossing is a single measurement, and the one arm whose
+repeat we have on the axis where it matters does not support it. (An earlier revision discarded
 the \texttt{cap3}+HiCache pair on the ground that one run had exceeded its
 cap. That was wrong: the over-cap run is the \emph{device-only}
 \texttt{cap3} repeat, and both HiCache runs peak at three with none over. The
