@@ -263,6 +263,26 @@ out co-tenancy. A capacity-controlled version---same card, same trace, only
 the pool size changed---is queued behind the re-runs and we report it in
 \S\ref{sec:results} when it lands; we do not use it here.
 
+\paragraph{The second trace agrees on direction and not on level.}
+We ran the same accounting on a second workload---117 real Claude agent
+sessions, 390 rounds, the same pool and the same engine---and it reproduces the
+direction: its realization of \emph{its own} bound falls from 74.8\% to 67.5\%
+as the running count rises from 1.08 to 1.29, a steeper per-unit drop than the
+device-only family's. What it does not reproduce is the level, and this is
+worth stating because it bounds what we can claim. That trace runs at a
+\emph{lower} mean device occupancy (15.8\% against 22.4\%) and realizes
+\emph{less}, so realization is not a function of occupancy alone---and a
+statement of the form ``the pool collapses above $x$\% occupancy'' is wrong on
+our own data. Occupancy is instantaneous while reuse depends on history; a
+session's prefix must survive from one round to the next, and how much
+pressure that puts on the pool is not visible in what the pool holds at an
+instant. We do not have the measurement that would separate those, which is
+why the controlled experiment we report in \S\ref{sec:results} varies the
+pool alone, on one card and one trace, rather than leaning on the cross-trace
+comparison. The claim this section supports is the narrow one: within a
+configuration, the host tier preserves realization at a matched running count
+and a matched occupancy, and without it realization falls.
+
 That gives the criterion of \S\ref{sec:criterion} a mechanism rather than a
 correlation, and it suggests a prediction we are testing:
 if the tier acts by multiplying usable capacity (the host pool is twice the
