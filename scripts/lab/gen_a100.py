@@ -91,7 +91,11 @@ def main():
         rows.append(x)
     for r in MAIN:
         d = os.path.join(main_root, "pois200_" + r)
+        # 缺了要报，不能 continue 了事（CLAUDE.md 纪律 3：生成器的 run 列表不全会静默丢数据）。
+        # 2026-09-25 自查发现：A100 那半边会报 missing，3090 这半边却静默跳过 ——
+        # 那样对照点少了一条，表还是照印，看的人不知道比的是什么。
         if not os.path.exists(os.path.join(d, "summary.json")):
+            missing.append("pois200_" + r + "（3090 对照点）")
             continue
         x = one(d)
         x.update(run=r, machine="3090-24G", bound_frac="%.4f" % (pre / tot),
@@ -121,7 +125,9 @@ def main():
             r["run"], r["machine"], r["pool_tokens"], r["Rbar_busy"],
             r["occ_p50_pct"], r["realized_frac"][:6], r["tau2_ms"]))
     if missing:
-        print("!! A100 上还没跑完（未写入）：" + " ".join(missing))
+        print("!! 未写入（缺 summary.json）：")
+        for m in missing:
+            print("   " + m)
 
 
 if __name__ == "__main__":
