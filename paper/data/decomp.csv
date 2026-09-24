@@ -3,7 +3,7 @@
 # span_min: metrics.csv 的采样跨度；wall_min: run_summary 的墙钟。两者差 ~6 分，是采样边界
 # step_back: busy分钟 x 在跑均值 / 产出token（导出量；用 busy 不用墙钟，见下）; step_perreq: 逐请求 decode 间隔中位（独立测量）
 run,wall_min,span_min,idle_min,busy_min,idle_pct,running,running_all,step_back_ms,step_perreq_ms,excess_pct
-default,288.6,294.8,33.6,261.2,11.4,1.91,1.69,42.5,39.3,8.3
+default,288.6,294.8,33.6,261.2,11.4,1.91,1.69,42.5,39.2,8.4
 cap1,527.4,533.6,193.6,340.0,36.3,1.0,0.64,28.8,20.6,39.7
 cap2,304.2,310.4,57.0,253.5,18.4,1.27,1.04,27.4,22.8,19.9
 cap3_fixed,258.7,264.7,37.1,227.6,14.0,1.53,1.32,29.7,24.9,19.1

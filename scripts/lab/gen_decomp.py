@@ -92,16 +92,40 @@ def read_steps(path):
     return out
 
 
-def step_perreq_ms(steps):
-    """方法二：逐请求 decode 间隔的中位。只取 output_len >= 32 的步。"""
-    vals = []
-    for s in steps:
-        n = s.get("output_len_actual") or 0
-        tot = s.get("total_duration_ms")
-        ft = s.get("first_token_ms")
-        if n >= 32 and tot is not None and ft is not None and n > 1:
-            vals.append((tot - ft) / (n - 1))
+def perreq_one(s):
+    """单步的逐请求 decode 间隔（ms），不合格返回 None —— τ₂ 的【唯一判据】。
+
+    分桶类脚本（`gen_tau2_windows.py`）要的是逐条的间隔，不是中位，
+    所以判据单独抽出来给它 import；`perreq_ms` 也用它。
+    """
+    n = s.get("output_len_actual") or 0
+    tot = s.get("total_duration_ms")
+    ft = s.get("first_token_ms")
+    if n < 32 or tot is None or ft is None or s.get("status") != "SUCCESS":
+        return None
+    return (tot - ft) / max(1, n - 1)
+
+
+def perreq_ms(steps):
+    """逐请求 decode 间隔的中位 —— **τ₂ 的唯一实现**（CLAUDE.md 纪律 2）。
+
+    口径：只取 `output_len_actual >= 32` **且 `status == "SUCCESS"`** 的步；
+    间隔 = (total_duration_ms − first_token_ms) / max(1, output_len_actual − 1)。
+
+    `status` 这一条是 2026-09-25 补上的：`gen_concurrency.tau2()` 一直有它，
+    而本脚本、以及照抄本脚本的 `gen_tau2_windows.py` 都没有 ——
+    而 `gen_tau2_windows` 的自述还写着「与 gen_concurrency.py 的 tau2() 逐字一致」。
+    实测影响很小（全库只有 `default` 一条 run 有一个非 SUCCESS 的 ≥32 步，
+    τ₂ 差 0.022 ms），但它是【同一个量两份实现】这一类，见 CLAUDE.md。
+    `gen_concurrency.py` 在实验机上跑、那边没有 scripts/lab/，所以它保留自己那份，
+    由 check_paper_numbers.py 的守护检查逐 run 对拍（不许只靠注释）。
+    """
+    vals = [v for v in (perreq_one(s) for s in steps) if v is not None]
     return statistics.median(vals) if vals else None
+
+
+# 旧名保留，指向同一个实现（别的地方还在调这个名字）
+step_perreq_ms = perreq_ms
 
 
 def busy_stats(rows_m, tokens):

@@ -302,6 +302,34 @@ def main():
         if r.get("run") == "bres_r2":
             ck("§VI bres 在 10s 的距离", r["slo10_pp"], "sec_discussion.tex")
 
+    # ---- τ₂ 的三份实现必须逐 run 相同（共用定义的守护检查）----
+    # `gen_concurrency.tau2()` 在实验机上跑、那边没有 scripts/lab/，所以它保留
+    # 自己那份实现；`gen_decomp.perreq_one()` 是本地这一份，`gen_tau2_windows.py`
+    # 已经改成 import 它。**注释说「逐字一致」不算数，这里逐 run 算一遍。**
+    # 2026-09-25 这两份真的不一致过：gen_concurrency 有 `status == "SUCCESS"` 过滤，
+    # 另两份没有（实测只有 `default` 一条 run 受影响）。
+    _gd = importlib.util
+    _sp = _gd.spec_from_file_location("_gd2", os.path.join(ROOT, "scripts/lab/gen_decomp.py"))
+    _GD = _gd.module_from_spec(_sp); _sp.loader.exec_module(_GD)
+    _sp2 = _gd.spec_from_file_location("_gc", os.path.join(ROOT, "scripts/lab/gen_concurrency.py"))
+    _GC = _gd.module_from_spec(_sp2); _sp2.loader.exec_module(_GC)
+    _root = os.path.join(ROOT, "results/night")
+    _n = 0
+    for _r in load(os.path.join(ROOT, "paper/data/decomp.csv")):
+        _sp3 = os.path.join(_root, "pois200_" + _r["run"], "steps.jsonl")
+        if not os.path.exists(_sp3):
+            continue
+        _steps = [json.loads(l) for l in open(_sp3) if l.strip()]
+        _a = _GD.perreq_ms(_steps)
+        _b = _GC.tau2(_root, "pois200_" + _r["run"])
+        if _a is not None and _b is not None and abs(_a - _b) > 1e-9:
+            fails.append(("τ₂ 两份实现不一致：%s" % _r["run"],
+                          "gen_decomp %.4f vs gen_concurrency %.4f" % (_a, _b),
+                          "scripts/lab/gen_decomp.py 与 gen_concurrency.py"))
+        _n += 1
+    if VERBOSE:
+        print("  OK   τ₂ 两份实现在 %d 条 run 上逐位一致" % _n)
+
     # ---- elasticity.csv 表头：§IV 那句「覆盖整个控制器运行区间（1.35 到 1.69）」----
     # 这个区间是【九条 Foyer 臂】的，不是 controller 族全体的（后者含重复臂 hz1_r2，
     # R̄ 到 2.10）。表头两个集合都写出来了，这里查九条那个 —— 集合选错正是本项目

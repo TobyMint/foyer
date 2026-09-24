@@ -19,12 +19,21 @@ CLAUDE.md 纪律 3）。realhr 扫描（cap6/cap8）落地后把新 run 加进�
 """
 import csv, json, os, statistics, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_reuse as _GR  # noqa: E402  上界的共用定义
+
 
 def trace_bound(path):
-    rows = list(csv.DictReader(open(path)))
-    pre = sum(int(r["prefix_len"]) for r in rows)
-    tot = sum(int(r["prefix_len"]) + int(r["input_len"]) for r in rows)
-    return pre, tot, pre / tot, len({r["session_id"] for r in rows}), len(rows)
+    """上界走 gen_reuse.trace_ceiling —— 两个 trace 用的是**同一个函数**。
+
+    2026-09-25：这里原来自己写了一遍，而本文件的注释写着「定义与 gen_reuse.py
+    逐字一致」。对拍过，两边确实一致（公式就两行求和），但那是运气 ——
+    按 CLAUDE.md 的规矩改成 import。
+    返回 (pre, tot, bound, 会话数, 步数)，与原来的五元组同形。
+    """
+    ce = _GR.trace_ceiling(path)
+    return (ce["ceiling_tok"], ce["prompt_tok"], ce["ceiling_frac"],
+            ce["sessions"], ce["steps"])
 
 
 # 第二条 trace 的臂：capN 是纯静态 cap（无 HiCache），foyer 是控制器臂。

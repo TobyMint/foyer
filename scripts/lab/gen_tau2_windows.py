@@ -23,6 +23,9 @@
 """
 import csv, json, os, statistics, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_decomp as _GD  # noqa: E402  τ₂ 判据的共用定义
+
 BUCKET_MIN = 30.0
 RUNS = ["cap1", "foyer_t85", "foyer_rl99"]
 
@@ -32,13 +35,19 @@ def steps(d):
 
 
 def tau2_rows(st):
+    """逐条的 (间隔 ms, 完成时刻)。**判据走 gen_decomp.perreq_one —— 共用定义，不另写一份。**
+
+    2026-09-25：本函数原来自己判「output_len >= 32 且时间戳非空」，而
+    `gen_concurrency.tau2()` 多一条 `status == "SUCCESS"` —— 偏偏本文件的自述
+    还写着「与 gen_concurrency.py 的 tau2() 逐字一致」。全库实测只有 `default`
+    一条 run 受影响（τ₂ 差 0.022 ms），但那是运气不是设计。
+    """
     out = []
     for s in st:
-        o = s.get("output_len_actual") or 0
-        if o < 32 or s.get("first_token_ms") is None or s.get("total_duration_ms") is None:
+        v = _GD.perreq_one(s)
+        if v is None:
             continue
-        out.append(((s["total_duration_ms"] - s["first_token_ms"]) / (o - 1),
-                    s.get("complete_timestamp")))
+        out.append((v, s.get("complete_timestamp")))
     return out
 
 

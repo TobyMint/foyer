@@ -22,6 +22,19 @@ import csv, math, os, sys
 IDS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
 
 
+def eps(t0, r0, t1, r1):
+    """分段弹性 ε = dln(tau1)/dln(R̄) —— **唯一实现**，gen_elasticity_hc.py import 它。
+
+    τ₁ 用 decomp.csv 的 `step_back_ms`（busy 条件均值反推），R̄ 用同表的 `running`
+    （也是 busy 条件口径）—— 两个都别换成全时段均值，见 gen_elasticity.py 开头的说明。
+    `gen_elasticity_hc.py` 原来自己写了一遍、注释声称「与 gen_elasticity.py 完全一致」；
+    2026-09-25 对拍过确实一致，但按 CLAUDE.md 的规矩抽出来共用。
+    """
+    if min(r0, r1, t0, t1) <= 0 or r0 == r1:
+        return None
+    return math.log(t1 / t0) / math.log(r1 / r0)
+
+
 def main():
     src, out = sys.argv[1], sys.argv[2]
     d = {r["run"]: r for r in csv.DictReader(l for l in open(src) if not l.startswith("#"))}
@@ -29,7 +42,7 @@ def main():
     rows = []
     print("%-13s -> %-13s %8s %8s %8s" % ("from", "to", "R̄", "τ₁", "ε"))
     for (r0, t0, n0), (r1, t1, n1) in zip(pts, pts[1:]):
-        e = math.log(t1 / t0) / math.log(r1 / r0)
+        e = eps(t0, r0, t1, r1)
         rows.append({"from": n0, "to": n1, "r0": round(r0, 2), "r1": round(r1, 2),
                      "tau0_ms": t0, "tau1_ms": t1, "epsilon": round(e, 2)})
         print("%-13s -> %-13s %8.2f %8.1f %+8.2f" % (n0, n1, r1, t1, e))

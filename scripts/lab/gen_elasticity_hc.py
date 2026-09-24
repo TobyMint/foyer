@@ -11,6 +11,9 @@ decomp.csv 里其实已经有 HiCache 的静态 cap（pairB_cap2hc / cap3_hc / c
 """
 import csv, math, os, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_elasticity as _GE  # noqa: E402  ε 的共用定义
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEC = os.path.join(HERE, "..", "..", "paper", "data", "decomp.csv")
 ARM = os.path.join(HERE, "..", "..", "paper", "data", "arm_running.csv")
@@ -23,11 +26,13 @@ def load(p):
     return {r["run"]: r for r in csv.DictReader(l for l in open(p) if not l.startswith("#"))}
 
 def eps(d, a, b):
-    ra, rb = float(d[a]["running"]), float(d[b]["running"])
-    ta, tb = float(d[a]["step_back_ms"]), float(d[b]["step_back_ms"])
-    if min(ra, rb, ta, tb) <= 0 or ra == rb:
-        return None
-    return math.log(tb / ta) / math.log(rb / ra)
+    """走 gen_elasticity.eps —— 共用定义，不另写一份（CLAUDE.md 纪律 2）。
+
+    本函数原来自己实现了一遍，而文件开头写着「口径与 gen_elasticity.py 完全一致」。
+    2026-09-25 对拍过：两边确实一致；但那是运气，改成 import。
+    """
+    return _GE.eps(float(d[a]["step_back_ms"]), float(d[a]["running"]),
+                   float(d[b]["step_back_ms"]), float(d[b]["running"]))
 
 def curve(d, names, label):
     print("== %s ==" % label)
