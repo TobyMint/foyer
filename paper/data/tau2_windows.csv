@@ -1,8 +1,9 @@
 # 逐请求 decode 间隔 τ₂ 的分时段读数 —— gen_tau2_windows.py 生成，勿手改
 # τ₂ 定义与 gen_concurrency.py 的 tau2() 逐字一致（逐请求、中位、output_len>=32）
 # 分桶按完成时刻的绝对墙钟；bucket_start_s 是 epoch 秒，bucket_min 是相对该 run 首个可比步的分钟
-# 用途：§repro 的两个「同一分钟内跳变」对照（cap1 的 20.3~20.7 -> 22.4~27.5，
-#   t85/rl99 的约 30 -> 22~25）。这两个对照此前只在 docs/ 的手抄序列里，不在 CSV。
+# 用途：§repro 的两个【半小时尺度】对照（cap1 的 20.3~20.9 -> 21.3/27.1/21.1，
+#   t85 的 29.8 -> 22.3~22.6、rl99 的 32.4 -> 25.2）。此前只在 docs/ 的手抄序列里。
+# ⚠ 桶宽半小时，不支持分钟级主张（论文 §repro 明写不做）。
 run,bucket_start_s,bucket_min,n,tau2_p50_ms,tau2_min_ms,tau2_max_ms
 cap1,1789906873,0,85,20.5,19.4,23.4
 cap1,1789908673,30,63,20.4,19.6,24.5

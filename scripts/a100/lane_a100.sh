@@ -18,6 +18,13 @@
 # 实际值记在 metadata.json 里，事后必须核对而不是假定。
 # ⚠ 本机同样会跑采样器记录同卡进程；A100 常年 90%+ 利用率，跑之前先看
 #   是否真有窗口，测完必须查 gpu_watch 再决定这批数据能不能用。
+#
+# ⚠⚠ **本脚本不是第二配置实验实际用的那一份。** 它下面的 MEMFRAC=0.70 是给
+#   【池子扫描】用的下界（求解器往上找，POOL 由调用方给）。第二配置实验要的是
+#   「只改卡、别的都不动」，用的是 mem-fraction-static **0.85**、且把池子守卫关掉
+#   （TURNSTILE_EXPECT_POOL=0，让 80G 卡自己决定池子，实际值写进 metadata.json）。
+#   拿这一份去重跑会同时改掉卡和 memfrac，前提就没了。
+#   实际用的那一份已存进仓库：`scripts/a100/lane_a100_dev.sh`（2026-09-25 从实验机取回）。
 set -e
 LANE=$1; GPU=$2; PORT=$3; RUNS=$4; MARK=$5; POOL=${6:-811456}
 export TURNSTILE_RUN_TIMEOUT_H=14

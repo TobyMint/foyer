@@ -1,9 +1,12 @@
 # 准入队列长度（每个 2 s 控制周期记一次的 waiting_n）—— gen_backlog.py 生成，勿手改
-# 用途：§VII 的「200 档等待会话中位 66 / 最大 135，同代 25 档中位 16 / 最大 25」，
-#   以及「更早一代的 25 档读 9--11」。取舍：中位、p90、最大一起报（中位会骗人）。
+# 用途：§VII 的队列长度。正文**不跨档比队列长度**（两档 trace 不同、
+#   25 档没有 arrival_time，归一化后方向是反的，见生成器 docstring）。
+#   正文引的是：两档非零周期占比、pct_of_tier（扣住本档多少会话）、
+#   三个相位中位、以及「更早一代的 25 档读 11--13」（window=run）。
+#   取舍：中位、p90、最大一起报（中位会骗人）。
 # 口径：两个窗口都报，不挑一个 ——
 #   window=all  全部控制周期（含首个请求提交之前的空队列段）
-#   window=run  只算 [最早提交, 最后完成] 之间的周期（正文之比用这个）
+#   window=run  只算 [最早提交, 最后完成] 之间的周期（与全篇墙钟同一窗口）
 # 两个窗口的分母都在 samples 列里，读者可复算。
 run,window,n_sessions,samples,waiting_p50,pct_of_tier,median_p10,median_mid,median_p90,waiting_p90,waiting_max,pct_nonzero
 pois200_foyer_hc,all,200,8784,66.0,33.0,21.0,89.0,6.0,118,135,95.7
