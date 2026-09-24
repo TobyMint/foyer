@@ -2,40 +2,43 @@
 
 接手先读这一页。**当前在跑什么、下一步做什么、哪些数还不能用，都在这。**
 
-## 〇0、**A100 方向 D 跑起来了**（2026-09-25 02:47）
+## 〇0、**A100 方向 D 在跑**（2026-09-25 02:47 起，03:2x 更新）
 
-之前两页说「A100 跑不了」，**两条理由都是错的，已更正**（`docs/a100_toolchain_20260925.md`）：
+方向 D 之前两页说「跑不了」，**两条理由都是错的**（`docs/a100_toolchain_20260925.md`）：
+模型其实在 `/data/xbw/turnstile/models/`（trace md5 与 3090 逐位一致）；
+旧窗口判据的 `foreign` 是**全机合计**，GPU2 上有别人的 76G 就永远判不出来。
+真正的拦路石是 SGLang 的 JIT kernel 要 C++20 而 A100 上只有 gcc 8/9 ——
+conda 装 gcc-12 + `NVCC_PREPEND_FLAGS="-ccbin ..."`（**只设 CUDAHOSTCXX 不够**）。
 
-1. 「A100 上没有 coder+YaRN 模型」—— 我只搜了 `/data/models`；模型其实在
-   `/data/xbw/turnstile/models/`，**trace md5 与 3090 侧逐位一致**。
-2. 「没有窗口」—— 旧判据的 `foreign` 是**全机合计**（GPU2 上有别人的 76G 就永远判不出来）。
-   新看门狗 02:25:11 判出真窗口，持续二十多分钟。
+**池子 983,728 = 3090 的 9.70 倍**，同模型、同 trace、同引擎、同 memfrac，只改卡。
 
-真正的拦路石是 **SGLang 的 JIT kernel 要 C++20、而 A100 上只有 gcc 8/9**。
-修法：conda 装 gcc-12 + `NVCC_PREPEND_FLAGS="-ccbin ..."`（**只设 CUDAHOSTCXX 不够**，
-ninja 里写死了 nvcc 路径）。
+**车道**：GPU0，`a100_cap4 → cap3 → cap5 → cap2`，跑完由 `scripts/a100/chain_a100.sh`
+自动接 `a100_cap1`（带窗口检查：GPU0 显存有占用就不启动）。
+`gpu_watch` 全程 `n_foreign=0`。
 
-**跑的是**：`a100_cap4 → a100_cap3 → a100_cap5 → a100_cap2`，GPU0，
-device-only、memfrac 0.85、`EXPECT_POOL=0`（故意关守卫）。
-**池子 983,728 = 3090 的 9.70 倍** —— 同模型、同 trace、同引擎、同 memfrac，只改卡。
+**判据**（看结果前定死，`docs/prereg_a100_addendum_20260925.md`）：
+**唯一判决轴 = 兑现率穿过 50% 时的 R̄**；3090 上它是 **1.7344**（cap4 的
+60.7432%@R̄1.650488 与 cap5 的 36.3560%@R̄1.840948 之间插值）。
+A100 的交叉点 > 1.7344 判支持、≤ 判证伪。判据**已在 `gen_a100.py` 的
+`crossing()`/`verdict()` 里实现**（五个分支自测过），判决由脚本打印。
+⚠ 初版的两套规则会给出相反判决，已删掉一套；`±10 点` 与 `cap5 ≥65%` 两条阈值
+**已撤回**（前者宽度无依据、后者不可复算）。
 
-预注册预测与判据写在 `docs/a100_toolchain_20260925.md`；
 分析脚本 `scripts/lab/gen_a100.py` → `paper/data/a100.csv`（**不进主表前沿**）。
 
-**顺带查到一条**：3090 的 `~/.cache/tvm-ffi/` 里是 **9 月 7 日编译的 kernel**，
-它跑的是陈旧缓存 —— 用今天这份源码它大概也编不过。与「四个 running copy 的 hash
-都与仓库不一致」同类。
+## 〇a、审查状态（2026-09-25 03:2x）
 
-## 〇a、审查状态（2026-09-25 00:5x）
+两路并行，每轮都开。**这一轮两路的分工效果很明显**：codex 查数对不对、能不能追，
+子 agent 查论证成不成立 —— 后者抓到两条是**我在回应上一轮审查时新写进去的错**。
 
-- **codex 第 15 轮：5–15%**（上一轮 20–35%）。四条 major，**两条是我改漏的**：
-  §III 末段还留着被重跑推翻的 `bres` 解释（与子 agent 第 7 轮独立命中同一处）；
-  否定判决仍覆盖三条自己声明不可比的测量。**全部处置**，
-  记录在 `docs/finding_review_r15_disposition_20260925.md`。
-- **子 agent 第 7 轮**：三条结论 + 三条 major（Route 1 的 0.09pp 精度主张、
-  「干净族 τ₂」区间被干净 run 打破、表 I 脚注列表过期），全部处置，同一份记录。
-- **codex 第 16 轮（复读）在跑**，只核处置是否到位。
-- `check_paper_numbers.py` 从 317 加到 **331 项、0 MISS**；编译 **23 页、0 Overfull**。
+- **codex 第 22 轮**：A 段（§VII 重写）一条数字都没挑出来；B、C 两段各三处措辞。
+- **子 agent 第 9 轮**：六条 major。最重的两条 ——
+  ①「队列是节流造出来的」原来用「18 个在等 + 只跑一个」论证，而那个并列在
+  **200 档基线上同样成立**（两档在跑数 1.1369 对 1.1360）；改成引闸门归因与占用投影。
+  ② 我加的反证是个**从未暴露于该条件**的对照（那条 run 只有 14.4 分钟在四车道，
+  门槛是 60 分钟）。两条通则已进 CLAUDE.md。
+- 全部处置，记录在 `docs/finding_review_r22_r9sub_disposition_20260925.md`。
+- `check_paper_numbers.py`：**401 项、0 MISS**；编译 **25 页、0 Overfull、无 undefined**。
 
 ### 本轮新加的三个数据文件（都是为了补追溯缺口）
 `superseded.csv`（新旧并排，让被撤下的 0.6943 可追）、
@@ -66,7 +69,8 @@ device-only、memfrac 0.85、`EXPECT_POOL=0`（故意关守卫）。
 
 ## 一、论文当前状态
 
-- `paper/` **23 页**，0 Overfull，无 undefined，编译干净
+- `paper/` **25 页**（目标 23，**瘦身留到实验全落地后一次做，一条限定都不许丢**），
+  0 Overfull，无 undefined，编译干净
 - **主线是方向 B**：标题 *When Does Admission Control Pay? The Memory Tier Sets
   the Cost of Concurrency in Agentic LLM Serving*。核心是一条定量律：
   **trace 定复用上界（21.55M / 75.5%），配置定兑现多少**。
@@ -77,32 +81,30 @@ device-only、memfrac 0.85、`EXPECT_POOL=0`（故意关守卫）。
   正文写明了排除理由
 - **§VI 第二条工作负载**：**方向迁移、水平不迁移**（R̄ 现在覆盖到 1.50）
 - 归因表：**12 条中 4 条被归因**（本轮从 3 变 4，`bres` 干净值落到「内存没用满」）
-- **数字溯源**：`check_paper_numbers.py` **290 项 0 MISS**
+- **数字溯源**：`check_paper_numbers.py` **401 项 0 MISS**
 
-## 一b、还在跑的 / 排队的（2026-09-25 00:06 快照）
+## 一b、还在跑的 / 排队的（2026-09-25 03:25 快照）
 
-两条车道，链式 waiter：
-- **GPU 2**：`foyer_hz0_r2`（在跑）→ `cap5_hc`+`cap6_hc` → `cap2_hp`+`cap3_hp` → varload
-- **GPU 3**：`foyer_hz2_r2`+`foyer_breshz1_r2`（在跑）→ `cap8_hc` → `cap4_hp` → `cap1_r2`
+**严格 2 条 3090 车道 + 1 条 A100 车道**（A100 是另一台机器）：
 
-还剩三条争用臂要重测（hz0/hz2/breshz1）+ 三个 HiCache 高档位（cap5/6/8_hc）+
-**预注册的半池因果实验**（`docs/prereg_halfpool_20260924.md`：把设备池减半，
-预测塌点从 R̄≈1.5 移到 ≈0.75–0.9）。`cap1_r2` 排在队尾（它的 ‡ 目前靠
-「窗口标了、但没有可测损害」的论证保留，重跑是确认不是必需）。
+- **3090 GPU 2**：`foyer_hz0_r2`（772/999 在跑）→ 链式 waiter 已挂
+  `chain_pool50.sh`：跑完自动起**半池因果实验** `cap2_hp/cap3_hp/cap4_hp`
+  （带窗口检查：GPU2 有占用就不启动；同名旧目录先挪走）。
+- **3090 GPU 3**：`foyer_hz2_r2`（763/999）→ `foyer_breshz1_r2`（同车道排队中）。
+- **A100 GPU 0**：`a100_cap4`（348/999）→ cap3 → cap5 → cap2 →（`chain_a100.sh` 自动接）cap1。
 
-**2026-09-25 新排进去的**：**同卡背靠背的层级配对** `cap3_pd`（设备侧）/ `cap3_ph`（+HiCache），
-预注册在 `docs/prereg_tierpair_20260925.md`。动机：论文 §III 的匹配对
-（`cap3_fixed` vs `cap3_hc`）跨 19.5 小时、跨卡，而**梯队**正是标题主张的那个变量；
-那一对是唯一能把它控制住的对照。挂在 GPU 3 车道尾（`cap1_r2` 之后），
-两个 waiter 已 armed。
+⏳ **还没排进车道的**：`cap5/6/8_hc`（三条脚本 `lane_cap_hc_g2/g3/ext.sh` 都在）、
+`cap1_r2`（`lane_cap1_r2.sh`）、**同卡背靠背的层级配对** `cap3_pd`/`cap3_ph`
+（`docs/prereg_tierpair_20260925.md`；`lane_pair_dev.sh` / `lane_pair_hc.sh` 都在）。
+**这些要等 3090 上的车道腾出来**，按优先级：半池 > cap5/6/8_hc > 层级配对 > cap1_r2。
 
-⚠ **`concurrency.csv` 的 CONTESTED 计数（现在 14）会随新 run 落地而变** ——
-正文写了这个数，定稿前必须重跑一次 `gen_concurrency.py` 并对齐。
+⚠ **`concurrency.csv` 的 CONTESTED 计数会随新 run 落地而变** —— 正文写了这个数，
+定稿前必须重跑一次 `gen_concurrency.py` 并对齐。
 
-⚠ **摘要要瘦身**：本轮为回应审查加了约 150 词，现在 **1038 词**（接手时 892）。
-绝大多数 venue 的摘要远短于此，而摘要是评审的第一眼。建议做法：摘要只留
-头条结果 + 关键条件句（「六条干净、三条重测中」），把逐条限定挪进 §I / §V
-—— 挪的时候**一条限定都不许丢**，只是换位置。
+⚠ **摘要 1045 词**（接手时 892），多数 venue 远短于此。瘦身留到实验全落地后做，
+**挪位置可以，一条限定都不许丢**。
+
+⚠ **页数 25，目标 23** —— 同一批一起收。
 
 ## 二、审查基线（下一轮拿这个对比）
 
@@ -160,12 +162,15 @@ GPU3: realhr补全(cap5→cap6→cap8→cap4_r2→foyer_r2) → hz2_r2,breshz1_r
 —— run_matrix 在一条车道的两条 run 之间会卸载 server）。启动前数一遍自己的 server 数（≤1），
 并用 `/tmp/turnstile_launch.lock` 防两个等待器同时启动凑成 3 条。
 
-## 五、lab-A100（方向 D）：工具链就绪，**但环境不允许**
+## 五、lab-A100（方向 D）：**在跑**（这一节以前写的是「跑不了」，已作废）
 
-- env / 模型 / trace / 两机同一份代码，全部与 3090 逐项对齐（config md5 一致）
-- **现在跑不了**：GPU1 空闲 71 GB 但利用率 96%，采样器连续报 `big=0`
-- 采样判据已改：`big = 空闲>60GB 且 util<20%`（原判据是给小池子设的）
-- waiter 已挂，出现窗口自动开跑。**宁可交白卷，也不产出不可比的数据**
+工具链与判据见 `## 〇0` 与 `docs/prereg_a100_addendum_20260925.md`。
+两条留给下一次的提醒：
+
+- **JIT kernel 编译要靠 `NVCC_PREPEND_FLAGS`**（`-ccbin` 指到 `/data/xbw/gcc12/bin`）——
+  只设 `CUDAHOSTCXX` 不够，ninja 里写死了 nvcc 路径。
+- **池子守卫故意关掉**（`TURNSTILE_EXPECT_POOL=0`）：80G 卡上池子本来就该大得多，
+  关掉后 memfrac 钉在 0.85，池子由卡自己决定，实际值 983,728 写进 metadata。
 
 ## 六、实验跑完后要做的（按顺序）
 
