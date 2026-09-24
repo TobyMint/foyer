@@ -22,17 +22,32 @@ import json, os, statistics as st, sys
 RESULTS = "/data/xbw/turnstile/results/night"
 # 上左包络的锚点，按墙钟升序。cap1 没有 HiCache 版本，但它仍然是"静态 cap 能达到的点"，
 # 必须放进前沿——否则墙钟超过最右锚点的 run 会被误判成"越过前沿"（cap1 自己就撞过这个）。
-FRONT = [(209.1, 68.5, "cap4_hc_r2"), (230.3, 81.9, "cap3_hc_r2"),
-         (295.0, 91.6, "cap2_hc"), (527.4, 94.8, "cap1")]
+# 锚点坐标必须是【全精度】，不能用表里印的 1 位小数。
+# 2026-09-24 审稿人抓：这里原来写死 209.1/68.5 等显示值，于是【全篇的 Δ 都是用
+# 显示值插值出来的】—— sf0 得 -0.57（全精度 -0.55）、hz1 得 -0.94（-0.93）；
+# 更糟的是锚点自己的 Δ 不为 0（cap4_hc_r2 -0.055、cap3_hc_r2 -0.019），
+# 而 cap1 因为墙钟 527.4320 > 锚点 527.4 被判成 OUT-OF-RANGE。
+# 上一轮把 gen_table 改成 import 本模块，两条管线【一致】了 —— 但一致在显示值上。
+# 坐标来自 paper/data/runs_precise.csv（frontier.py --csv 的产物），逐位相符。
+FRONT = [(209.137154, 68.468468, "cap4_hc_r2"),
+         (230.308193, 81.881882, "cap3_hc_r2"),
+         (295.020816, 91.591592, "pairB_cap2hc"),
+         (527.431963, 94.794795, "cap1")]
 
 
 def front_slo(wall):
     """前沿在给定墙钟处的 SLO 上界（分段线性插值）。超出锚点范围返回 None——
     范围外没有可比的前沿，不能给判决，否则端点外推会凭空造出"越过"。"""
-    if wall < FRONT[0][0] or wall > FRONT[-1][0]:
+    # 容差：锚点 run 自己的墙钟与 FRONT 里的字面量会差几个 ulp，不加容差会把
+    # 锚点自己判成 LEFT-OF-FRONT（2026-09-24 全精度化之后暴露出来的）。
+    EPS = 1e-6
+    if wall < FRONT[0][0] - EPS or wall > FRONT[-1][0] + EPS:
         return None
     for (w0, s0, _), (w1, s1, _) in zip(FRONT, FRONT[1:]):
-        if w0 <= wall <= w1:
+        # 容差也要加在这里：只加在上面的范围检查是不够的 —— 锚点 run 自己的墙钟
+        # 比 FRONT 里的字面量小 5.7e-8，于是 w0 <= wall 为假、整条循环都不匹配，
+        # 锚点被自己的前沿判成 LEFT-OF-FRONT（2026-09-24 全精度化之后暴露的）。
+        if w0 - EPS <= wall <= w1 + EPS:
             return s0 + (s1 - s0) * (wall - w0) / (w1 - w0)
     return None
 

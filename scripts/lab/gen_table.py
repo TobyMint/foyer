@@ -67,6 +67,10 @@ def _frontier_mod():
     return m
 
 
+def _csv_str(x):
+    return x if isinstance(x, str) else str(x)
+
+
 def emit_csv(runs, env, delta, front_slo, conc, out_p):
     """把表 I 的每一列落成一个 CSV —— 包括 Δ。
 
@@ -92,10 +96,17 @@ def emit_csv(runs, env, delta, front_slo, conc, out_p):
         d = "" if f is None else "%.4f" % (sl - f)
         v = ("OUT-OF-RANGE" if f is None else
              "ABOVE" if sl - f > 1.0 else "TIE" if sl - f >= -1.0 else "BELOW")
-        lines.append(",".join(str(x) for x in [
+        # ⚠ 用 csv.writer 而不是手拼逗号：label 里有逗号（"AIMD, retuned"、
+        # "no gate, no resv." 等四条），手拼会让字段数多于表头、DictReader 整体错位
+        # （2026-09-24 审稿人抓）。csv.writer 会自动加引号。
+        import io as _io
+        buf = _io.StringIO()
+        _w = csv.writer(buf)
+        _w.writerow([_csv_str(x) for x in [
             r["run"], LABEL.get(k, k), "%.4f" % w, r["conc"], "%.4f" % sl,
             "" if f is None else "%.4f" % f, d, v, conc.get(k, "?"),
-            "1" if k in env_w else "0"]))
+            "1" if k in env_w else "0"]])
+        lines.append(buf.getvalue().rstrip("\r\n"))
     body = "\n".join(out + lines) + "\n"
     assert isinstance(body, str)
     with open(out_p, "w") as fh:

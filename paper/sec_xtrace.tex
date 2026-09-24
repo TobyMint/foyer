@@ -17,8 +17,8 @@ this paper, which is why we chose it. Its sessions are smaller (median prompt
 18{,}809 tokens against 23{,}187) and its tool waits are far longer at the
 median: over round transitions---same session,
 adjacent rounds, each session's last round excluded because it has no
-successor---the gap is 20.2\,s against 0.34\,s at the median and 39.9\,s
-against 15.8\,s at the mean, roughly 60$\times$ either way
+successor---the gap is 20.2\,s against 0.34\,s at the median---about 60$\times$---and
+39.9\,s against 15.8\,s at the mean, which is 2.5$\times$
 (\texttt{toolwait.csv} carries both traces on this definition). The 29.1\,s
 that appears in \texttt{elasticity\_x.csv} is the mean over all 390 rows
 including each session's last round, and is not comparable with the main
@@ -85,7 +85,8 @@ resolvable at that perturbation---which is a bound on the paragraph above, not
 a reprieve from it.
 
 \paragraph{The controller's verdict transfers, weakly.} \sys{} finishes the
-second trace in 75.6 minutes against 66.9 for the fastest static cap, so it is
+second trace in 75.6 minutes against 66.4 for the fastest static cap (on the
+three caps of \texttt{elasticity\_x.csv} the fastest is 66.9), so it is
 13.2\% slower (13.15\% at full precision)---but that gap is inside the run-to-run spread we measure
 elsewhere (up to 22.4\% between repeat pairs of the same configuration), so we
 do not claim it lost. What we can say is that it did not win, on either axis:

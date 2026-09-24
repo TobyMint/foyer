@@ -26,6 +26,9 @@ load25c_budget3_zero,1381,1195,1.2,0.0,16.7,82.1,N
 load25c_budget3,1628,1439,0.5,0.0,15.8,83.7,N
 realhr_foyer,2348,1852,0.2,0.0,13.9,86.0,N
 load25c_budget3_sg0,2278,2059,1.5,0.0,8.3,90.2,N
+# 正文用的集合（八条非重复 Foyer 臂）：pois200_foyer_bres pois200_foyer_breshz1 pois200_foyer_hc pois200_foyer_hz0 pois200_foyer_hz1 pois200_foyer_hz2 pois200_foyer_nogate pois200_foyer_rg4
+# eight_median,valve_pct=32.7,projection_over_pct=32.2
+# eight_range,valve=6.8~67.9,projection_over=19.5~50.8
 # 论文正文引用的集合：pois200_foyer_bres pois200_foyer_breshz1 pois200_foyer_hc pois200_foyer_hc_r2 pois200_foyer_hz0 pois200_foyer_hz1 pois200_foyer_hz2 pois200_foyer_nogate pois200_foyer_rg4 pois200_foyer_sf0_r2
 # paper_set_median,valve_pct=19.2,projection_over_pct=33.2,remainder_pct=45.1
 # paper_set_range,valve=5.9~67.9,projection_over=19.5~50.8

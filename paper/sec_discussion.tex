@@ -68,10 +68,10 @@ that it beats what a static mix could achieve. On 125 requests one request is
 worth 0.8\,pp, so the margin is about one request. The tier's
 segment-to-segment SD (5.1 to 21.4\,pp) is not the right yardstick: segment
 volatility is not run-to-run uncertainty. The right one is the replicate spread
-we have---which, across the four configurations we repeated, is 0.5, 1.0, 3.9
-and 5.1\,pp. Against the two tightest of those $+0.9$\,pp is about a replicate
-wide; against the two widest---which belong to the configurations that decide
-our headline elsewhere---it is well inside one. We quote the tightest pair
+we have---which, across the five configurations we repeated, is 0.5, 0.8, 1.0,
+3.9 and 5.1\,pp (\texttt{replicates.csv}). Against the two tightest of those $+0.9$\,pp is about a replicate
+wide; against the three widest---which belong to the configurations that decide
+our headline elsewhere---it is inside one. We quote the tightest pair
 because it is the least favourable to us, not because it is the whole
 distribution. What we will defend is the weaker claim: on the
 low-load tier the controller is not worse, and the same switch that is worth
@@ -293,10 +293,10 @@ band's upper edge, by a margin of the same order as that pair's own replicate
 spread (3.9\,pp).
 
 \paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
-model and one trace family; generality is untested. Only four configurations
-have been repeated---twice, twice, twice and three times---so the replicate
-spread we report in \S\ref{sec:results} is estimated from one to two degrees of
-freedom per configuration; a margin as small as the one that decides our verdict would need several
+model and one trace family; generality is untested. Only five configurations
+have been repeated---four of them twice and the base configuration four
+times---so the replicate spread we report in \S\ref{sec:results} is estimated
+from one to three degrees of freedom per configuration; a margin as small as the one that decides our verdict would need several
 more repeats per configuration to resolve, and we did not run them. Two specific boundaries
 matter. First, the pool holds about four median sessions, so concurrency is
 capacity-bound by construction; on a device with a much larger pool the

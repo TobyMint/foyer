@@ -136,7 +136,24 @@ def main():
         print()
         print("论文集合（%d 条，名单见 CSV 注释）：阀门中位 %.1f%%、投影超预算中位 %.1f%%、"
               "remainder 中位 %.1f%%" % (len(sel), mid(vp), mid(op), mid(rp)))
+        # 正文用的集合是【八条非重复的 Foyer 臂】（foyfix 与两条 AIMD 跑的是别的
+        # 控制器、不记闸门状态）。原来只落 10 条的 PAPER_SET，于是正文引的
+        # 「八条」中位数在文件里查不到，而 PAPER_SET 的中位数又对不上正文
+        # （2026-09-24 审稿人抓：正文把投影中位 32.7 写进了阀门那一格）。
+        eight = {"foyer_bres", "foyer_hc", "foyer_hz2", "foyer_hz1",
+                 "foyer_breshz1", "foyer_nogate", "foyer_hz0", "foyer_rg4"}
+        s8 = [r for r in rows if r["run"].replace("pois200_", "") in eight]
+        k8 = lambda key: sorted(100.0 * r[key] / r["blocked"] for r in s8)
+        v8, p8 = k8("valve"), k8("over")
+        print("八条非重复 Foyer 臂（正文用的集合）：阀门中位 %.1f%%、投影超预算中位 %.1f%%"
+              % (mid(v8), mid(p8)))
         with open(out_path, "a") as f:
+            f.write("# 正文用的集合（八条非重复 Foyer 臂）：%s\n" % " ".join(sorted(
+                r["run"] for r in s8)))
+            f.write("# eight_median,valve_pct=%.1f,projection_over_pct=%.1f\n"
+                    % (mid(v8), mid(p8)))
+            f.write("# eight_range,valve=%.1f~%.1f,projection_over=%.1f~%.1f\n"
+                    % (v8[0], v8[-1], p8[0], p8[-1]))
             f.write("# 论文正文引用的集合：%s\n" % " ".join(sorted(r["run"] for r in sel)))
             f.write("# paper_set_median,valve_pct=%.1f,projection_over_pct=%.1f,remainder_pct=%.1f\n"
                     % (mid(vp), mid(op), mid(rp)))

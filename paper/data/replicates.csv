@@ -1,11 +1,3 @@
-group                                 n  wall_sd wall_cv%   各次墙钟
-cap4+HiCache (frontier anchor)        2     1.93     0.92   213.0 209.1
-cap2+HiCache (frontier anchor)        2     4.72     1.57   304.5 295.0
-Foyer base (hw=0,t=0.95,h=3)          4     5.17     1.79   279.8 289.6 291.3 293.2
-horizon=1 (the best arm)              2     2.48     0.96   255.8 260.8
-cap3+HiCache (frontier anchor)        2     3.05     1.31   236.4 230.3
--> /tmp/rep.csv
----
 # 同配置重复 run 的离散度 —— 由 scripts/lab/gen_replicates.py 生成
 # 论文里「+0.20pp 在 run-to-run 波动内」这句就靠这张表
 group,n,wall_min_mean,wall_min_sd,wall_cv_pct,wall_range_pct,slo_mean,slo_sd_pp,slo_range_pp,runs

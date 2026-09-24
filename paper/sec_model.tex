@@ -12,8 +12,10 @@ engine has any request in flight:
 Fig.~\ref{fig:decomp} shows the split for every completed run. Two things are
 immediately visible and both matter later.
 
-First, idle time is not noise. It ranges from 7.4\% of the fastest
-configuration's sampled span to 36.3\% of the slowest's---the denominator here
+First, idle time is not noise. Across the runs it spans 7.4\% to 41.9\% of
+the sampled span---7.4\% for the fastest configuration, 36.3\% for the
+slowest, and 41.9\% for the one that idles most (all-throttles-off). The
+denominator here
 is the span the sampler observed, which runs about six minutes longer than the
 request wall clock of Table~\ref{tab:runs}, so the fractions against that
 wall clock are 7.6\% and 36.7\%---and it is not spread evenly.
@@ -256,7 +258,7 @@ recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
 lowest of those being the arm that disables its own admission gate and
 therefore runs the pool hardest. and it holds
 while the \emph{device} misses more than the device-only family's at every
-point (22.4--27.9\,M against 8.6--20.7\,M), because the host serves
+point (22.3--27.9\,M against 8.6--20.7\,M), because the host serves
 13--19\,M in front of the recomputation instead of letting the device keep
 it. A reader watching only the device hit rate would conclude the host tier
 made things worse. (The 92.6\% ceiling-on-prompt and the 75.5\% bound are not
