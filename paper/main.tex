@@ -60,8 +60,9 @@ overflows---though that pair is two runs on two days, so we also have a
 capacity control in the queue that changes the pool size alone on one card; we
 report it when it lands. Our controllers run on the host-tier configuration, where
 $\epsilon$ stays below one across their whole operating range, so the ceiling
-we measure on device-only caps is not what bounded them. It bounds what added concurrency is worth, not what a
-whole run achieves---idle time and the SLO axis are separate. We measure $\epsilon$ on a
+we measure on device-only caps is not what bounded them: it bounds what added
+concurrency is worth, not what a whole run achieves---idle time and the SLO
+axis are separate. We measure $\epsilon$ on a
 memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
 four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
 system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
@@ -72,9 +73,9 @@ the main trace's reaches 1.15---at a different running count and by an amount
 our own perturbation study cannot pin down.
 
 The verdict on the controllers is negative, and we report it at that
-strength. (The criterion of \S\ref{sec:criterion} is a diagnostic and does
-not return this verdict; \S\ref{sec:criterion} is explicit that it does not
-explain the failure.) Nine controller variants spanning four routes, plus a
+strength. (The criterion of \S\ref{sec:criterion} is a diagnostic; that
+section is explicit that it neither returns this verdict nor explains the
+failure.) Nine controller variants spanning four routes, plus a
 reimplementation of an independent congestion-based controller, none is
 above the static Pareto front at the latency threshold interactive serving
 cares about---of the six whose measurements are clean; the other three were
