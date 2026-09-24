@@ -84,18 +84,19 @@ where load is light and dominated where load is heavy is the pattern this
 paper set out to explain, and it is the pattern we measured.
 
 The second finding is the more useful one. The signal an adaptive controller
-would need is available---the number of sessions waiting for admission is three
-and a half times larger on the 200-session tier than on the same-generation
-25-session arm (median 66 against 18, maximum 135 against 24). We window the
-queue to the run, as every other timing number here is windowed; counting all
-control cycles instead gives 66 against 16 and 135 against 25, a ratio of 4.1
-rather than 3.7, because the 25-session arm is short enough that the 112 cycles
-before its first submission are 12\% of its 931, against 188 of 8784 (2\%) for
-the 200-session arm, and it is precisely there that its queue is empty. Both
-windows and both denominators are in \texttt{backlog.csv}. The earlier-harness
+would need is available---the number of sessions waiting for admission is 3.7
+times larger on the 200-session tier than on the same-generation 25-session arm
+(median 66 against 18, maximum 135 against 24). We window the queue to the run,
+as every other timing number here is windowed; counting all control cycles
+instead gives 66 against 16 and 135 against 25---a median ratio of 4.1 rather
+than 3.7---because the
+25-session arm is short enough that the 112 cycles before its first submission
+are 12\% of its 931, against 188 of 8784 (2\%) for the 200-session arm, and it
+is precisely there that its queue is empty. Both windows and both denominators
+are in \texttt{backlog.csv}. The earlier-harness
 25-session arms of \S\ref{sec:load} read 9--11, which is where the 6--7$\times$
 of an earlier draft came from, and we quote the same-generation
-pair---\texttt{backlog.csv} carries every arm's queue length. But the signal's
+pair. But the signal's
 \emph{interpretation} is not obvious. At the 25-session tier the controller
 holds eighteen sessions back while running one; that backlog is manufactured by
 the throttling itself rather than
