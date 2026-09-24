@@ -12,12 +12,21 @@
   应兑现明显更高（预期 >=85%），塌点被推到更高 R̄。
   **若 A100 在同样 R̄ 上塌到同样水平，「容量定塌点」被证伪。两种结果都照实写。**
 
-口径与 gen_reuse.py / gen_decomp.py 逐字一致（复用上界从 trace 直接求和、
-兑现率 = 实测复用 / 上界、R̄_busy = 全时段均值 / busy 占比）。
+口径**共用定义，不另写一份**（CLAUDE.md 纪律 2）：
+  - 上界           → import gen_reuse.trace_ceiling（与 reuse.csv 同一个函数）
+  - busy 占比 / R̄  → import gen_decomp.busy_stats（区间积分口径，与 decomp.csv 同一份）
+  - 兑现率         = 实测复用 / 上界
+2026-09-25 codex 第 21 轮指出：原来这三样都是本脚本自己重写的，而 docstring 写着
+「逐字一致」—— 兑现率那一项恰好对得上，busy 占比那一项对不上（cap1 0.998027 对 1.000000）。
 
 用法: python3 gen_a100.py <trace.csv> <a100_results_dir> <main_results_dir> <out.csv> [run ...]
 """
 import csv, json, os, statistics, sys
+
+# 同目录下的两个生成器 —— 上界与 busy 占比的**共用定义**（CLAUDE.md 纪律 2）。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_decomp as _GD  # noqa: E402
+import gen_reuse as _GR   # noqa: E402
 
 RUNS = ["a100_cap2", "a100_cap3", "a100_cap4", "a100_cap5"]
 # 3090 的 device-only 对照点（与主表同族：无 HiCache、同 memfrac、同 trace）
@@ -25,10 +34,10 @@ MAIN = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
 
 
 def bound(trace_p):
-    rows = list(csv.DictReader(open(trace_p)))
-    pre = sum(int(r["prefix_len"]) for r in rows)
-    tot = sum(int(r["prefix_len"]) + int(r["input_len"]) for r in rows)
-    return pre, tot
+    """上界走 gen_reuse.trace_ceiling —— 与 reuse.csv 的 bound_tok 是同一个函数，
+    不在这里重写一遍（重写就会有一天两边分叉）。"""
+    ce = _GR.trace_ceiling(trace_p)
+    return ce["ceiling_tok"], ce["prompt_tok"]
 
 
 def one(d):
@@ -38,16 +47,15 @@ def one(d):
     wall = (max(comps) - min(subs)) / 60.0
 
     rd = list(csv.DictReader(open(os.path.join(d, "metrics.csv"))))
-    rn = [float(x["sglang:num_running_reqs"]) for x in rd if x.get("sglang:num_running_reqs")]
     occ = [float(x["sglang:token_usage"]) for x in rd if x.get("sglang:token_usage")]
-    busy_frac = sum(1 for v in rn if v > 0) / len(rn) if rn else 0.0
-    running_busy = (statistics.mean(rn) / busy_frac) if busy_frac else 0.0
-
-    ts = [float(x["ts"]) for x in rd if x.get("ts")]
-    span_min = (max(ts) - min(ts)) / 60.0 if ts else 0.0
-    busy_min = span_min - sum(1 for v in rn if v == 0) * 5.0 / 60.0
     tokens = sum(s.get("output_len_actual") or 0 for s in st)
-    tau1 = busy_min * 60.0 * running_busy / tokens * 1000.0 if tokens else 0.0
+
+    # busy 占比 / R̄_busy / τ₁ 一律走 gen_decomp.busy_stats —— 与 decomp.csv 同一个函数。
+    # 原来这里是「数非零采样 / 总采样」，等于假定采样间隔严格均匀；
+    # 与 gen_decomp 的区间积分在 cap1 上差 0.002（0.998027 对 1.000000）。
+    _sp, _bu, _id, _pc, _ra, running_busy, tau1 = _GD.busy_stats(
+        _GD.read_metrics(os.path.join(d, "metrics.csv")), tokens)
+    tau1 = tau1 or 0.0
 
     durs = []
     for s in st:
@@ -113,7 +121,9 @@ def main():
                                           "Rbar_busy", "occ_p50_pct", "tau1_ms", "tau2_ms",
                                           "slo_pct", "prompt_tok", "reuse_tok", "reuse_frac",
                                           "bound_frac", "realized_frac"])
-        f.write("# 兑现率 = reuse_tok / 上界（%d），口径与 gen_reuse.py 逐字一致\n" % pre)
+        f.write("# 兑现率 = reuse_tok / 上界（%d）—— 上界调 gen_reuse.trace_ceiling，\n" % pre)
+        f.write("# R̄busy / τ₁ 调 gen_decomp.busy_stats，两个都是共用定义（CLAUDE.md 纪律 2）。\n")
+        f.write("# 3090 那五行的兑现率与 R̄busy 应与 reuse.csv 逐位相同；不同就是口径又分叉了。\n")
         w.writeheader()
         w.writerows(rows)
     print("写入 %s：%d 行（A100 %d 条，3090 对照 %d 条）"
