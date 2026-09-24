@@ -91,9 +91,11 @@ above it. So the direction transfers and the location does not, and on this
 trace we can say no more than that added concurrency stopped paying. The
 per-request measure is no steadier on
 that trace ($+0.41$, $+0.48$, $+0.45$, $-1.25$, $+0.73$). The controller arm
-there runs at 1.22, below every one of the nine arms above and below where the
-branch turns expensive on either trace, and still does not beat the static
-front at the threshold this paper uses---though at a stricter one it does
+there runs at $\overline{R}_{\text{busy}}$ 1.22---below the running count where
+the branch turns expensive on either trace (1.29 there, 1.53 on the main
+trace), and below every one of the nine main-trace arms---and still does not
+beat the static
+front at the threshold this paper uses, though at a stricter one it does
 (\S\ref{sec:xtrace}). We report this as a boundary:
 the criterion identifies a branch, and where we could check it elsewhere the
 sign of the branch transferred while its location did not; it never explained
