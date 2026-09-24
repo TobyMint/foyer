@@ -17,12 +17,19 @@ configuration's sampled span to 36.3\% of the slowest's---the denominator here
 is the span the sampler observed, which runs about six minutes longer than the
 request wall clock of Table~\ref{tab:runs}, so the fractions against that
 wall clock are 7.6\% and 36.7\%---and it is not spread evenly.
-Over 1{,}849 stretches the median is 5.6\,s---close to the 5\,s sampling
-floor, because most tool calls are quick---but 17.6\% of them exceed 20\,s,
-the 90th percentile is 30.1\,s, and the longest is 511\,s
+Over 1{,}849 stretches the mean is 20.6\,s and 17.6\% of them exceed
+20\,s, accounting for 69.6\% of all idle \emph{time}
 (Fig.~\ref{fig:idle}). The tail, not the middle, is what a scheduler feels,
 and it sits at the scale of the 15.8--16.9\,s mean tool wait (demanded and
-measured; \texttt{toolwait.csv}).
+measured; \texttt{toolwait.csv}). We report the mean and the share rather
+than the median here because the median is not robust to which runs enter the
+pool: it is 10.0\,s without \texttt{cap1} and 5.0--5.6\,s with it, since
+that one run contributes 411 of the 1{,}849 stretches and is itself the
+longest. The mean (18.3--21.0\,s) and the over-20\,s share of idle time
+(64.8--70.6\%) move by little across the four poolings we report in
+\texttt{idle\_pooled.csv}, so the claim that the tail dominates does not
+depend on the choice. The 90th percentile moves with the median
+(25.1--30.1\,s) and we give it as a range for the same reason.
 
 Second, the two components move independently. \texttt{bres}
 (\S\ref{sec:results}) reduces idle from 15.9\% to 10.1\%, recovering about 17
@@ -48,8 +55,10 @@ one thing will get this wrong.
   \includegraphics[width=\columnwidth]{figs/fig4_idle_segments.pdf}
   \caption{Survival function of idle-stretch duration, pooled over all
   completed runs (1{,}849 stretches). Most stretches are short---the median is
-  5.6\,s---but the minutes are not: 69.6\% of all idle \emph{time} sits in
-  stretches longer than 20\,s, and the mean stretch is 20.6\,s, the same order
+  5--10\,s depending on which runs enter the pool, which is why we do not lead
+  with it---but the minutes are not: 69.6\% of all idle \emph{time} sits in
+  stretches longer than 20\,s (64.8--70.6\% across the four poolings in
+  \texttt{idle\_pooled.csv}), and the mean stretch is 20.6\,s, the same order
   as the 15.8--16.9\,s mean tool wait. The cliff is the 5\,s sampling floor.}
   \label{fig:idle}
 \end{figure}
