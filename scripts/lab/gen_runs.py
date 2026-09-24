@@ -47,6 +47,8 @@ aimd2 200 aimd
 aimd2_paper 200 aimd
 cap2_25 25 static_hc
 cap3_25 25 static_hc
+cap4_25 25 static_hc
+foyer_push_25 25 foyer
 foyer_hc_r2 200 foyer
 foyer_sf0_r2 200 foyer""".split("\n")
 

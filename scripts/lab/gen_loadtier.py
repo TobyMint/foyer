@@ -63,6 +63,7 @@ def main():
     with open(out_p, "w", newline="") as f:
         f.write("# 节流开关在两个负载档上的反向效应 —— gen_loadtier.py 生成，勿手改\n")
         f.write("# 200 档取 table1.csv；25 档取 thr25_base / thr25_push 的原始步骤日志（现算墙钟与 SLO）。\n")
+        f.write("# thr=on 是控制器默认（水位线 + SLO 阀 + 增长预留都开）；off 是三者全关。\n")
         f.write("# ⚠ 25 档那两行是【旧 harness】，与 200 档不同代，只能作方向、不能作量级；\n")
         f.write("#   同代的 25 档对照在 tier25.csv 里（pois200_*_25），不含全关节流这条臂。\n")
         w = csv.DictWriter(f, fieldnames=["tier", "arm", "throttle", "wall_min", "slo_pct", "harness"])

@@ -31,10 +31,12 @@ that one run contributes 411 of the 1{,}848 stretches and is itself the
 longest. The mean (18.7--20.8\,s) and the over-20\,s share of idle time
 (65.8--70.2\%) move by little across the poolings we report in
 \texttt{idle\_pooled.csv}. That file carries four variants but only two
-distinct pools: the other two differ by arms that either never enter this
-analysis or, since the re-measurements, are flagged no longer, and we say so
-rather than count them twice. The claim that the tail dominates does not
-depend on the choice. The 90th percentile moves with the median
+distinct pools, and for different reasons: the ``minus damaged'' variant now
+excludes nothing, because the arms it names either never enter this analysis
+or have been re-measured clean; the ``minus flagged'' variant coincides with
+``minus \texttt{cap1}'' because \texttt{cap1} is the only flagged arm in this
+pool at all. We say that rather than count four pools where there are two. The
+claim that the tail dominates does not depend on the choice. The 90th percentile moves with the median
 (25.1--30.1\,s) and we give it as a range for the same reason.
 
 Second, the two components move independently and in opposite directions, so
@@ -65,7 +67,7 @@ charge-free base arm is a third case, whose split we give in
   \caption{Wall clock split into busy and idle for the twenty-eight runs of
   \S\ref{sec:model} and \S\ref{sec:results}, ordered by total duration. Idle is 7.3\% for the fastest configuration and
   36.3\% for the slowest. Note the no-control baseline: it sits sixth of
-  twenty-eight on idle share (11.4\%) and yet sixteenth on duration, because
+  twenty-eight on idle share (11.4\%) and yet eighteenth on duration, because
   its busy time grows with everything it admits. Three bars are hatched---the
   same $^\ddagger$ flag as in Table~\ref{tab:runs}: one of the three has a
   measurably inflated step cost and two are flagged windows that left no

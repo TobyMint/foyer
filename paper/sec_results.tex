@@ -525,7 +525,10 @@ settings we swept it does not behave like the others: budgets of 0.85 and 0.90
 finish in 333.9 and 315.9 minutes at 89.9\% and 87.7\% SLO, which is $-2.24$
 and $-4.22$\,pp from the envelope at those wall clocks (\texttt{budget\_sweep.csv}),
 against $-0.93$ and $-1.24$ for the two nearest arms at the 0.95 the rest of
-the paper uses. So this knob slides the point \emph{below} the front rather
+the paper uses. Both of these arms carry the co-tenancy flag of
+\S\ref{sec:repro}; their $\tau_2$ (25.0 and 24.3\,ms) sits inside the clean
+range, so we keep their numbers and flag the window, as we do for
+\texttt{cap1}. So this knob slides the point \emph{below} the front rather
 than along it. We report it
 only for completeness, since it adds no mechanism.
 
@@ -651,7 +654,7 @@ a tightening is another cap.
   it---while the one-round optimum, the fastest point here, is 0.9\,pp below
   and is the one point that does not reproduce on a repeat (it lands
   5.6\,pp below).
-  The other three settings were each run once, so the shape is better
-  supported than any single point on it.}
+  The other two settings were each run once (the base has a second run), so
+  the shape is better supported than any single point on it.}
   \label{fig:horizon}
 \end{figure}

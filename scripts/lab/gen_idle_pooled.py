@@ -44,8 +44,22 @@ def main():
     damaged = {k for k in bad
                if (lambda v: v is not None and v >= 30.0)(
                    (lambda t: float(t) if t not in (None, "", "None") else None)(_tau.get(k)))}
-    if damaged == (bad & {r["run"] for r in rows}):
-        print("  注：minus_damaged 与 minus_contested 现在是同一个集合（重跑后只剩一条带旗且受损的臂）")
+    # ⚠ 这条提示原来判的是 `damaged == (bad ∩ rows)` —— **判错了对**，
+    # 实际会退化的是另外两对（`damaged ∩ rows` 为空、`bad ∩ rows` 只剩 cap1），
+    # 所以它永不触发（2026-09-25 中立子 agent 第 11 轮实测：跑生成器无任何提示，
+    # 而表里四行两两相同）。改成直接按**输出**判重：哪两行逐列相同就说出来。
+    # ⚠ 要比的是【与池内 run 求交之后】的排除集，不是排除集本身 ——
+    # `minus_damaged` 排除的是 {foyer_breshz1}，而它根本不在这个池里，
+    # 所以它的**有效池**与 all_runs 相同。只比集合本身会漏掉这一对。
+    _inpool = {r["run"] for r in rows}
+    _seen = {}
+    for _n, _e in (("all_runs", set()), ("minus_cap1", {"cap1"}),
+                   ("minus_damaged", damaged),
+                   ("minus_contested4", bad & _inpool)):
+        _seen.setdefault(frozenset(_e & _inpool), []).append(_n)
+    for _k, _v in _seen.items():
+        if len(_v) > 1:
+            print("  注：这些变体的【有效池】相同（排除集与池内 run 求交后一样）：%s" % "、".join(_v))
     out = []
     for name, excl in (("all_runs", set()),
                        ("minus_cap1", {"cap1"}),

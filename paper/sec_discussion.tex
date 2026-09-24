@@ -313,11 +313,16 @@ runs, and every distance below carries that substitution
 (\texttt{arrival\_slo.csv} records the columns)---and of the eleven controller
 arms, nine move by no more than
 2.5\,pp. Two move more---the all-throttles-off arm improves by 8.2\,pp and the
-retuned AIMD arm by 3.2\,pp---and both stay below the front either way. One
-crosses the $\pm1.0$\,pp band, and it is the one that decides our headline:
+retuned AIMD arm by 3.2\,pp---and both stay below the front either way. Two
+cross out of the $\pm1.0$\,pp band, and one of them decides our headline:
 \texttt{horizon}=1 goes from $-0.93$ (inside the band, a tie) to $-1.21$ (below
 it), because on the ready clock its own SLO falls from 84.8\% to 68.2\% while
-the anchor it is measured against falls less. The ready clock therefore moves
+the anchor it is measured against falls less. The other is
+\texttt{horizon}=2, our closest point: $-0.30$ to $-1.48$. Its margin is only
+$0.48$\,pp and the ready clock's anchors are substituted rather than
+re-measured, which \S\ref{sec:results} notes moves every arm by of order
+$0.4$\,pp, so we read that one as \emph{at least one, possibly two} rather
+than as a count; the direction is the same for both. The ready clock therefore moves
 it from a tie to a loss, which is the same direction the paragraph above
 reaches from the other side, and it is why we do not report a ready-clock
 distance for it as a headline: the two anchor repeats that define the line are
@@ -334,9 +339,9 @@ ready-clock frontier that included them could move the line by the 3.9 and
 5.1\,pp those repeats differ by. We do not claim the verdict is unchanged under
 every SLO definition---only that on the runs we could recompute, moving the
 clock to the ready point costs every configuration 3--19\,pp, moves no
-configuration from below the line to above it, and changes exactly one
-controller verdict: \texttt{horizon}=1 leaves the tie band on the below
-side. (One static cap crosses the other way, \texttt{cap3}+HC from $-1.72$ to
+configuration from below the line to above it, and changes at most two
+controller verdicts: \texttt{horizon}=1 leaves the tie band on the below
+side, and \texttt{horizon}=2 may (see the margin above). (One static cap crosses the other way, \texttt{cap3}+HC from $-1.72$ to
 $-0.79$, which does not help any controller.)
 We report this because a reviewer should ask it,
 and because the answer is the useful part: the negative result is not an
@@ -400,7 +405,7 @@ and we treat it that way: five of the twelve (\texttt{F:t85}, \texttt{F:t90},
 no aggregate inflation at all, because their overlap was short relative to the
 run or did not touch their decode interval. Where the damage is legible it is large---the
 per-request decode interval $\tau_2$, measured client-side and never touching
-the sampler, sits at 30.9--33.3\,ms for the one affected arm still carrying
+the sampler, sits at 33.3\,ms for the one affected arm still carrying
 the flag in
 Table~\ref{tab:runs} against 23.7--27.5\,ms across the twelve clean runs of
 the same controller family (every \sys{}-family host-tier run that completed

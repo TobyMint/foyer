@@ -273,8 +273,8 @@ def main():
            "sec_results.tex")
 
     # ---- stall.csv：§V 的「不放行窗口」（2026-09-24 复核时原数字复现不出来，改用本表）----
-    # 正文把那三条写成【一句】：「170.5, 173.2 and 191.5\,s, 0.9--1.1\% of the run's
-    # wall clock」。逐条查 0.9 / 1.0 / 1.08 这种短值会撞车（--audit: "0.9" 出现 15 次），
+    # 正文把那三条写成【一句】：「170.5, 173.2 and 195.0\,s, 0.9--1.2\% of the run's
+    # wall clock」。逐条查 0.9 / 1.0 / 1.2 这种短值会撞车（--audit: "0.9" 出现 15 次），
     # 所以照正文那句的形态拼一下再查。
     _st = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/stall.csv"))}
     _three = [r for r in ("foyer_hz0_r2", "foyer_breshz1", "foyer_rg4") if r in _st]
