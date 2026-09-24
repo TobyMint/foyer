@@ -77,7 +77,9 @@ not return this verdict; \S\ref{sec:criterion} is explicit that it does not
 explain the failure.) Nine controller variants spanning four routes, plus a
 reimplementation of an independent congestion-based controller, none is
 above the static Pareto front at the latency threshold interactive serving
-cares about---the best misses it by under a point, on the below side of our
+cares about---of the six whose measurements are clean; the other three were
+measured while other jobs shared the host and are being re-measured. The best
+of the six misses the front by under a point, on the below side of our
 tie band, and the closest arm we repeated misses by 0.9 with its repeat at 5.6;
 a plain cap on resident sessions
 remains the fastest policy we measured. That is not an argument for admitting everything: with no control at
@@ -95,11 +97,11 @@ arms we tested, leaves five with a step cost that no matched comparison can
 confirm, and leaves three as residuals we can measure and cannot yet
 explain. The single step-cost attribution it does make is on a run flagged
 for host co-tenancy but not measurably damaged by it, and we say which is
-which rather than counting it. Three of the nine carry that flag and are still
-being re-measured; the one we have re-measured moved from 7.8 points below the
-front to 1.3, so the verdict is a statement about the six that are clean or
-re-measured, with the other three set aside rather than counted in its
-favour. They hold
+which rather than counting it. A fourth variant carried the same flag and has been
+re-measured: it moved from 7.8 points below the front to 1.3, still below,
+which is the correction we expect the other three to show. The verdict is a
+statement about the six that are clean or re-measured, with the other three set
+aside rather than counted in its favour. They hold
 nearly half
 the pool idle while sessions queue---their own headroom estimate on the base
 configuration is 1.79$\times$ the truth (1.32--1.90$\times$ across the

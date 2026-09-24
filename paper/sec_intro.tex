@@ -27,15 +27,16 @@ We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 (Qwen2.5-Coder-7B, 96K context, SGLang, a 101{,}432-token KV pool) and compare
 a family of admission policies against a sweep of static concurrency caps.
 Nine controller variants, spanning four mechanistically distinct ideas, all
-land below the static Pareto front, and so does a reimplementation of an
-independent congestion-based controller from the literature
+land below the static Pareto front---six of them on clean measurements, three
+on ones we are re-measuring because other jobs shared the host---and so does a
+reimplementation of an independent congestion-based controller from the
+literature
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
 $\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
-arm we repeated misses by 0.9 with its repeat at 5.6. Three of the nine were
-measured while other jobs shared the host and are being re-measured; the one
-that has been moved 6.5 points closer to the front without crossing it, and
-\S\ref{sec:results} says what the verdict rests on until the other two
-land.
+arm we repeated misses by 0.9 with its repeat at 5.6. Four of the nine were
+measured while other jobs shared the host. We re-measured one: it moved 6.5
+points closer to the front without crossing it, and \S\ref{sec:results} says
+what the verdict rests on until the other three land.
 
 \begin{figure}[tb]
   \centering
@@ -50,7 +51,8 @@ land.
   interpolation, and we do not have the switching policy that would turn it
   into a measurement; \S\ref{sec:bg} states the limit and names the arm that
   beats the nearest measured static point on SLO while losing on wall clock. Nine \sys{} variants plus a
-  reimplementation of an independent controller, none above at the 10\,s
+  reimplementation of an independent controller, and of the six \sys{} variants
+  whose measurements are clean, none is above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
   that verdict is conditional on the threshold. The five points drawn with a
   hollow ring were measured while three or more other engine instances shared

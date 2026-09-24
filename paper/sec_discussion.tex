@@ -230,7 +230,8 @@ controllers sit relative to them, and at the loose end one of them crosses:
 
 Two readings, and we give both. The first is that our headline claim is
 conditional: at the strict threshold that interactive serving actually cares
-about, no controller reaches the static front; at a loose one, one does. The
+about, none of the cleanly measured controllers reaches the static front; at a
+loose one, one does. The
 second is that the crossing is still not a win, though the reason is more
 awkward than we first wrote. $+1.5$\,pp at 20\,s is larger than the replicate
 SLO spread of the three tightest pairs we have---0.5\,pp for the base
@@ -472,8 +473,10 @@ inspection and once by the end-to-end measurement here.
 
 We asked whether an adaptive admission controller can beat a tuned static
 concurrency cap on a memory-bound agentic LLM workload, and found that on our
-system it cannot: nine variants, four routes tested, none above the static
-front. We expected the reason to be a cancellation---admission policy controls
+system it cannot: nine variants, four routes tested, and of the six whose
+measurements are clean, none above the static front. (Four were measured while
+other jobs shared the host; we re-measured one, which moved 6.5\,pp closer
+without crossing, and the other three are still out.) We expected the reason to be a cancellation---admission policy controls
 how many requests are in flight, the per-step cost rises with that number, and
 the product is what the wall clock sees---and we built a two-part decomposition
 of the wall clock that makes the cancellation measurable. That decomposition

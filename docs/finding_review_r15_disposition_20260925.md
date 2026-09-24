@@ -95,7 +95,10 @@ codex 指出最接近的匹配对（`cap3_fixed` / `cap3_hc`）虽然占用率�
 摘要：「that pair is two runs on two days, so we also have a capacity control in
 the queue that changes the pool size alone on one card; we report it when it lands」；
 §III：「The caveat is that this pair is two runs on two different days and two
-different GPUs, not a paired experiment」；§IV：同句。**不做进一步弱化的理由**：
+different GPUs, not a paired experiment」。**§IV 当时其实没有这句**（我先前写"§IV：同句"
+是错的，codex 第 16 轮指出）——§IV 只有更强的「cross-policy association, not a
+transportable causal derivative」，没点名日期/卡。已补一句点名，
+并注明同卡配对已排队（`docs/prereg_tierpair_20260925.md`）。**不做进一步弱化的理由**：
 分层对照（device-only 族 vs host-tier 族，同 trace、同引擎、同模型、同池子大小）
 不依赖那一对；`cap3_fixed`/`cap3_hc` 只是最干净的单点说明。预注册的容量控制
 （`docs/prereg_halfpool_20260924.md`）落地后会直接检验它。
