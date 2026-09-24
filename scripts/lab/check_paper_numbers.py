@@ -498,6 +498,22 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- loadtier.csv（图 5 与 §Load Dependence）----
+    # 2026-09-25：这张表是 paper/data 里【唯一一张没有生成器】的，而图 5 和正文都引它。
+    # 已建 gen_loadtier.py（200 档取 table1.csv、25 档取 thr25_base/thr25_push 现算），
+    # 逐位复现了原来手维护的四行。这里把那两个反向效应钉住。
+    _lt = {r["tier"]: r for r in load(os.path.join(ROOT, "paper/data/loadtier.csv"))}
+    _lt_on = {(r["tier"], r["throttle"]): float(r["wall_min"])
+              for r in load(os.path.join(ROOT, "paper/data/loadtier.csv"))}
+    if ("25", "on") in _lt_on and ("25", "off") in _lt_on:
+        ck("§load 25 档的加速幅度",
+           "%.0f" % abs(100 * (_lt_on[("25", "off")] - _lt_on[("25", "on")]) / _lt_on[("25", "on")]),
+           "sec_discussion.tex")
+    if ("200", "on") in _lt_on and ("200", "off") in _lt_on:
+        ck("§load 200 档的减速幅度",
+           "%.0f" % abs(100 * (_lt_on[("200", "off")] - _lt_on[("200", "on")]) / _lt_on[("200", "on")]),
+           "sec_discussion.tex")
+
     # ---- nocontrol.csv 与 arrival_slo.csv：此前【零覆盖】----
     # 2026-09-25 全量重生成时发现 arrival_slo.csv 的生成器 run 列表被改名了、
     # 表却没重生成（还留着旧的 foyer_hz0/hz2）—— 两张表此前一条检查都没有。

@@ -157,6 +157,8 @@ REGEN = [
     ("gate_attrib.csv",  "实验机：gen_gate_attrib.py <results>/night <out>（只算跑完的 run）"),
     ("projection.csv",   "实验机：gen_projection.py <results>/night <out>"),
     ("repeat_spread.csv","实验机：gen_repeat_spread.py <results>/night <out>"),
+    ("loadtier.csv",     "python3 scripts/lab/gen_loadtier.py results/night paper/data/table1.csv paper/data/loadtier.csv"),
+    ("horizon.csv",      "python3 scripts/lab/gen_horizon.py paper/data/table1.csv paper/data/horizon.csv"),
     ("图",               "python3 paper/figs/make_figs.py"),
 ]
 
