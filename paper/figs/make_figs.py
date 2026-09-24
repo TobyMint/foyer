@@ -125,7 +125,9 @@ def fig_frontier():
             ("cap4+HC",          (213.0, 63.4), (207, 49), "left"),
             ("cap3+HC",          (236.4, 81.1), (238, 71), "right"),
             # best Foyer 放到点的【正上方】：原来放在左下，与 cap3+HC 的引线交叉
-            ("best Foyer\n(tie, below it)", (255.8, 84.8), (262, 95), "center")]:
+            # 最接近前沿的臂是单飞关闭那条（263.3, 86.3, Δ −0.55）；原来这里锚在
+            # horizon=1 的 (255.8, 84.8) 上，文字却写「best Foyer」——指错了点。
+            ("best Foyer\n(tie, below it)", (263.3, 86.3), (268, 95), "center")]:
         # cap4+HC 甩到右边：往左会让文字压住 y 轴的 "50" 刻度
         ax.annotate(txt, xy, xytext=xytext, ha=ha, va="center",
                     fontsize=6, color="0.15", linespacing=1.25,
@@ -401,8 +403,46 @@ def fig_cancel():
 
 
 
+def fig_transfer():
+    """两条 trace 的「兑现率 vs 在跑数」—— §VI 的迁移主张就画在这一张上。
+
+    为什么要有它：§VI 说的是「方向迁移、水平不迁移」，而全文没有一张图把两条
+    trace 放在同一个坐标里。y 轴取【各自 trace 上界的百分比】而不是绝对复用率，
+    这样两条 trace 可比 —— 上界不同（75.5% vs 86.3%）正是不能直接比绝对量的原因。
+    """
+    fig, ax = plt.subplots(figsize=(3.5, 2.45))
+    main_dev = load("reuse.csv")
+    xt = load("reuse_x.csv")
+    md = sorted([r for r in main_dev if r["family"] == "device_only"],
+                key=lambda r: float(r["Rbar_busy"]))
+    mh = sorted([r for r in main_dev if r["family"] == "hicache"],
+                key=lambda r: float(r["Rbar_busy"]))
+    x = sorted(xt, key=lambda r: float(r["Rbar_busy"]))
+    ax.plot([float(r["Rbar_busy"]) for r in md],
+            [100 * float(r["realized_frac"]) for r in md],
+            "s-", color=C_STATIC, ms=4, lw=1.0, label="main trace, device-only")
+    ax.plot([float(r["Rbar_busy"]) for r in mh],
+            [100 * float(r["realized_frac"]) for r in mh],
+            "^", color=C_STATIC_HC, ms=4, lw=0,
+            label="main trace, with a host tier")
+    ax.plot([float(r["Rbar_busy"]) for r in x],
+            [100 * float(r["realized_frac"]) for r in x],
+            "o-", color=C_FOYER, ms=4, lw=1.0, label="second trace, device-only")
+    for lbl, sel in (("cap1", md[:1]), ("cap5", md[-1:]),
+                     ("cap2", x[:1]), ("cap8", x[-1:])):
+        r = sel[0]
+        ax.annotate(lbl, (float(r["Rbar_busy"]), 100 * float(r["realized_frac"])),
+                    xytext=(4, 3), textcoords="offset points", fontsize=6, color="0.2")
+    ax.set_xlabel("mean running requests during busy time", labelpad=1)
+    ax.set_ylabel("realization (\% of that trace's reuse bound)")
+    ax.set_xlim(0.9, 1.95); ax.set_ylim(30, 98)
+    legend_below(ax, ncol=1, y=-0.20)
+    fig.savefig(os.path.join(HERE, "fig8_transfer.pdf"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     for fn in (fig_frontier, fig_decomp, fig_steptime, fig_idle_segments,
-               fig_loadtier, fig_horizon, fig_cancel):
+               fig_loadtier, fig_horizon, fig_cancel, fig_transfer):
         fn()
         print("ok", fn.__name__)

@@ -1,0 +1,15 @@
+{
+ "lane": "pois_cap3r",
+ "policy": "static=3",
+ "trace": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+ "trace_md5": "df4bdd37e5",
+ "gpu": 2,
+ "port": 30032,
+ "started": 1789599962.8325665,
+ "pool_tokens": 101432,
+ "pool_attempts": 1,
+ "cap": 3,
+ "runner_rc": 0,
+ "wall_s": 15550.5,
+ "finished": 1789615575.3512838
+}

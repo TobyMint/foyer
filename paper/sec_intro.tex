@@ -30,8 +30,8 @@ Nine controller variants, spanning four mechanistically distinct ideas, all
 land below the static Pareto front, and so does a reimplementation of an
 independent congestion-based controller from the literature
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
-$\pm1.0$\,pp band we call a tie, but on the below side of it---and its repeat
-misses by 5.6.
+$\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
+arm we repeated misses by 0.9 with its repeat at 5.6.
 
 \begin{figure}[tb]
   \centering
@@ -45,11 +45,13 @@ misses by 5.6.
   point on the segment between them. Nine \sys{} variants plus a
   reimplementation of an independent controller, none above at the 10\,s
   latency threshold used throughout; \S\ref{sec:discussion} reports how far
-  that verdict is conditional on the threshold. The four points drawn with a
-  hollow ring were measured while three other engine instances shared the
-  host, which inflates per-step cost and makes them incomparable with the
-  rest (\S\ref{sec:repro}); they are plotted for completeness and are being
-  re-measured.}
+  that verdict is conditional on the threshold. The five points drawn with a
+  hollow ring were measured while three or more other engine instances shared
+  the host (\S\ref{sec:repro}); on three of them the per-request decode
+  interval is inflated by 24--41\% and they are not comparable with the rest,
+  on the other two the flag is a window that left no measurable trace. The
+  three are being re-measured, and one arm that carried the flag in an
+  earlier version has been re-measured clean and is plotted without a ring.}
   \label{fig:frontier}
 \end{figure}
 
@@ -61,8 +63,9 @@ none. The busy component is governed by $W_{\text{busy}} \approx
 (G/\overline{R})\,\tau$ (Eq.~\ref{eq:busy}), where $\overline{R}$ is the mean
 number of running requests, $G$ the generated tokens and $\tau$ the per-step
 cost. An admission policy moves $\overline{R}$, and on our configurations it
-moves little else---\texttt{bres} is the exception, and \S\ref{sec:model}
-uses it to show why moving both components at once is still not enough.
+moves little else---though \S\ref{sec:model} gives two arms where the busy and
+idle components move in \emph{opposite} directions, which is why the split is
+worth making at all.
 The difficulty is that $\tau$ is not constant in $\overline{R}$: across our
 runs $\tau_1$ spans 27.0--36.7\,ms, and on the device-only family, raising the
 busy-time running count from 1.00 to 1.84 absorbs a third of what the extra
@@ -74,11 +77,14 @@ worth reusing only while it is still resident, so prefix \emph{reuse} is
 bounded by the workload---in our trace, 75.5\% of the prompt tokens, a bound
 no configuration we ran reaches. How much of that bound is realized is where
 the tier enters. With the KV pool on the device alone, realization falls as
-concurrency rises---92.6\% of the bound at $\overline{R}_{\text{busy}}$ 1.00
+concurrency rises---92.5\% of the bound at $\overline{R}_{\text{busy}}$ 1.00
 down to 36.4\% at 1.84---and the shortfall appears as recomputation, 8.6\,M to
-20.7\,M tokens. With a host tier in front of it, realization holds across the
-range our controllers occupy---90.2\% to 92.3\% between 1.25 and 1.73---even
-though the \emph{device} misses more. Two configurations at the same running
+20.7\,M tokens. With a host tier in front of it the decline disappears: over the
+running counts our controllers occupy, the static points fall only from 92.4\%
+to 90.2\%, and the worst of the nineteen host-tier runs---the one that disables
+every throttle---still realizes 72.8\%, where the nearest device-only point
+(the cap of four, at $\overline{R}_{\text{busy}}$ 1.65) manages 60.7\%, while
+the \emph{device} misses more. Two configurations at the same running
 count and the same pool occupancy realize 79.0\% and 91.3\% of the bound
 respectively (\S\ref{sec:model}); what separates them is not how full the pool
 is but what happens when it overflows. That pair also differs in date and in
@@ -91,7 +97,7 @@ the controller.
 The idle component is structural rather than a control failure. A session in a
 tool wait issues no request, so when all live sessions happen to be waiting,
 the engine is genuinely empty. The stretches are short in the middle and long
-in the tail---mean 20.6\,s---and the tail is what a scheduler feels: 69.6\%
+in the tail---mean 20.9\,s---and the tail is what a scheduler feels: 69.9\%
 of all idle \emph{time} sits in stretches over 20\,s, an order of magnitude
 above the 2\,s control cycle. (The median is not a good summary here: it moves
 between 5 and 10\,s depending on which runs are pooled, because one long run
@@ -113,14 +119,14 @@ leave and therefore that there is no idle time to recover. There is.
         (busy-time throughput), and it does not by itself decide whether a
         controller wins \emph{end to end}, where idle time and the SLO axis
         also move. Our second workload is the demonstration---it has no host
-        tier and runs at low concurrency, the two conditions this section
-        associates with room, and its controller still does not win
+        tier and its controller runs at low concurrency (1.22), the two
+        conditions this section associates with room, and it still does not win
         (\S\ref{sec:xtrace}). The claim here is the local one. The trace
         bounds reuse at
         75.5\% of its prompt tokens, and no configuration we ran reaches that
-        bound---the best realizes 92.6\% of it. What the tier decides is how
+        bound---the best realizes 92.5\% of it. What the tier decides is how
         much of the bound is realized as concurrency rises: device-only,
-        realization falls from 92.6\% to 36.4\% between
+        realization falls from 92.5\% to 36.4\% between
         $\overline{R}_{\text{busy}}$ 1.00 and 1.84 and the shortfall appears
         as recomputation, 8.6\,M to 20.7\,M tokens; with a host tier it holds
         at 90.2--92.4\% over 1.25 to 1.73, while the \emph{device} misses more
@@ -186,8 +192,9 @@ leave and therefore that there is no idle time to recover. There is.
 \subsection{What we do not claim}
 
 We do not claim that admission control is useless in general. We claim it does
-not pay \emph{here}, we show the measurement that decides it, and we argue
-(\S\ref{sec:criterion}) that the same measurement can be taken on another
+not pay \emph{here} and we show the frontier measurement that decides that; the
+diagnostic of \S\ref{sec:criterion} is a cheaper check an engineer can run
+before committing to a sweep, not a verdict on its own, and it can be taken on another
 workload before committing to a sweep. We also do not claim our hardware and model are
 representative; our results are from one 24\,GB accelerator and one 7B model,
 and extending them is future work.

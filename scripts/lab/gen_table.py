@@ -24,7 +24,7 @@ LABEL = {
     "foyer_hc_r2": "horizon$=$3 (2nd run)", "foyer_sf0_r2": "single-flight off",
     "foyer_hz1": "horizon$=$1",
     "foyer_hz1_r2": "horizon$=$1 (repeat)", "foyer_hc": "horizon$=$3 (base)",
-    "foyer_hz2": "horizon$=$2", "foyer_bres": "resident base",
+    "foyer_hz2": "horizon$=$2", "foyer_bres_r2": "resident base",
     "foyer_hz0": "horizon$=$0", "foyer_breshz1": "horizon$=$1, no hw",
     "foyer_nogate": "no gate, no resv.", "foyer_rg4": "running gate$=$4",
     "foyfix_hc": "all throttles off",
@@ -131,6 +131,17 @@ def main():
                 runs[k]["slo_pct"] = r["slo_pct"]
                 n_ov += 1
         assert n_ov > 15, "runs_precise.csv 只覆盖了 %d 行，路径或前缀不对" % n_ov
+        # 每一行都必须有全精度坐标：正文的脚注声称四条步数不足 999 的 run
+        # 「与其余各行用同一个全精度来源」，而这条路径曾经静默回落到 1 位小数的
+        # runs.csv（2026-09-24 审稿人抓：三条 Δ 因此差了 0.01~0.04pp）。
+        # 只断言「覆盖 > 15 行」挡不住这个 —— 它必须逐行点名。
+        miss = sorted(k for k in runs if k not in {r["run"].replace("pois200_", "")
+                                                   for r in load(cand_p)})
+        if miss:
+            raise SystemExit(
+                "!! 这些 run 没有 runs_precise.csv 的坐标，会静默回落到 1 位小数：%s\n"
+                "   在实验机（或完整镜像）上跑 `python3 frontier.py --csv` 重新生成。"
+                % ", ".join(miss))
     else:
         print("%% 警告：没有 runs_precise.csv，用 1 位小数的 runs.csv（delta 会与 frontier.py 差 ~0.02pp）",
               file=sys.stderr)

@@ -12,7 +12,10 @@
   实测复用 = prompt - uncached（steps.jsonl 的 server_uncached_prompt_tokens 累加）
   兑现率 = 实测复用 / 上界 —— 「兑现了多少」这个数
 
-用法: python3 gen_reuse_x.py <trace.csv> <results_dir> <out.csv> <run> [<run> ...]
+用法: python3 gen_reuse_x.py <trace.csv> <results_dir> <out.csv> [<run> ...]
+
+不给 run 列表时用下面的 RUNS（显式列出，缺目录直接报错而不是静默少一行 ——
+CLAUDE.md 纪律 3）。realhr 扫描（cap6/cap8）落地后把新 run 加进来再跑一次。
 """
 import csv, json, os, statistics, sys
 
@@ -24,9 +27,16 @@ def trace_bound(path):
     return pre, tot, pre / tot, len({r["session_id"] for r in rows}), len(rows)
 
 
+# 第二条 trace 的臂：capN 是纯静态 cap（无 HiCache），foyer 是控制器臂。
+# cap1 只有 84/390 步（无 summary.json），从分析与表里排除（与 gen_elasticity_x 的
+# EXCLUDED 一致）。
+RUNS = ["realhr_cap2", "realhr_cap3", "realhr_cap4", "realhr_cap5", "realhr_cap6",
+        "realhr_cap8", "realhr_cap4_r2", "realhr_foyer", "realhr_foyer_r2"]
+
+
 def main():
     trace, root, out_p = sys.argv[1], sys.argv[2], sys.argv[3]
-    runs = sys.argv[4:]
+    runs = sys.argv[4:] or RUNS
     pre, tot, bound, nsess, nsteps = trace_bound(trace)
 
     rows, bad = [], []
@@ -60,6 +70,9 @@ def main():
             "sessions": nsess, "steps": len(steps),
             "Rbar_busy": "%.6f" % (statistics.mean(busy) if busy else 0),
             "occ_p50_pct": "%.1f" % (statistics.median(occ) * 100 if occ else 0),
+            # 正文 §VI 引「means of 13.9% and 25.2%」——13.9 是这条 trace 的 cap2，
+            # 原来两个被引文件里都没有这一列（子 agent 2026-09-24 抓到）。
+            "occ_mean_pct": "%.1f" % (statistics.mean(occ) * 100 if occ else 0),
             "prompt_tok": prompt,
             "reuse_tok": reuse,
             "recompute_tok": unc,
@@ -80,8 +93,8 @@ def main():
         "#   用同一套定义，合起来才是 §VI 那张跨 trace 对照。",
         "# 注意【兑现率跨 trace 不可用占用率概括】：",
         "#   这条 trace 在占用 15.8% 时兑现 0.7478，而主 trace 在占用 22.4% 时兑现 0.9255。",
-        "run,sessions,steps,Rbar_busy,occ_p50_pct,prompt_tok,reuse_tok,recompute_tok,reuse_frac,bound_frac,realized_frac"])
-    fields = ["run", "sessions", "steps", "Rbar_busy", "occ_p50_pct", "prompt_tok",
+        "run,sessions,steps,Rbar_busy,occ_p50_pct,occ_mean_pct,prompt_tok,reuse_tok,recompute_tok,reuse_frac,bound_frac,realized_frac"])
+    fields = ["run", "sessions", "steps", "Rbar_busy", "occ_p50_pct", "occ_mean_pct", "prompt_tok",
               "reuse_tok", "recompute_tok", "reuse_frac", "bound_frac", "realized_frac"]
     body = header + "\n" + "\n".join(",".join(str(r[k]) for k in fields) for r in rows) + "\n"
     assert isinstance(body, str)
@@ -96,6 +109,10 @@ def main():
         print("!! 未写入：")
         for n, why in bad:
             print("   %-16s %s" % (n, why))
+        # 缺 run 必须让调用方看得见：update_xtrace.sh 是串起来跑的，
+        # 只打印不报错的话，后面几步会拿着少了几行的 reuse_x.csv 继续往下算
+        # （CLAUDE.md 纪律 3：静默丢 run 已经栽过三次）。
+        raise SystemExit("!! 有 %d 条 run 没写进去 —— 扫描没跑完就别往下更新" % len(bad))
 
 
 if __name__ == "__main__":

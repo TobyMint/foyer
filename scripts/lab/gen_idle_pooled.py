@@ -31,7 +31,9 @@ def main():
     # 四个变体都出：合并在位/均值对【并哪些 run】的敏感性本身就是要报的东西。
     # 实测：中位被 cap1 一条主导（它占 22% 的段，自身中位 5.0 s），去掉它中位
     # 从 5.60 跳到 10.00；而均值（18.3~21.0）与 >20s 占比（64.8~70.6%）稳定。
-    damaged = {"foyer_hz2", "foyer_hz0", "foyer_bres"}   # 实测被争用损害的三条
+    # 实测被争用损害的【重跑前】那几条。foyer_bres 已由 foyer_bres_r2 替代、
+    # 不再进入正文，所以它从这一组里拿掉（2026-09-25）。
+    damaged = {"foyer_hz2", "foyer_hz0", "foyer_breshz1"}
     out = []
     for name, excl in (("all_runs", set()),
                        ("minus_cap1", {"cap1"}),

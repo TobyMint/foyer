@@ -46,12 +46,14 @@ $\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$. Near zero, busy-time
 converting; near one it does not. It is a property of the workload \emph{and}
 the engine configuration, not of the controller, and what sets it is the
 memory tier. The trace bounds reuse at 75.5\% of its prompt tokens, and no
-configuration we ran reaches that bound---the best realizes 92.6\% of it.
+configuration we ran reaches that bound---the best realizes 92.5\% of it.
 What the tier decides is how much of the bound survives added concurrency:
-device-only, realization falls from 92.6\% to 36.4\% as the running count
+device-only, realization falls from 92.5\% to 36.4\% as the running count
 rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
-20.7\,M tokens); with a host tier it holds at 90.2--92.4\% between 1.25 and
-1.73, while the \emph{device} cache misses more. Two configurations at the
+20.7\,M tokens); with a host tier the static points hold at 90.2--92.4\%
+between 1.25 and 1.73, and across the nineteen host-tier runs that completed
+this trace realization never falls below 72.8\%, while the \emph{device} cache
+misses more. Two configurations at the
 same running count and the same pool occupancy realize 79.0\% and 91.3\% of
 the bound, so it is not how full the pool is but what happens when it
 overflows---though that pair is two runs on two days, so we also have a
@@ -63,6 +65,11 @@ whole run achieves---idle time and the SLO axis are separate. We measure $\epsil
 memory-bound agentic replay (200 sessions, one 24\,GB GPU, a pool that holds
 four median sessions) and get $0.38$ to $0.61$ depending on which step cost a
 system can observe: every 10\% of added concurrency buys 4--6\% of throughput.
+A second, real agent trace (117 Claude sessions, same engine and pool)
+reproduces both measurements in direction, neither in level: realization falls
+there too, and the elasticity there also turns positive---rising to 1.0 where
+the main trace's reaches 1.15---at a different running count and by an amount
+our own perturbation study cannot pin down.
 
 The verdict on the controllers is negative, and we report it at that
 strength. (The criterion of \S\ref{sec:criterion} is a diagnostic and does
@@ -71,7 +78,8 @@ explain the failure.) Nine controller variants spanning four routes, plus a
 reimplementation of an independent congestion-based controller, none is
 above the static Pareto front at the latency threshold interactive serving
 cares about---the best misses it by under a point, on the below side of our
-tie band, and its repeat misses by 5.6; a plain cap on resident sessions
+tie band, and the closest arm we repeated misses by 0.9 with its repeat at 5.6;
+a plain cap on resident sessions
 remains the fastest policy we measured. That is not an argument for admitting everything: with no control at
 all the median request waits 1{,}774 seconds for its first token, the prefix
 cache's realized hit rate collapses from the trace's planned 75.5\% to
@@ -82,27 +90,28 @@ run), and SLO falls to 3\%.
 The question is which selective rule, not whether to be selective. Two
 measurable effects, rather than one we can tune away, account for part of why
 our variants fail---the arm-by-arm attribution of
-\S\ref{sec:results:attribution} attributes three of the twelve controller
-arms we tested, leaves six with a step cost that no matched comparison can
+\S\ref{sec:results:attribution} attributes four of the twelve controller
+arms we tested, leaves five with a step cost that no matched comparison can
 confirm, and leaves three as residuals we can measure and cannot yet
 explain. The single step-cost attribution it does make is on a run flagged
 for host co-tenancy but not measurably damaged by it, and we say which is
 which rather than counting it. They hold
 nearly half
 the pool idle while sessions queue---their own headroom estimate on the base
-configuration is 1.79$\times$ the truth (1.24--2.00$\times$ across the
-controller arms on this trace, and 1.01--4.11$\times$ over every controller run
-we logged, across all three trace families)---and the per-step elasticity measured on the
+configuration is 1.79$\times$ the truth (1.32--1.90$\times$ across the
+sixteen controller runs that finished on this trace, and 1.01--4.11$\times$
+over every finished controller run we logged)---and the per-step elasticity measured on the
 configuration they actually run stays below one across their whole operating
 range, so the engine had room they did not take: the ceiling we measure on
 device-only caps does not survive on the host-tier configuration the
 controllers use. The wall
 clock splits into busy and idle time; admission policy moves only the running
-count, and $\tau$ rises with it. The idle component (7.4--41.9\% of the
+count, and $\tau$ rises with it. The idle component (7.3--41.9\% of the
 sampled span) comes from gaps the tool waits set---an agent session issues no
 request while a tool runs,
-and that wait averages 16.85\,s measured over the controller's run (the trace
-demands 15.82\,s; they differ by the controller's own admission delay), not
+and that wait averages 16.85\,s measured over the controller's run, against the
+15.82\,s the trace demands---on the static cap of one the two match exactly, so
+we attribute the controller's extra 1.03\,s to its own admission delay---not
 the sub-second figure the trace's median suggests---though how many such gaps a run collects is partly the policy's,
 since a policy sets how many sessions stay live. On device-only configurations we can account for the rise token for
 token; on host-tier ones part of it is co-tenancy we found late and part we

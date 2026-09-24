@@ -1,0 +1,16 @@
+# 控制器「不放行窗口」审计 —— 由 scripts/lab/gen_stall.py 生成，勿手改
+# 判据：连续控制周期内 (a) 不放行 (b) 阀门开 (c) 引擎空闲 (d) waiting_n>=85，
+#       且窗口 >= 150 s。详见脚本 docstring。
+run,n_windows,total_s,max_s,pct_wall,waiting_med,lengths
+foyer_hc,0,0.0,,0.0,,-
+foyer_hc_r2,0,0.0,,0.0,,-
+foyer_sf0_r2,0,0.0,,0.0,,-
+foyer_hz0,1,191.5,191.5,1.08,88,191
+foyer_hz1,0,0.0,,0.0,,-
+foyer_hz2,0,0.0,,0.0,,-
+foyer_bres,0,0.0,,0.0,,-
+foyer_bres_r2,1,240.1,240.1,1.47,89,240
+foyer_breshz1,1,170.5,170.5,0.9,130,171
+foyer_nogate,0,0.0,,0.0,,-
+foyer_rg4,1,173.2,173.2,1.0,111,173
+foyfix_hc,9,3036.2,505.8,12.02,122,225|197|181|506|455|441|447|327|256

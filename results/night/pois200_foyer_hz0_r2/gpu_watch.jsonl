@@ -1,0 +1,13 @@
+{"ts": 1790265337.153, "event": "start", "gpu": 2, "owner": "xubowen", "interval": 15.0}
+{"ts": 1790265337.325, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265352.472, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265367.645, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265382.851, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265398.041, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265413.229, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265428.418, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265443.558, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265458.71, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265473.922, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265489.079, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}
+{"ts": 1790265504.256, "gpu": 2, "mem_used_mib": 22181, "util_pct": 0, "procs": [{"pid": 1771250, "user": "xubowen", "mem_mib": 22134, "foreign": false}], "n_foreign": 0, "foreign_mib": 0}

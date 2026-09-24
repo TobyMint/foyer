@@ -1,6 +1,37 @@
-# 实验机上的脚本（镜像）
+# scripts/lab —— 生成器与 lane 脚本
 
-这些脚本**实际运行在 lab-3090 的 `/data/xbw/turnstile/scripts/`**，
+这个目录里有两类东西，**运行位置不一样**，别搞混（2026-09-24 因此栽过一次，
+见 CLAUDE.md「本地镜像是部分快照」）：
+
+## 一、必须在实验机（lab-3090）上跑的
+
+判据：**输出会随「目录里有哪些 run」变化**（计数、排名、并发、集合中位数）。
+
+- `gen_concurrency.py`（同时几条车道；本地跑会把 `var_cap3` 从 CONTESTED 判成 clean）
+- `gen_gate_attrib.py`（全表统计；本地 34 行 vs 实验机 46 行）
+- `gen_projection.py`（全表区间与中位数；本地 35 行 vs 实验机 47 行）
+- `frontier.py --csv`（用 `TURNSTILE_RESULTS` 切目录；本地跑前先确认 `pois200_*` 目录数一致）
+
+这三个生成器都带最小行数护栏（镜像不全直接报错）。跑完把 CSV scp 回 `paper/data/`。
+
+## 二、可以在本地镜像上跑的
+
+判据：run 列表是**显式写在脚本里**的（缺 run 会报错，不会静默少一行），
+所以镜像不全会立刻暴露。本机 `results/night/` 里有 54 个 `pois200_*` 与
+`realhr_*` 目录，够它们用：
+
+- `gen_runs.py`（表 I 的行清单；`runs.csv`）
+- `gen_table.py`（表 I 每一列含 Δ；`table1.csv`）
+- `gen_reuse.py` / `gen_reuse_x.py` / `gen_slope.py`（复用兑现与斜率）
+- `gen_decomp.py` / `gen_arm_running.py` / `gen_eviction.py`（时间与体积分解）
+- `gen_occupancy.py` / `gen_hitrate.py` / `gen_tier25.py` / `gen_toolwait.py` /
+  `gen_arrival_slo.py` / `gen_projection.py`（后者见上，须在实验机）
+- 自检：`check_paper_numbers.py`（正文 ↔ CSV）、`audit_numbers.py`（正文 ↔ 任何文件）、
+  `data_run_coverage.py`（镜像体检）、`compare_rerun.py`（重跑对照）
+
+## 三、lane 脚本（跑实验用）
+
+这些**实际运行在 lab-3090 的 `/data/xbw/turnstile/scripts/`**，
 这里是从那边拉下来的镜像，用于留档与复现。
 
 ## 2026-09-22 新增

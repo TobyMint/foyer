@@ -16,11 +16,15 @@ import csv, os, statistics, sys
 # gen_attribution 于是静默回退到 occupancy.csv 的【全时段均值】口径（1.26），
 # 而其余 11 行都是 busy 条件口径（sf0 的 busy 值是 1.45）—— 口径混用（2026-09-24 审稿人抓）。
 # 这就是 CLAUDE.md 纪律 3 的又一个实例：生成器的 run 列表不全会静默改变下游口径。
-ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2",
-        "foyer_hz0", "foyer_bres", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
-        "foyfix_hc", "aimd2", "aimd2_paper"]
+# pairA_foyerhc / pairB_foyerhc：匹配对实验的两条 Foyer 臂（同 trace、同 HiCache，
+# 与 static 的 pairA/pairB_cap2hc 配对）。它们【不在表 I】但属于 host-tier 族，
+# §model 的「host tier 兑现区间」要把它们算进去 —— 少一条就会让区间说错
+# （2026-09-24 第 12 轮审稿人：foyfix_hc 的 72.8% 被排除在「84.2–92.4%」之外）。
+ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz1_r2", "foyer_hz2",
+        "foyer_hz0", "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
+        "foyfix_hc", "pairA_foyerhc", "pairB_foyerhc", "aimd2", "aimd2_paper"]
 STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
-          "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap4_hc_r2"]
+          "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
 
 
 def one(path):
@@ -46,8 +50,11 @@ def main():
             if not res:
                 continue
             a, b, f = res
-            rows.append({"run": r, "family": group, "running_all": round(a, 3),
-                         "running_busy": round(b, 3), "busy_frac": round(f, 3)})
+            # 精度必须够：gen_slope 的斜率是 d(realized)/d(R̄)，R̄ 只给 3 位会让
+            # 斜率在第 2 位就偏（2026-09-24 审稿人用原始 metrics 复算，
+            # 三条斜率对不上：-66.77 vs -66.73、-157.1 vs -157.8、-127.6 vs -127.0）。
+            rows.append({"run": r, "family": group, "running_all": round(a, 6),
+                         "running_busy": round(b, 6), "busy_frac": round(f, 6)})
             print("%-16s %8.2f %9.2f %8.3f" % (r, a, b, f))
     with open(out, "w", newline="") as f:
         f.write("# 在跑数的两个口径 —— 由 scripts/lab/gen_arm_running.py 生成\n")
@@ -59,6 +66,15 @@ def main():
     ctrl = [r["running_busy"] for r in rows if r["family"] == "controller"]
     if ctrl:
         print()
+        # 论文 §IV/§VI 引用的「控制器运行区间 1.35~1.69」是【九条 Foyer 臂】的区间
+        # （不含 AIMD、不含 pairA/pairB_foyerhc、不含 foyfix）。两个都报，
+        # 免得看汇总的人以为正文的区间写错了。
+        NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
+                "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
+        nb = [r["running_busy"] for r in rows if r["run"] in NINE]
+        if nb:
+            print("正文 §IV 的九条 Foyer 臂 R̄busy: %.2f ~ %.2f（%d 条）"
+                  % (min(nb), max(nb), len(nb)))
         print("控制器臂 R̄busy: %.2f ~ %.2f（%d 条）" % (min(ctrl), max(ctrl), len(ctrl)))
         print("  >=1.53 的: %d 条" % sum(1 for x in ctrl if x >= 1.53))
     print("->", out)

@@ -10,11 +10,16 @@
 
 用法: python3 gen_slope.py <reuse.csv> <reuse_x.csv> <out.csv>
 """
-import csv, sys
+import re, csv, sys
 
 
 def load(p):
     return [r for r in csv.DictReader(l for l in open(p) if not l.startswith("#"))]
+
+
+def _is_repeat(run):
+    """重复 run 的命名约定：_r2 / _r3 ...（各 family 都遵守）。"""
+    return bool(re.search(r"_r\d+$", run))
 
 
 def main():
@@ -22,8 +27,11 @@ def main():
            for r in load(sys.argv[1]) if r["family"] == "device_only"]
     # 只取【静态点】——控制器臂不参与前沿/序列，混进来会把两段连成一段
     # （第一版没滤，把 realhr_foyer 也算进去，于是 realhr 变成 3 段而不是 4 段）
+    # 只取【静态点】，且**排除重复 run** —— 重复点与它自己那条 cap 的 R̄ 几乎相同
+    # （cap4 1.287 vs cap4_r2 1.290），当段算会造出一个 ΔR̄=0.003 的假段，
+    # 斜率读到 −207（2026-09-24 加 cap4_r2 时当场出现）。重复只进散布，不进斜率。
     src += [(("xtrace", r["run"]), float(r["Rbar_busy"]), float(r["realized_frac"]))
-            for r in load(sys.argv[2]) if "_cap" in r["run"]]
+            for r in load(sys.argv[2]) if "_cap" in r["run"] and not _is_repeat(r["run"])]
     by = {}
     for (tr, run), r, f in src:
         by.setdefault(tr, []).append((r, f, run))

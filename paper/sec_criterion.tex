@@ -69,16 +69,26 @@ a transportable causal derivative. $\tau_2$ is genuinely independent of the
 wall clock but measures only decode, so it cannot be dropped into a throughput
 equation that includes prefill.
 
-We tested whether the curve transfers to a second workload and it does not
-obviously do so. On a real agent trace (117 sessions, median inter-round
+We tested whether the curve transfers to a second workload. On a real agent
+trace (117 sessions, median inter-round
 waits of 20.2\,s against 0.34\,s on the synthetic trace,
-\texttt{toolwait.csv}, three static caps and one
-controller arm), the model-consistent elasticity is negative across the measured
-range---$-2.40$ then $-0.28$, at $\overline{R}_{\text{busy}}$ 1.08 to 1.29---and
-the controller arm there runs at 1.22, below every one of the nine arms above,
-and still does not beat the static front. The per-request measure has the
-opposite sign on that trace ($+0.41$, $+0.48$). We report this as a boundary:
-the criterion is a description of one workload on one configuration, and where
-we could check it elsewhere it neither transferred nor explained the failure.
-It is not, as an earlier draft claimed, something that decides the question in
-minutes before building anything.
+\texttt{toolwait.csv}, six static caps and one controller arm) the
+model-consistent elasticity is negative over the first two segments---$-2.40$
+then $-0.28$, at $\overline{R}_{\text{busy}}$ 1.08 to 1.29---and then turns
+positive above 1.29 ($+1.0$, $+0.18$, $+0.87$ over the three segments that
+reach 1.50). The $\varepsilon > 1$ regime is touched and not held there: the
+first of those three segments is the only one at or above one, and a $\pm10\%$
+perturbation of $\tau_1$ carries every one of their bounds across both zero and
+one. The main trace, for contrast, crosses one at 1.53 with $+1.15$ and stays
+above it. So the direction transfers and the location does not, and on this
+trace we can say no more than that added concurrency stopped paying. The
+per-request measure is no steadier on
+that trace ($+0.41$, $+0.48$, $+0.45$, $-1.25$, $+0.73$). The controller arm
+there runs at 1.22, below every one of the nine arms above and below where the
+branch turns expensive on either trace, and still does not beat the static
+front at the threshold this paper uses---though at a stricter one it does
+(\S\ref{sec:xtrace}). We report this as a boundary:
+the criterion identifies a branch, and where we could check it elsewhere the
+sign of the branch transferred while its location did not; it never explained
+the failure. It is not, as an earlier draft claimed, something that decides the
+question in minutes before building anything.

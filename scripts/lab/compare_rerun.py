@@ -58,6 +58,9 @@ def main():
     root = sys.argv[1]
     pairs = list(zip(sys.argv[2::2], sys.argv[3::2]))
     FR = front_mod()
+    # frontier.py 的 RESULTS 默认指实验机；本脚本第一个参数就是结果目录，这里对齐它
+    # —— 否则本地跑（或以后换目录）会全篇报「缺日志」，看着像数据没了。
+    FR.RESULTS = os.path.abspath(root)
     print("%-26s %8s %7s %8s %9s %8s %9s" % (
         "run", "wall", "SLO%", "front", "delta", "τ₂", "复用%"))
     for old, new in pairs:

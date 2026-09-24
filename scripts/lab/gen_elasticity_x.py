@@ -34,8 +34,12 @@ FAMILIES = [
       ("cap3", "pois200_cap3_fixed"), ("cap4", "pois200_cap4"),
       ("cap5", "pois200_cap5")], 5),
     ("realhr", "replay_realhr (真实高峰小时, 117 会话)",
+     # 第二条 trace 的纯静态 cap。cap5/cap6/cap8 是 2026-09-24 为「第二条 trace 会不会
+     # 也出现悬崖」这个扫描补跑的（cap8 落地后自动进段）；realhr_cap1 只有 84/390 步，
+     # 在 EXCLUDED 里列了原因。段是相邻两个 cap 之间，所以顺序必须按 cap 升序。
      [("cap2", "realhr_cap2"), ("cap3", "realhr_cap3"),
-      ("cap4", "realhr_cap4")], 4),
+      ("cap4", "realhr_cap4"), ("cap5", "realhr_cap5"),
+      ("cap6", "realhr_cap6"), ("cap8", "realhr_cap8")], 4),
 ]
 # 控制器臂（每族一条主臂）
 ARMS = [("main", "Foyer+HiCache", "pois200_foyer_hc", 200),
@@ -280,7 +284,14 @@ def main():
             fhit = front_slo(envhit, st["wall_min"])
             dhit = (st["hit"] - fhit) if (fhit is not None and st["hit"] is not None) else None
             seg_hit = [s for s in segs if s["r0"] <= st["running_busy"] <= s["r1"]]
-            fkind = ("realhr 纯静态 cap 上左包络（cap2/cap3/cap4，3 个锚点）" if fam == "realhr"
+            # 锚点名单【动态生成】：原来这里硬编码「cap2/cap3/cap4，3 个锚点」，
+            # 而扫描扩到 cap5/cap6/cap8 之后包络已经变了（cap8 与 cap5 也在包络上），
+            # 文件里的说明与它自己的列自相矛盾（2026-09-24 复核时抓到）。
+            _byname = {(stats[r]["wall_min"], stats[r]["slo10"]): c for c, r in caps}
+            _env_names = "、".join(
+                "%s(%.1f, %.1f)" % (_byname.get((w, sl), "?"), w, sl)
+                for w, sl in sorted(env10))
+            fkind = ("realhr 纯静态 cap 上左包络（%s，%d 个锚点）" % (_env_names, len(env10)) if fam == "realhr"
                      else "主 trace 纯静态 cap 上左包络（cap1..cap5）——⚠ 与论文 Table 的前沿"
                           "不是同一条（论文的前沿锚点带 HiCache），两族的 Δ 不可直接比")
             order = sorted([(stats[r]["running_busy"], stats[r]["wall_min"], c)

@@ -10,7 +10,7 @@ import json, os, statistics, sys, glob
 THRESH = [5.0, 10.0, 20.0]
 # cap3_hc_r2 / cap4_hc_r2 是重复 run，2026-09-24 起按其重复顶掉首次的规矩一并纳入
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap3_hc_r2","cap4_hc","cap4_hc_r2",
-        "foyer_hc","foyer_hz1","foyer_hz2","foyer_hz0","foyer_bres","foyer_breshz1",
+        "foyer_hc","foyer_hz1","foyer_hz2","foyer_hz0","foyer_bres_r2","foyer_breshz1",
         "foyer_nogate","foyer_rg4","foyfix_hc","aimd2","aimd2_paper"]
 
 
@@ -57,9 +57,9 @@ def main():
                     return s0 + (w - w0) / (w1 - w0) * (s1 - s0)
             return None
         deltas = []
-        for r in ["foyer_hz1", "foyer_hc", "foyer_bres", "foyer_nogate", "aimd2_paper"]:
+        for r in ["foyer_hz1", "foyer_hc", "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]:
             if r in out:
-                w = {"foyer_hz1": 255.8, "foyer_hc": 291.3, "foyer_bres": 295.5,
+                w = {"foyer_hz1": 255.8, "foyer_hc": 291.3, "foyer_bres_r2": 265.9,
                      "foyer_nogate": 272.3, "aimd2_paper": 364.3}[r]
                 f = front_slo(w)
                 if f is not None:
@@ -75,7 +75,7 @@ def main():
             w.writerow(["# 阈值敏感性 —— slo_sensitivity.py 生成"])
             w.writerow(["# 每个阈值下各控制器相对该阈值静态前沿的有符号距离（pp）"])
             w.writerow(["run"] + ["slo%d_pp" % t for t in THRESH])
-            names = ["foyer_hz1", "foyer_hc", "foyer_bres", "foyer_nogate", "aimd2_paper"]
+            names = ["foyer_hz1", "foyer_hc", "foyer_bres_r2", "foyer_nogate", "aimd2_paper"]
             for r in names:
                 row = [r.replace("foyer_", "")]
                 for t in THRESH:

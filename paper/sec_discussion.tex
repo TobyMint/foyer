@@ -36,7 +36,9 @@ in 27.6 minutes at 92.8\%.
 \begin{table}[tb]
   \caption{The 25-session tier, all four arms under the current harness.
   This is the same-generation comparison earlier drafts of this paper were
-  missing; \texttt{cap4} and the \sys{} arm were run for this revision.}
+  missing; \texttt{cap4} and the \sys{} arm were run for this revision. The
+  segment SD here is over six segments, not the ten Table~\ref{tab:runs} uses
+  for 999-step runs, so the two tables' SD columns are not comparable.}
   \label{tab:tier25}
   \centering
   \small
@@ -82,11 +84,14 @@ where load is light and dominated where load is heavy is the pattern this
 paper set out to explain, and it is the pattern we measured.
 
 The second finding is the more useful one. The signal an adaptive controller
-would need is available---the number of sessions waiting for admission differs
-by 6--7$\times$ between the tiers (median 9--11 at 25 sessions against 66 at
-200, maximum 135)---but its \emph{interpretation} is not obvious. At the
-25-session tier the controller holds eleven sessions back while running
-exactly one; that backlog is manufactured by the throttling itself rather than
+would need is available---the number of sessions waiting for admission is four
+times larger on the 200-session tier than on the same-generation 25-session arm
+(median 66 against 16, maximum 135 against 25; the earlier-harness 25-session
+arms of \S\ref{sec:load} read 9--11, which is where the 6--7$\times$ of an
+earlier draft came from, and we quote the same-generation pair)---but its
+\emph{interpretation} is not obvious. At the 25-session tier the controller
+holds sixteen sessions back while running one; that backlog is manufactured by
+the throttling itself rather than
 evidence that demand has slackened. Reading it correctly requires combining
 instantaneous backlog with progress through the run, which is a stateful
 computation a cap cannot perform. We regard this as the most promising
@@ -98,7 +103,9 @@ direction we did not finish, and we are explicit that we did not finish it.
   \caption{The same throttle switch, two load tiers, opposite signs. The
   25-session bars are from an earlier harness revision and are shown as a
   direction, not a magnitude---the current-harness 25-session comparison is in
-  Table~\ref{tab:tier25} instead. The 200-session bars are current.}
+  Table~\ref{tab:tier25} instead. The 200-session bars are current. The two
+  panels have independent axes, so the bars are not comparable in height
+  across panels---the annotations give each panel's own change.}
   \label{fig:loadtier}
 \end{figure}
 
@@ -167,8 +174,8 @@ per-step logs), unweighted mean over rounds $\ge 1$; the planned rate is the
 trace constant 80.9\% and does not move with the cap. \S\ref{sec:model} uses
 a different convention---all steps, token-weighted, so that reuse and
 recomputation partition the prompt---under which the same collapse reads
-92.6\%$\to$36.4\% of the trace's bound for the device-only caps and
-92.3\%$\to$90.2\% with a host tier. We state both because the paper's earlier
+92.5\%$\to$36.4\% of the trace's bound for the device-only caps and
+92.4\%$\to$90.2\% for the static host-tier caps. We state both because the paper's earlier
 drafts mixed them. We note the boundary of this claim---we varied admission policy,
 not eviction policy, and SGLang exposes alternate eviction policies we did not
 test. A characterization of production KV-cache traffic at a large cloud
@@ -215,7 +222,7 @@ controllers sit relative to them, and at the loose end one of them crosses:
   \midrule
   \texttt{horizon}=1        & $-2.9$ & $-0.9$ & $+1.5$ \\
   \sys{} base               & $-2.3$ & $-1.3$ & $+0.6$ \\
-  \texttt{bres}             & $-11.9$ & $-7.8$ & $-4.3$ \\
+  \texttt{bres}             & $-3.6$ & $-1.4$ & $+0.3$ \\
   Concur-style AIMD        & $-14.2$ & $-11.2$ & $-6.5$ \\
   \bottomrule
 \end{tabular}
@@ -263,16 +270,21 @@ session admitted last under \texttt{cap1} can wait hours for its turn; its
 engine-side TTFT is still 1.6\,s.
 
 What does \emph{not} change is the verdict, within the subset we recomputed.
-The static envelope keeps the same four anchors, and of the eleven controller
+The static envelope keeps the same four anchors---the two anchor
+repeats, which we did not recompute on the ready clock, stand in as their first
+runs, and every distance below carries that substitution
+(\texttt{arrival\_slo.csv} records the columns)---and of the eleven controller
 arms, nine move by no more than
-2.7\,pp and none crosses the $\pm1.0$\,pp band into a new verdict. Two move
-more: the all-throttles-off arm improves by 8.3\,pp and the retuned AIMD arm by
-2.8\,pp, both of which stay below the front either way. The one that decides our headline moves the wrong way for
-the controller: on the ready clock \texttt{horizon}=1's own SLO falls from
-84.8\% to 68.2\% while the anchor it is measured against falls less, so the
-ready clock moves it further below the line rather than closer to it. We do not
-give a ready-clock distance for it, because the two anchor repeats that define
-the line are not in the set we could recompute (\S\ref{sec:discussion} says
+2.5\,pp. Two move more---the all-throttles-off arm improves by 8.2\,pp and the
+retuned AIMD arm by 3.2\,pp---and both stay below the front either way. One
+crosses the $\pm1.0$\,pp band, and it is the one that decides our headline:
+\texttt{horizon}=1 goes from $-0.93$ (inside the band, a tie) to $-1.21$ (below
+it), because on the ready clock its own SLO falls from 84.8\% to 68.2\% while
+the anchor it is measured against falls less. The ready clock therefore moves
+it from a tie to a loss, which is the same direction the paragraph above
+reaches from the other side, and it is why we do not report a ready-clock
+distance for it as a headline: the two anchor repeats that define the line are
+not in the set we could recompute (\S\ref{sec:discussion} says
 which runs are), and inventing a line for them would be the same error this
 subsection is about.
 
@@ -284,18 +296,22 @@ therefore rests on the original anchors without their repeats, and a
 ready-clock frontier that included them could move the line by the 3.9 and
 5.1\,pp those repeats differ by. We do not claim the verdict is unchanged under
 every SLO definition---only that on the runs we could recompute, moving the
-clock to the ready point costs every configuration 3--19\,pp and changes no
-verdict in that set.
+clock to the ready point costs every configuration 3--19\,pp, moves no
+configuration from below the line to above it, and changes exactly one
+controller verdict: \texttt{horizon}=1 leaves the tie band on the below
+side. (One static cap crosses the other way, \texttt{cap3}+HC from $-1.72$ to
+$-0.79$, which does not help any controller.)
 We report this because a reviewer should ask it,
 and because the answer is the useful part: the negative result is not an
 artifact of choosing an SLO definition that flatters controllers. If anything
-the flattering choice was the one that moved our best arm's distance from
+the flattering choice was the one that moved the arm nearest the line from
 $-0.9$ to $+1.5$---that is, from just below the line to just above the tie
 band's upper edge, by a margin of the same order as that pair's own replicate
 spread (3.9\,pp).
 
-\paragraph{Limitations.} Our results come from one 24\,GB accelerator, one 7B
-model and one trace family; generality is untested. Only five configurations
+\paragraph{Limitations.} Our results come from one 24\,GB accelerator and one
+7B model. The workload axis we did test once more (\S\ref{sec:xtrace}); the
+hardware axis we did not, so generality across devices is untested. Only five configurations
 have been repeated---four of them twice and the base configuration four
 times---so the replicate spread we report in \S\ref{sec:results} is estimated
 from one to three degrees of freedom per configuration; a margin as small as the one that decides our verdict would need several
@@ -326,10 +342,12 @@ heterogeneous-SLO settings are where we would look next.
 \paragraph{Reproducibility.}
 \label{sec:repro}
 The front and the signed distance of each controller are computed by
-\texttt{scripts/lab/frontier.py} from the raw per-step logs; the run tables and
-the four runs shorter than 999 steps are computed by
-\texttt{scripts/lab/gen\_table.py} and \texttt{scripts/lab/run\_summary.py}
-respectively, and \S\ref{sec:criterion} is computed by
+\texttt{scripts/lab/frontier.py} from the raw per-step logs; Table~\ref{tab:runs}
+is rendered by \texttt{scripts/lab/gen\_table.py} from
+\texttt{frontier.py}'s full-precision coordinates
+(\texttt{paper/data/runs\_precise.csv}), including the four runs that stopped
+short of 999 steps; the live-session column comes from the runner's admission
+log via \texttt{run\_summary.py}, and \S\ref{sec:criterion} is computed by
 \texttt{gen\_elasticity.py} and \texttt{gen\_elasticity\_hc.py}. Every run is
 guarded against a shrunken KV pool.
 
@@ -340,43 +358,70 @@ matters more than the pool guard catches. An audit
 reconstructs, for every run, how many other runs were alive for how long. Runs
 that overlapped three or more others for at least an hour are flagged;
 fourteen of ours are, two of which are failed runs we do not report. The flag is a risk marker, not a measurement of damage,
-and we treat it that way: three of the twelve (\texttt{F:t85}, \texttt{F:t90},
-\texttt{var\_foyer}) show no aggregate inflation at all, because their overlap
-was short relative to the run. Where the damage is legible it is large---the
+and we treat it that way: five of the twelve (\texttt{F:t85}, \texttt{F:t90},
+\texttt{var\_foyer}, \texttt{cap1} and the published-parameter AIMD row) show
+no aggregate inflation at all, because their overlap was short relative to the
+run or did not touch their decode interval. Where the damage is legible it is large---the
 per-request decode interval $\tau_2$, measured client-side and never touching
-the sampler, sits at 30.9--33.3\,ms for the four affected arms in
-Table~\ref{tab:runs} against 23.8--25.7\,ms for the same family measured
-clean. Two
-controls pin the cause to co-tenancy rather than to the configuration. One
-run (\texttt{cap1}) holds $\tau_2$ at 20.3--20.7\,ms for its first five and a
-half hours and jumps to 22.4--27.5\,ms in the minute two other runs start. And
-two independent runs (\texttt{F:t85}, \texttt{F:rl99}) step down from
-$\approx$30\,ms to 22--25\,ms in the same wall-clock minute, when a third run
-ends. Fourteen of our runs fall in the flagged class; six of them are rows of
-Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:bres}, \texttt{F:hz0},
+the sampler, sits at 30.9--33.3\,ms for the three affected arms still carrying
+the flag in
+Table~\ref{tab:runs} against 23.7--25.0\,ms across the seven clean runs of the
+same controller family---a 24 to 41\% inflation. A fourth affected arm has
+since been re-measured alone and came in at
+24.8\,ms, inside the clean range, which is the correction in action. Two
+controls pin the cause to co-tenancy rather than to the configuration, and both
+are within-run---the same run, the same policy, the same trace, with the only
+change being who else was on the machine. One run (\texttt{cap1}) reads a
+per-half-hour median $\tau_2$ of 20.3--20.9\,ms for its first five and a half
+hours, and 21.3, 27.1 and 21.1 in the three half-hours after two others start.
+Two runs move the other way as neighbours leave: \texttt{F:t85} from 29.8\,ms
+in the half-hour before to 22.3--22.6 in the four after, \texttt{F:rl99} from
+32.4 to 25.2 and 25.1. We chose the half-hour window because it is the widest
+one that resolves the transition and still puts at least twenty steps in every
+bucket quoted; the finer series is noisier and does not support a
+minute-resolution claim, so we do not make one.
+(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; five of them are rows of
+Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:hz0},
 \texttt{F:hz2}, \texttt{F:breshz1}, and the published-parameter AIMD row) and
-eight are arms we do not report here. The flag is a window, and only four of
-those six are actually damaged---the four controller variants whose $\tau_2$
+nine are arms we do not report here. The flag is a window, and only three of
+those five are actually damaged---the controller variants whose $\tau_2$
 is 30.9--33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
 inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
-The four damaged rows are being re-measured under the same one-run-per-GPU
-discipline as everything else, and until those runs land we treat their
-wall-clock, SLO and step-cost columns as unusable: the signed distances in
-Table~\ref{tab:runs} for those four rows, the step-cost attribution of
-\S\ref{sec:results:attribution} where it names them, and the route-1
-comparison of \S\ref{sec:results} which rests on \texttt{bres}, are all
-provisional. We flag them rather than quietly dropping the rows so that a
-reader can see which conclusions are still standing on which measurements.
+A sixth row carried the flag and the damage, and has been re-measured alone
+under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
+$\tau_2$ is 24.8\,ms. Its row in Table~\ref{tab:runs} now carries the clean
+numbers, and the two conclusions that rested on it---its step-cost
+attribution in \S\ref{sec:results:attribution} and the route-1 comparison of
+\S\ref{sec:results}---are restated in that section rather than left
+provisional. The remaining three damaged rows are still being re-measured,
+and until those runs land we treat their wall-clock, SLO and step-cost
+columns as unusable: the signed distances in Table~\ref{tab:runs} for those
+three rows and the $\tau$-high attributions of
+\S\ref{sec:results:attribution} where it names them. We flag them rather than
+quietly dropping the rows so that a reader can see which conclusions are still
+standing on which measurements.
 
 Two things we can already say. First, the failure is silent: the engine-side
 counters---running count, pool occupancy, evictions, recomputation---are
 indistinguishable between the affected runs and the clean ones, so nothing in
 the ordinary telemetry would have caught this. Second, the affected runs'
-\emph{volume} columns look untouched: the four damaged host-tier arms reuse
-0.6791--0.6959 of the prompt against 0.6355--0.6978 for the six clean
-host-tier arms, a range overlap that is suggestive but not proof---co-tenancy could in
-principle also reorder completions and change eviction order. The re-runs will
-settle it, since they are the same policies measured clean, and we compare
+\emph{volume} columns look untouched: the three damaged host-tier arms reuse
+0.6791--0.6959 of the prompt against 0.5497--0.6981 across the sixteen
+undamaged host-tier arms, so the damaged runs sit inside the clean range
+rather than apart from it---suggestive, but not proof, since co-tenancy could
+in principle also reorder completions and change eviction order.
+
+The one arm we have both ways settles the second point directly, and we keep
+the two runs side by side in \texttt{superseded.csv} because the superseded
+one is by construction absent from the tables the rest of this paper reads.
+\texttt{bres}
+measured under co-tenancy reuses 0.6943 of its prompt; the same policy measured
+alone reuses 0.6904, a 0.39-point difference, while its per-request decode
+interval moves 31.3 to 24.8\,ms and its wall clock by 10\%. The volume columns
+therefore carry no signature of the contamination that we can detect---one arm
+is one comparison, and we are not claiming more than that---which is why the
+audit had to run on the client-side clock. For the three arms still
+outstanding, the re-runs will confirm it policy by policy, and we compare
 reuse per round and per session between the pairs rather than only the totals.
 
 One caveat about the controller artifact, which a reader with our code would
@@ -450,9 +495,13 @@ not confirm.
 The part we would carry elsewhere is not the negative result but the
 mechanism behind it. Prefix reuse is bounded by the workload---75.5\% of our
 prompt tokens---and whether that bound survives added concurrency is set by
-the memory tier: device-only, realization falls from 92.6\% to 36.4\% as the
+the memory tier: device-only, realization falls from 92.5\% to 36.4\% as the
 running count rises, and the shortfall reappears as recomputation; with a host
-tier it holds at 90.2--92.4\% across the range our controllers occupy, while
+tier the static caps hold at 90.2--92.4\% across the range our controllers
+occupy, and the worst of the nineteen host-tier runs that completed this
+trace---the one that disables every throttle---still realizes 72.8\%, where the
+nearest device-only point, the cap
+of four at $\overline{R}_{\text{busy}}$ 1.65, manages 60.7\%---while
 the device cache misses \emph{more}. Two configurations at the same running
 count and the same pool occupancy realize 79.0\% and 91.3\% of the bound,
 which is why we describe the tier rather than the occupancy as the variable.
@@ -460,8 +509,10 @@ That claim is measured on one trace family and one card, its controlled
 version is still running, and we do not extend it past what we measured---but
 it is the finding a system designer can act on, and it is the one we would
 test first on different hardware. Two boundaries come with it. On a second
-workload the direction survives and the level does not: that trace realizes
-less of its own bound at a lower occupancy, so no occupancy threshold
-transfers. And the variable-load case, which is where a controller should
+workload both of our measurements survive in direction and neither in level:
+that trace realizes less of its own bound at a lower occupancy, and its
+elasticity turns positive at a lower running count---reaching 1.0 there where
+the main trace reaches 1.15 at 1.53---so neither an occupancy threshold nor a
+concurrency threshold transfers. And the variable-load case, which is where a controller should
 have its best chance, is measured but not usable---its baselines were taken
 under host co-tenancy and we report it as open rather than as a result.

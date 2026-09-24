@@ -1,12 +1,17 @@
+# 每条 run 自带 trace（见下表 trace 列）；转换定义：同会话相邻两轮。
 # 轮次间隔：trace 要求 vs 实测 —— 由 scripts/lab/gen_toolwait.py 生成，勿手改
-# 两条 trace 各生成一次后按顺序拼接（主 trace 在前）；生成命令见 docs 或 commit message。
-# ⚠ 分母不同均值差很多，正文引用必须指明口径（主 trace）：
-#     全部 999 行（含每会话最后一轮，无后继）  12.65 s
-#     799 次轮次转换                          15.82 s（要求）/ 16.85 s（实测，foyer_hc）
-#     662 个非零 tool_wait                     19.10 s
-run,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,measured_mean_s,measured_p90_s
-pois200_foyer_hc,799,0.34,15.82,27.72,0.35,16.85,29.33
-pois200_cap1,799,0.34,15.82,27.72,0.34,15.82,27.72
-realhr_cap2,273,20.20,39.87,86.21,20.20,39.87,86.21
-realhr_cap4,273,20.20,39.87,86.21,20.20,39.87,86.21
-realhr_foyer,273,20.20,39.87,86.21,20.20,39.87,86.21
+# 轮次转换 = 同会话相邻两轮 = 每会话除最后一轮外的每一行
+# ⚠ 分母不同，均值差很多，正文引用时必须指明口径：
+#     全部 999 行（含每会话最后一轮，无后继）  均值 12.65 s
+#     799 次轮次转换（本表）                  均值 15.82 s   <- 论文用的
+#     662 个非零 tool_wait                     均值 19.10 s
+# 论文摘要的 16.85 s 是【实测】列的均值（run 的 steps.jsonl 实测间隔，
+# 含等 permit 的门时间），15.82 s 是 trace 要求值。
+# ratio_med/ratio_mean: 逐转换的 实测/要求 比值（只在要求>0 的转换上算）；
+#   ratio_ratio_of_means: 两个均值之比 —— 正文的「中位 1.001 / 均值比 1.065」是前两者的两个数
+run,trace,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,measured_mean_s,measured_p90_s,ratio_med,ratio_mean,ratio_ratio_of_means
+pois200_foyer_hc,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.35,16.85,29.33,1.0007,11.2769,1.0652
+pois200_cap1,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.34,15.82,27.72,1.0007,1.0663,1.0001
+realhr_cap2,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000
+realhr_cap4,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000
+realhr_foyer,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000

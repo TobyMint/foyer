@@ -16,7 +16,7 @@
 上游 eviction.csv 必须带 prompt_tok/reuse_tok/uncached_tok 三列（未舍入原始计数）——
 比例一律用它们算，不用舍入到 0.1M 的列。曾经用舍入列算，cap1 印成 69.8% 而真值 69.9%。
 """
-import csv, os, sys
+import csv, json, os, sys
 
 
 def load(p):
@@ -34,6 +34,28 @@ def trace_ceiling(path):
             "ceiling_tok": reuse, "prompt_tok": prompt,
             "ceiling_frac": reuse / prompt,
             "ceiling_r1_tok": r0}
+
+
+# 正文 §model 写明排除的两条短 run（跑完 763 / 770 步，不是 999）。它们不在表里，
+# 但正文把兑现率印出来了，所以在这里落一行注释，让那两个数有出处。
+EXCLUDED_SHORT = {"cap2_hc": (763, "replay_pois200_l04.csv"),
+                  "foyer_rg2": (770, "replay_pois200_l04.csv")}
+
+
+def _excluded_note(ceiling):
+    """从原始日志算那两条被排除 run 的兑现率，写进表头注释。缺 run 不报错，只少一行注释。"""
+    out = []
+    for run, (steps, _) in sorted(EXCLUDED_SHORT.items()):
+        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                         "results", "night", "pois200_" + run)
+        sp = os.path.join(d, "steps.jsonl")
+        if not os.path.exists(sp):
+            continue
+        rows = [json.loads(l) for l in open(sp) if l.strip()]
+        reuse = sum(s.get("prompt_len") or 0 for s in rows) - \
+            sum(s.get("server_uncached_prompt_tokens") or 0 for s in rows)
+        out.append("%s（%d 步，兑现 %.4f）" % (run, len(rows), reuse / ceiling))
+    return "；".join(out) if out else "（本地镜像里没有这两条，跑 data_run_coverage.py 查）"
 
 
 def main():
@@ -121,6 +143,7 @@ def main():
         "# contested: 该 run 是否落在主机争用窗口（见 concurrency.csv）。三档含义：",
         "#   clean     = 生命周期内同机 <3 条，未受影响",
         "#   watch     = 同机 >=3 条持续 >=60 分钟，但实测 tau2 未见整体抬升（cap1 即此档）",
+        "# 被排除在集合外的两条（正文 §model 点名）：%s" % _excluded_note(ce["ceiling_tok"]),
         "#   CONTESTED = 同机 >=4 条持续 >=60 分钟，tau1_ms 这一列不可用；",
         "#               reuse/recompute 是体积量，实测与同族干净 run 一致。",
         "run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,"

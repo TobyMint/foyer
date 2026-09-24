@@ -6,11 +6,13 @@
 # 不能拿一条的三点斜率去比另一条的全范围 —— 2026-09-24 犯过）。
 trace,from_run,to_run,r0,r1,realized0_pct,realized1_pct,slope_pp_per_unit
 main,cap1,cap2,1.000,1.271,92.5,89.7,-10.4
-main,cap1,cap5,1.000,1.842,92.5,36.4,-66.73
+main,cap1,cap5,1.000,1.842,92.5,36.4,-66.77
 main,cap2,cap3_fixed,1.271,1.534,89.7,79.0,-40.6
-main,cap3_fixed,cap4,1.534,1.650,79.0,60.7,-157.8
-main,cap4,cap5,1.650,1.842,60.7,36.4,-127.0
+main,cap3_fixed,cap4,1.534,1.650,79.0,60.7,-157.1
+main,cap4,cap5,1.650,1.842,60.7,36.4,-127.6
 xtrace,realhr_cap2,realhr_cap3,1.076,1.160,74.8,72.2,-31.2
-xtrace,realhr_cap2,realhr_cap5,1.076,1.409,74.8,64.0,-32.29
+xtrace,realhr_cap2,realhr_cap8,1.076,1.500,74.8,57.5,-40.87
 xtrace,realhr_cap3,realhr_cap4,1.160,1.287,72.2,67.5,-36.8
 xtrace,realhr_cap4,realhr_cap5,1.287,1.409,67.5,64.0,-28.4
+xtrace,realhr_cap5,realhr_cap6,1.409,1.426,64.0,62.5,-93.0
+xtrace,realhr_cap6,realhr_cap8,1.426,1.500,62.5,57.5,-67.6

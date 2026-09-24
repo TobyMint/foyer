@@ -1,0 +1,6 @@
+# Route 3（硬天花板 / 预算分数）的两条臂 —— 由 scripts/lab/gen_budget_sweep.py 生成
+# Δ 用 frontier.py 的同一套锚点与插值（不另写判据）；±1.0pp 是打平带。
+# 这两条不在表 I 里：它们是早期扫描，与表 I 的行不同代（表 I 的标题已说明）。
+run,target,steps,wall_min,slo_pct,front_slo,delta_pp
+foyer_t85,0.85,999,333.8989,89.8899,92.1274,-2.2375
+foyer_t90,0.90,998,315.8595,87.6630,91.8788,-4.2158

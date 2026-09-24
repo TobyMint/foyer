@@ -19,7 +19,12 @@
 """
 import json, os, statistics as st, sys
 
-RESULTS = "/data/xbw/turnstile/results/night"
+# 结果目录。默认指实验机；本地镜像可用环境变量覆盖：
+#   TURNSTILE_RESULTS=results/night python3 frontier.py --csv
+# 为什么要这个开关：本地镜像是 rsync 的一部分（2026-09-24 之前只有 21/54 条），
+# 于是 --csv 在本地生成时会【静默漏掉】镜像里没有的 run。默认指向实验机不变，
+# 保证在实验机上跑出来的值与一直以来的口径一致。
+RESULTS = os.environ.get("TURNSTILE_RESULTS", "/data/xbw/turnstile/results/night")
 # 上左包络的锚点，按墙钟升序。cap1 没有 HiCache 版本，但它仍然是"静态 cap 能达到的点"，
 # 必须放进前沿——否则墙钟超过最右锚点的 run 会被误判成"越过前沿"（cap1 自己就撞过这个）。
 # 锚点坐标必须是【全精度】，不能用表里印的 1 位小数。
@@ -110,14 +115,26 @@ def emit_csv():
     """
     import csv as _csv
     w = _csv.writer(sys.stdout)
-    w.writerow(["run", "wall_min", "slo_pct"])
+    w.writerow(["run", "wall_min", "slo_pct", "steps"])
+    short = []
     for nm in sorted(os.listdir(RESULTS)):
         if not nm.startswith("pois200_"):
             continue
         d = summarise(nm)
-        if not d or d["steps"] < 999:
+        if not d:
             continue
-        w.writerow([nm, "%.6f" % d["wall"], "%.6f" % d["slo"]])
+        # 【不再过滤步数】。原来的 `steps < 999: continue` 让表 I 里四条
+        # 步数不足 999 的 run（hz0 995、hz2 997、rg4 998、no-control 997）
+        # 拿不到全精度坐标，gen_table 只能回落到 runs.csv 的 1 位小数，
+        # 于是表里的 Δ 与 frontier.py 复算的值差 0.01~0.04pp
+        # （2026-09-24 审稿人抓；正文那四条本来就【列在表里】）。
+        # 数据文件负责给全精度值，是否可比由判据决定 —— 步数落成列，
+        # 缺了多少步在数据里看得见，而不是只在正文里说。
+        w.writerow([nm, "%.6f" % d["wall"], "%.6f" % d["slo"], d["steps"]])
+        if d["steps"] < 999:
+            short.append((nm, d["steps"]))
+    for nm, n in short:
+        print("# 注意：%s 只有 %d/999 步" % (nm, n), file=sys.stderr)
 
 
 def main():

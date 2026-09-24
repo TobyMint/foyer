@@ -23,6 +23,14 @@ decode 间隔中位 τ₂】抬高 25~40%。τ₂ 是客户端实测的、不经
 读数，两者一起看——t85/t90/var_foyer 触发了 CONTESTED 但 τ₂ 正常（只有前半段被抬）。
 
 用法: python3 gen_concurrency.py <results_dir> <out.csv>
+
+**必须在实验机上跑**（RESULTS_DIR 指向 /data/xbw/turnstile/results/night）。
+为什么：本脚本是【对 run 集合计数】的 —— 同时活着的条数取决于目录里有哪些 run。
+本地镜像是部分 rsync（2026-09-24 实测：本地 116 个目录 vs 实验机 145+，且本地还留着
+实验机上已清理的旧 25 档目录），在本地跑会把 var_cap3 从 CONTESTED 误判成 clean
+（丢掉的 _failed_4lane_* 与 25 档目录正是它窗口里的那几条）。判据本身没错，
+错的是输入集合。下面有 MIN_RUNS 断言，镜像不全时会直接报错而不是静默给错判决。
+
 """
 import csv, glob, json, os, statistics, sys
 
@@ -50,6 +58,14 @@ def tau2(root, run):
 
 def main():
     root, out_path = sys.argv[1], sys.argv[2]
+    # 镜像完整性护栏：本脚本的判据是"同时活着几条"，少一个 run 目录就少一条车道，
+    # 判决会静默变松。实测 2026-09-24 本地镜像 116 目录 vs 实验机 145，把
+    # var_cap3 从 CONTESTED 变成 clean。宁可拒绝跑，也不要给出看着合理的错判决。
+    MIN_RUNS = 140
+    n_dirs = len(glob.glob(os.path.join(root, "*", "metadata.json")))
+    assert n_dirs >= MIN_RUNS, (
+        "只找到 %d 个带 metadata.json 的 run 目录（需要 >=%d）。"
+        "这多半是部分镜像 —— 本脚本必须在实验机上跑。" % (n_dirs, MIN_RUNS))
     rows, skipped = [], []
     for d in glob.glob(os.path.join(root, "*", "metadata.json")):
         try:

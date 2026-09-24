@@ -65,9 +65,16 @@ def proj(d):
 # 且与仓库脚本复算的值对不上（正文 39.9/43.5，复算 39.7/44.0）——
 # 2026-09-24 审稿人抓到的。纳进来之后正文只能引用 CSV。
 PAPER_SET = ["pois200_foyer_hz0", "pois200_foyer_hz1", "pois200_foyer_hz2",
-             "pois200_foyer_hc", "pois200_foyer_bres", "pois200_foyer_breshz1",
+             "pois200_foyer_hc", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
              "pois200_foyer_nogate", "pois200_foyer_rg4",
              "pois200_foyer_sf0_r2", "pois200_foyer_hc_r2"]
+
+
+# 必须在实验机上跑：本表统计【所有】带 controller.jsonl 的 run，本地镜像是部分快照
+# （2026-09-24 实测：本地 34 行 vs 实验机 46 行），在本地跑会把正文引用的
+# 「over every run in that file」那两个中位数算错（27.0/5.4 是 22 行的旧快照，
+# 实验机 46 行给 27.4/5.3）。见 CLAUDE.md「本地镜像是部分快照」。
+MIN_ROWS = 40
 
 
 def main():
@@ -78,6 +85,13 @@ def main():
     for p in sorted(glob.glob(os.path.join(root, "*", "controller.jsonl"))):
         run = os.path.basename(os.path.dirname(p))
         if run.startswith("_"):
+            continue
+        # 只算【跑完的】run：本表的 all_rows 中位数是对「所有带 controller.jsonl 的 run」
+        # 取的，在跑的 run（还没写 summary.json）会带着任意长度的日志混进来 ——
+        # 2026-09-25 实测：在跑的 foyer_hz0_r2（275 个周期）把 all_rows 的投影超预算
+        # 中位从 27.4 拖到 27.3。生成器必须在实验机上跑，而实验机上永远有 run 在跑，
+        # 所以这条过滤是必须的，不是可选的。
+        if not os.path.exists(os.path.join(os.path.dirname(p), "summary.json")):
             continue
         L = load(p)
         if len(L) < 200:
@@ -101,11 +115,21 @@ def main():
         over = sum(1 for d in blk if not d.get("valve") and not d.get("gate_full")
                    and proj(d) > b)
         rem = n - valve - gate - over
-        # starve guard：唯一绕过预算的通道
+        # starve guard：唯一绕过预算的通道。§V 用 foyer_hc 的三个数论证
+        # 「投影超预算时只有它能进来」：全部超预算周期数、其中放了人的、其中被强制的。
+        # 这三个数 2026-09-24 之前只在正文里（3,700 / 9 / 9），文件里没有，于是落列。
         forced = sum(1 for d in L if d.get("forced"))
         admits = sum(1 for d in L if (d.get("n_admitted") or 0) > 0)
+        over_all = [d for d in L if proj(d) > b]
+        over_adm = [d for d in over_all if (d.get("n_admitted") or 0) > 0]
+        over_forced = [d for d in over_adm if d.get("forced")]
         rows.append(dict(run=run, n=n, blocked=n, valve=valve, gate=gate, over=over, rem=rem,
-                         sf_off=sf_off, forced=forced, admits=admits, samples=len(L)))
+                         sf_off=sf_off, forced=forced, admits=admits, samples=len(L),
+                         over_all=len(over_all), over_all_admitted=len(over_adm),
+                         over_all_forced=len(over_forced)))
+    assert len(rows) >= MIN_ROWS, (
+        "只统计到 %d 行的闸门归因（需要 >=%d）—— 这多半是部分镜像，本脚本必须在实验机上跑"
+        % (len(rows), MIN_ROWS))
     rows.sort(key=lambda r: -r["over"] / r["blocked"])
     print("%-26s %6s %8s %7s %7s %8s %9s %6s" % (
         "run", "采样", "被挡", "阀门%", "gate%", "投影超%", "remainder%", "sf关"))
@@ -121,12 +145,15 @@ def main():
         f.write("#   日志里没有 prev_started，无法区分，故不做单飞归因。sf_off=Y 的臂是探针：\n")
         f.write("#   单飞关闭时闸门不可能拦人，其 remainder 只可能是「没有候选者塞得进预算」。\n")
         f.write("run,samples,blocked_cycles,valve_pct,round_gate_pct,projection_over_pct,"
-                "remainder_pct,sf_disabled\n")
+                "remainder_pct,sf_disabled,forced_admits,total_admits,"
+                "cycles_over_budget,admitted_while_over,forced_while_over\n")
         for r in rows:
             k = r["blocked"]
-            f.write("%s,%d,%d,%.1f,%.1f,%.1f,%.1f,%s\n" % (
+            f.write("%s,%d,%d,%.1f,%.1f,%.1f,%.1f,%s,%d,%d,%d,%d,%d\n" % (
                 r["run"], r["samples"], k, 100*r["valve"]/k, 100*r["gate"]/k,
-                100*r["over"]/k, 100*r["rem"]/k, "Y" if r["sf_off"] else "N"))
+                100*r["over"]/k, 100*r["rem"]/k, "Y" if r["sf_off"] else "N",
+                r["forced"], r["admits"], r["over_all"], r["over_all_admitted"],
+                r["over_all_forced"]))
     # 论文正文用的集合，单独汇总并写进 CSV（含名单），使那两个中位数可复现
     sel = [r for r in rows if r["run"] in PAPER_SET]
     if sel:
@@ -140,13 +167,32 @@ def main():
         # 控制器、不记闸门状态）。原来只落 10 条的 PAPER_SET，于是正文引的
         # 「八条」中位数在文件里查不到，而 PAPER_SET 的中位数又对不上正文
         # （2026-09-24 审稿人抓：正文把投影中位 32.7 写进了阀门那一格）。
-        eight = {"foyer_bres", "foyer_hc", "foyer_hz2", "foyer_hz1",
+        eight = {"foyer_bres_r2", "foyer_hc", "foyer_hz2", "foyer_hz1",
                  "foyer_breshz1", "foyer_nogate", "foyer_hz0", "foyer_rg4"}
         s8 = [r for r in rows if r["run"].replace("pois200_", "") in eight]
         k8 = lambda key: sorted(100.0 * r[key] / r["blocked"] for r in s8)
         v8, p8 = k8("valve"), k8("over")
         print("八条非重复 Foyer 臂（正文用的集合）：阀门中位 %.1f%%、投影超预算中位 %.1f%%"
               % (mid(v8), mid(p8)))
+        # 两种中位口径（上中位 vs 两数均值）在八条臂上的差 —— 正文 §V 专门有一段
+        # 「约定说明」，引的就是这两个数；原来它们只在正文里，文件里没有。
+        def mean2(v):
+            v = sorted(v); n = len(v)
+            return (v[n // 2 - 1] + v[n // 2]) / 2 if n % 2 == 0 else v[n // 2]
+        print("两种中位口径在八条臂上的差：投影 %.1fpp、阀门 %.1fpp"
+              % (mid(p8) - mean2(p8), mid(v8) - mean2(v8)))
+        # 【全表】的上中位也要落成一行：正文写「over every run in that file they are
+        # 27.0% and 5.4%」，这两个数【不在】前面任何一行里（eight_* 是八条臂、
+        # paper_set_* 是十条），只能从逐行重算 —— 那就不满足「数字要能追到文件」。
+        va = sorted(100.0 * r["valve"] / r["blocked"] for r in rows)
+        pa = sorted(100.0 * r["over"] / r["blocked"] for r in rows)
+        ra = sorted(100.0 * r["rem"] / r["blocked"] for r in rows)
+        print("全表（%d 条）：阀门上中位 %.1f%%、投影超预算上中位 %.1f%%、remainder 上中位 %.1f%%"
+              % (len(rows), mid(va), mid(pa), mid(ra)))
+        with open(out_path, "a") as f:
+            f.write("# all_rows_median（%d 条，正文「over every run in that file」用的就是这一行）,"
+                    "valve_pct=%.1f,projection_over_pct=%.1f,remainder_pct=%.1f\n"
+                    % (len(rows), mid(va), mid(pa), mid(ra)))
         with open(out_path, "a") as f:
             f.write("# 正文用的集合（八条非重复 Foyer 臂）：%s\n" % " ".join(sorted(
                 r["run"] for r in s8)))
@@ -154,6 +200,9 @@ def main():
                     % (mid(v8), mid(p8)))
             f.write("# eight_range,valve=%.1f~%.1f,projection_over=%.1f~%.1f\n"
                     % (v8[0], v8[-1], p8[0], p8[-1]))
+            f.write("# convention_delta（上中位 − 两数均值，八条臂）,"
+                    "projection_pp=%.1f,valve_pp=%.1f\n"
+                    % (mid(p8) - mean2(p8), mid(v8) - mean2(v8)))
             f.write("# 论文正文引用的集合：%s\n" % " ".join(sorted(r["run"] for r in sel)))
             f.write("# paper_set_median,valve_pct=%.1f,projection_over_pct=%.1f,remainder_pct=%.1f\n"
                     % (mid(vp), mid(op), mid(rp)))

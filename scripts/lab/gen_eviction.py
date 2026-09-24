@@ -34,8 +34,73 @@ HEADER = ["run", "hicache", "prompt_M", "dev_miss_M", "host_hit_M", "uncached_M"
           "dev_miss_tok", "host_hit_tok"]
 SAMPLE_S = 5.0
 
-RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
-        "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres"]
+# ── 集合的判据（2026-09-24 第 5 轮审查后写死）──────────────────────────────
+# 这张表 + gen_reuse.py 产出的 reuse.csv 支撑正文那句「host tier 把兑现率守在
+# 72.8–92.5%」。**集合必须能由判据机械地重算出来**，否则就是「集合没说清」——
+# 上一版正是这样：正文写「十九条 host-tier run，含每一条控制器臂」，
+# 而 `cap2_hc`（763 步）兑现 70.7%、`foyer_rg2`（770 步）兑现 67.1% 都被漏掉了，
+# 变量负载族的六条（999 步、HiCache）也不在集合里，其中四条就是控制器臂。
+#
+# 判据（三条，缺一不可）：
+#   1. trace 是主 trace（metadata.trace 以 replay_pois200_l04.csv 结尾）——
+#      变量负载族与 25 档用的是别的 trace，**它们不是这个集合的一部分**；
+#   2. build.hicache_enabled 为真（host tier 开着）；
+#   3. 完成步数 >= 995（999 步的 trace；995–998 是客户端末尾丢的几步）。
+#      763 / 770 步那两条是**没跑完**，不是「数字不好看」。
+# 另有一条按名字排除：foyer_hz1_r2 —— 引擎侧 prompt token 计数是计划的 1.41×、
+# 零 retraction、零重试、τ₁ 也不成比例，无法解释，故不作数（正文写明）。
+# 下面 _derive() 会用这套判据重新扫一遍镜像，与 RUNS 不一致就直接报错。
+TRACE_MAIN_SUFFIX = "replay_pois200_l04.csv"
+MIN_STEPS = 995
+EXCLUDED = {"foyer_hz1_r2": "引擎侧 prompt token 计数 1.41x 计划、τ₁ 不成比例（正文已写明排除）"}
+
+# 被【干净重跑】替代的旧测量：2026-09-24 查出同机 ≥4 条车道 ≥60 分钟会把 τ₂ 抬高
+# 25~40%（见 docs/finding_concurrency_contamination_20260924.md），受污的控制器臂
+# 已用同名 + `_r2` 重跑。旧名因此仍在镜像里、也仍然满足下面三条判据 —— 判据自检
+# 若不认识它们，就会把「重跑替代」误报成「集合没说清」。
+#
+# ⚠ 与 `cap3_hc`/`cap3_hc_r2` 这类【重复对】区分开：重复对是同一配置跑两次、**两条都
+# 进正文**（表 I 各占一行），所以它们都在集合里；SUPERSEDED 里的旧名则是**被撤下的**，
+# 只有新名进正文。这个区别是语义的、不是机械的，所以必须在这里手写并写明理由。
+SUPERSEDED = {
+    "foyer_bres": "争用污染（τ₂ 31.3ms vs 干净 24.8ms），已由 foyer_bres_r2 替代（2026-09-25）",
+}
+
+
+def _derive(root):
+    """按上面的判据从镜像里列出集合 —— 用来断言硬编码的 RUNS 没写错。"""
+    import glob as _g
+    dev, hc, bad = [], [], []
+    for d in sorted(_g.glob(os.path.join(root, "pois200_*"))):
+        run = os.path.basename(d)[len("pois200_"):]
+        try:
+            m = json.load(open(os.path.join(d, "metadata.json")))
+        except Exception:
+            continue
+        if not (m.get("trace") or "").endswith(TRACE_MAIN_SUFFIX):
+            continue
+        n = sum(1 for l in open(os.path.join(d, "steps.jsonl")) if l.strip()) \
+            if os.path.exists(os.path.join(d, "steps.jsonl")) else 0
+        if n < MIN_STEPS:
+            bad.append((run, n))
+            continue
+        if run in EXCLUDED or run in SUPERSEDED:
+            continue
+        if (m.get("build") or {}).get("hicache_enabled"):
+            hc.append(run)
+        else:
+            dev.append(run)
+    return dev, hc, bad
+
+
+# 这张表的集合 = 论文 §III 引「host tier 兑现区间」的那个集合 + 论文点名的五个静态
+# device-only cap。**必须与 eviction.csv 的行数一致** —— 原来这里是 13 条，而文件是
+# 24 行（上一次是用命令行传的 24 条），裸跑一次就会静默把文件砍掉一半。
+RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
+        "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_hc_r2", "cap4_hc", "cap4_hc_r2",
+        "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres_r2",
+        "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2", "foyfix_hc",
+        "pairA_foyerhc", "pairB_foyerhc"]
 
 
 def last_value(path, name):
@@ -76,6 +141,21 @@ def col(path, name):
 def main():
     root, out_path = sys.argv[1], sys.argv[2]
     runs = sys.argv[3:] or RUNS
+    # 判据自检：镜像上按判据重算一遍，与给定的 run 列表比对（多一条少一条都报错）
+    dev_d, hc_d, short_d = _derive(root)
+    # 只对【host-tier 那一半】做判据比对：device-only 那一半是论文里点名的
+    # 「五个静态 cap」（cap1..cap5），不是按判据筛出来的族 —— 主 trace 上还有
+    # default/aimd2/rl90 等别的 device-only run，它们不属于那张表。
+    want_hc = {r for r in runs if r in hc_d or r.startswith(("foyer_", "pair", "cap3_hc", "cap4_hc", "foyfix"))}
+    want_hc = {r for r in runs if r not in ("cap1", "cap2", "cap3_fixed", "cap4", "cap5")}
+    missing, extra = sorted(want_hc - set(hc_d)), sorted(set(hc_d) - want_hc)
+    print("判据重算：host-tier %d 条；未达 %d 步被排除 %d 条 %s（另有 device-only %d 条不在本判据内）"
+          % (len(hc_d), MIN_STEPS, len(short_d),
+             " ".join("%s(%d)" % t for t in short_d), len(dev_d)))
+    if missing or extra:
+        raise SystemExit("!! host-tier 集合与判据不一致：判据里有而列表没有 %s；列表里有而判据不认 %s\n"
+                         "   （判据见本脚本顶部注释；改判据要同步改正文）"
+                         % (missing, extra))
     rows, bad, missing = [], [], []
     for r in runs:
         d = os.path.join(root, "pois200_" + r)
@@ -123,7 +203,7 @@ def main():
             # 成员的集合算的，而漏掉的那个恰是最极端的一点（2026-09-24 审稿人抓）。
             HC_FALLBACK = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
                            "foyer_hz1", "foyer_hz2", "foyer_hz0", "foyer_bres",
-                           "foyer_breshz1"}
+                           "foyer_bres_r2", "foyer_breshz1"}
             _mj = os.path.join(d, "metadata.json")
             hc_flag = None
             if os.path.exists(_mj):

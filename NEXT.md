@@ -1,29 +1,73 @@
-# 交接状态（2026-09-24 晚更新）
+# 交接状态（2026-09-25 凌晨更新）
 
 接手先读这一页。**当前在跑什么、下一步做什么、哪些数还不能用，都在这。**
 
+## 〇a、审查状态（2026-09-25 00:5x）
+
+- **codex 第 15 轮：5–15%**（上一轮 20–35%）。四条 major，**两条是我改漏的**：
+  §III 末段还留着被重跑推翻的 `bres` 解释（与子 agent 第 7 轮独立命中同一处）；
+  否定判决仍覆盖三条自己声明不可比的测量。**全部处置**，
+  记录在 `docs/finding_review_r15_disposition_20260925.md`。
+- **子 agent 第 7 轮**：三条结论 + 三条 major（Route 1 的 0.09pp 精度主张、
+  「干净族 τ₂」区间被干净 run 打破、表 I 脚注列表过期），全部处置，同一份记录。
+- **codex 第 16 轮（复读）在跑**，只核处置是否到位。
+- `check_paper_numbers.py` 从 317 加到 **331 项、0 MISS**；编译 **23 页、0 Overfull**。
+
+### 本轮新加的三个数据文件（都是为了补追溯缺口）
+`superseded.csv`（新旧并排，让被撤下的 0.6943 可追）、
+`tau2_windows.csv`（§repro 的分时段 τ₂ 对照）、
+`repeat_spread.csv` 改两位小数。
+
+### 本轮新记进 CLAUDE.md 的一条方法论
+**连锁改名要按【数字】清点，不只按【名字】清点** —— §III 末段一个 `bres` 字样都没有，
+只有「17 分钟」这个数，名字扫描扫不到。
+
+## 〇、刚刚落地（2026-09-25 00:0x）：`bres` 干净重跑 + realhr 补全扫描
+
+- **`pois200_foyer_bres_r2` 已跑完并全量并入正文**，连锁改动 12 处，逐条记在
+  `docs/finding_rerun_bres_20260925.md`。最重要的一条：**Route 1 的结论被改写了** ——
+  去掉记账不是「墙钟慢 4.2 分、SLO 掉 6.0 pp、两项相抵」，而是
+  **墙钟快 25.4 分、SLO 掉 3.9 pp、相对前沿的距离几乎不变（−1.24 vs −1.33）**，
+  即「沿前沿下滑」而不是「越过前沿」。这个版本更强也更负面。
+- **realhr 补全扫描全部落地**：cap5/cap6/cap8 把第二条 trace 的 R̄ 推到 1.50（此前只到 1.29），
+  另补两个重复对（cap4/cap4_r2 墙钟差 1.7%，**foyer/foyer_r2 只差 0.06%**）。
+  结论「方向迁移、水平不迁移」不变（`slope.csv` 的 xtrace 全范围斜率仍是 −40.87）。
+- **数据文件全部重生成**，`check_paper_numbers.py` **290 项 0 MISS**；
+  论文 **23 页**（上一版 22 页，本轮改动加了一页，页数收紧留到实验全落地后一次做）。
+
+### 本轮新记进 CLAUDE.md 的两条纪律
+1. 重跑替代旧测量时，生成器要有**显式的 `SUPERSEDED` 名单**（判据自检否则会误报，
+   重复散布表否则会把「污染 vs 干净」当成 run-to-run 噪声）。
+2. lab-only 的表会随「实验机上有什么」漂移 —— 论文引这类数**必须同时给出集合规模**。
+
 ## 一、论文当前状态
 
-- `paper/` **20 页**，0 Overfull，0 undefined，编译干净
-- **主线已改为方向 B**：标题 *When Does Admission Control Pay? The Memory Tier Sets
+- `paper/` **23 页**，0 Overfull，无 undefined，编译干净
+- **主线是方向 B**：标题 *When Does Admission Control Pay? The Memory Tier Sets
   the Cost of Concurrency in Agentic LLM Serving*。核心是一条定量律：
-  **trace 定复用上界（21.5M / 75.5%），配置定兑现多少**。
-  device-only 兑现 92.6%→36.3%（R̄ 1.00→1.84），host tier 守住 83.9–92.3%
-- 新增 **§VI 第二条工作负载**（117 个真实 Claude agent 会话）。结论：**方向迁移、
-  水平不迁移** —— 复用兑现率随并发下降在两条 trace 上都成立，但**不能用占用率概括**
-  （realhr 在占用 15.8% 时只兑现 74.8%，主 trace 在 22.4% 时兑现 92.6%）
-- 归因表重做过：**12 条中 3 条被归因**（原先「11 条中 4 条」是数据缺失 + 判据未实现的双重假象）
-- **数字溯源**：`audit_numbers.py` 从 85 处降到 18 处。办法是给每组建生成器，
-  不是放宽审计。新表：`table1.csv`（表 I 每列含 Δ）、`hitrate.csv`（round-1+ 命中率）、
-  `slope.csv`（§VI 的斜率）、`idle_pooled.csv`、`reuse_x.csv`、`toolwait.csv`（两条 trace）
-- **审计脚本自己修了两个 bug**：千分位花括号匹配不了（16 处假阳性）、负数不取绝对值
-  （整列 Δ 被误报）。它的 docstring 里写了能力边界：只做匹配、不理解派生关系
+  **trace 定复用上界（21.55M / 75.5%），配置定兑现多少**。
+  device-only 兑现 **92.5%→36.4%**（R̄ 1.00→1.84）；host tier 的静态点守住
+  **90.2–92.4%**，**全部 19 条 host-tier run 落在 72.8–92.5%**（最低那条是关掉
+  所有节流的臂）。有一条 host-tier run 被排除（`foyer_hz1_r2`：引擎侧 prompt token
+  计数是 trace 计划的 1.41×、零 retraction、零重试，τ₁ 也不成比例）——
+  正文写明了排除理由
+- **§VI 第二条工作负载**：**方向迁移、水平不迁移**（R̄ 现在覆盖到 1.50）
+- 归因表：**12 条中 4 条被归因**（本轮从 3 变 4，`bres` 干净值落到「内存没用满」）
+- **数字溯源**：`check_paper_numbers.py` **290 项 0 MISS**
 
-### 已经栽过两次的同一类错误：用【显示值】算比例
-- 空转段中位 5.6 s → 实际被 `cap1` 一条主导，去掉它变 10.0 s
-- τ₁/τ₂ 超出比例「7.9~39.8%」→ 未舍入值算出来是 7.7~39.7
-- realhr 全范围斜率「−34.5」→ 那是三点斜率，全范围是 −32.28
-**推论：任何用两个显示值相除/相减得到的新数，都要回到未舍入数据重算。**
+## 一b、还在跑的 / 排队的（2026-09-25 00:06 快照）
+
+两条车道，链式 waiter：
+- **GPU 2**：`foyer_hz0_r2`（在跑）→ `cap5_hc`+`cap6_hc` → `cap2_hp`+`cap3_hp` → varload
+- **GPU 3**：`foyer_hz2_r2`+`foyer_breshz1_r2`（在跑）→ `cap8_hc` → `cap4_hp` → `cap1_r2`
+
+还剩三条争用臂要重测（hz0/hz2/breshz1）+ 三个 HiCache 高档位（cap5/6/8_hc）+
+**预注册的半池因果实验**（`docs/prereg_halfpool_20260924.md`：把设备池减半，
+预测塌点从 R̄≈1.5 移到 ≈0.75–0.9）。`cap1_r2` 排在队尾（它的 ‡ 目前靠
+「窗口标了、但没有可测损害」的论证保留，重跑是确认不是必需）。
+
+⚠ **`concurrency.csv` 的 CONTESTED 计数（现在 14）会随新 run 落地而变** ——
+正文写了这个数，定稿前必须重跑一次 `gen_concurrency.py` 并对齐。
 
 ## 二、审查基线（下一轮拿这个对比）
 
@@ -31,8 +75,22 @@
 - 中立子 agent 第 1 轮（全稿）：M1–M5
 - 中立子 agent 第 2 轮（新 §VI + 归因表）：8 条 major，全成立
 - codex 第 9 轮：**10–25%**（4 条 major，全成立）
-- **codex 第 10 轮 + 子 agent 第 3 轮正在跑**（专攻「机械核对每个数字」）
-- 三方给的分数在升，理由**从「结构性上限」换成了「可当场修的账目错误」**
+- codex 第 11 轮：**20–35%**
+- **codex 第 12 轮：30–45%**（五项机械核对全 MATCH，只剩两处措辞/出处）
+- 子 agent 第 4 轮（第 12 轮审查）：9 条 major，**5 条是「集合没说清/数字无出处」**，全部处置
+- **codex 第 13 轮：15–30%**（它读的是修改中途的版本；核到的 host-tier 端点、表 I 并发列、
+  sf=0 探针四个数全部 MATCH）
+- **子 agent 第 5 轮（复核「上一轮 25 处修改」）**：7 条 major —— 最重要的一条是
+  **host-tier 集合的定义不成立**（摘要的全称句被自己的数据反驳：`cap2_hc` 70.7%、
+  `foyer_rg2` 67.1% 在区间外，变量负载族六条不在集合里）。全部处置，
+  见 `docs/finding_review_r13_disposition_20260924.md`
+- **codex 第 14 轮：20–35%**（三条 MATCH、两处要改：`14.27%`→`14.26%`、
+  「turns expensive」→「turns positive」；另两条集合/表述问题）。处置见
+  `docs/finding_review_r14_disposition_20260924.md`
+- **子 agent 第 6 轮：第一版卡死**（跑了 56 分钟没写一行输出，已停掉重开一个收紧范围的）。
+  教训：给子 agent 派活要写「最多核这几条、不要穷尽全稿」，否则它会去做全量复算
+- **下一轮**（四条重跑 + 半池落地后）：codex 第 15 轮 + 子 agent 第 7 轮
+- 分数在升，理由**从「结构性上限」换成了「可当场修的账目错误」**
 - **每一轮修正都引入过被下一轮抓到的新错误** —— 所以每批改动后必须再开审查，
   这一步不能省（本会话已因此循环了五轮）
 
@@ -76,11 +134,17 @@ GPU3: realhr补全(cap5→cap6→cap8→cap4_r2→foyer_r2) → hz2_r2,breshz1_r
 
 ## 六、实验跑完后要做的（按顺序）
 
-1. 四条 `*_r2` 落地 → 更新 `runs.csv` → 重跑 `gen_table.py` → **看判决变不变**
-2. `cap_hc` 落地 → 扩 `elasticity_hc.csv` 与 `reuse.csv` → §III 那条预测写成实测
-3. `pool50` 落地 → 用 `gen_reuse.py` 的同一套定义算兑现率 → §III/§V 的因果段
-4. realhr 补全落地 → 用 `gen_reuse_x.py` 扩 `reuse_x.csv` → §VI
-5. 全部落地后：更新 §repro 的 pending 措辞、去掉表 I 的 ‡、**再开一轮 codex + 子 agent**
+0. ~~realhr 扫描~~ **已做**（cap8 落地，§VI/§criterion 已按六条 cap 重写，
+   见 `docs/update_xtrace_cap8_20260924.md`）。cap4_r2 / foyer_r2（重复对）落地后
+   再跑一次 `bash scripts/lab/update_xtrace.sh` 即可，它们只影响重复散布。
+1. 四条 `*_r2` 落地 → **`bash scripts/lab/update_table.sh`**（一条命令：concurrency →
+   runs_precise → runs.csv → table1.csv → `compare_rerun.py` 看判决变不变 → 自检）。
+   然后改正文的表 I 行、去掉 ‡、改图注的六条空心圈、把 §repro 的「正在重测」改成过去时。
+2. `cap*_hc`（HiCache 推到高 R̄）落地 → 扩 `elasticity_hc.csv` 与 `reuse.csv`
+   → §III 那条可证伪预测（host tier 把悬崖推到约 3 倍运行数）写成实测。
+3. `cap*_hp`（**半池因果实验**）落地 → 判据**已经先写好了**（`docs/prereg_halfpool_20260924.md`），
+   照它逐条回答 → §IV 的因果段。
+4. 全部落地后：codex 第 14 轮 + 子 agent 第 6 轮 → 处置 → 最后收紧页数（22 → 21 需省约 30 行）。
 
 ## 七、这个项目的硬规矩（详见 CLAUDE.md，这里只列最容易犯的）
 

@@ -1,11 +1,18 @@
-# Foyer 全部 run 的实测值（2026-09-23 从实验机 run_summary.py 导出）
+# Foyer 全部 run 的实测值 —— 由 scripts/lab/gen_runs.py 生成，勿手改
+# 生成器用的定义与实验机的 scripts/lab/run_summary.py 逐字相同（wall/tw_conc/slo/sd）。
+# 这张表原来是从 run_summary.py 的打印输出【手抄】的，2026-09-24 补上生成器。
 # 列: run, tier, steps, wall_min, conc, slo_pct, sd_pp, family
-#   tier   200 = 200 会话档(泊松 λ=0.04/s, 999 步)；25 = 25 会话档(125 步)
-#   family static / static_hc(带 HiCache) / foyer
-#   200 档 999 步为跑满；995-998 步的（hz0/hz2/rg4）标了实际步数，不当作跑满
-#   25 档 125 步为跑满
+#   tier   200 = 200 会话档（泊松 λ=0.04/s，999 步）；25 = 25 会话档（125 步）
+#   family static / static_hc（带 HiCache）/ foyer / aimd
+#   sd_pp  段 SLO 的总体标准差；段数 = max(2, min(10, 完成步数//20))，
+#          999 步 10 段、125 步 6 段 —— 段数不同不可直接比
+#   显示为 1 位小数；全精度值在 paper/data/runs_precise.csv（wall/slo）与本脚本的 stdout
+# conc 一律是【会话级活着的条数】（准入日志的 admit/release 时间加权）。
+#   唯一的例外是 default：那个 arm 没有控制器、不写准入日志，用会话跨度估计
+#   （与静态 cap 上的 tw_conc 逐位相符；见表 I 标题的脚注）。曾经那一格被填成
+#   1.69 —— 那是 num_running_reqs 的均值，也就是 Conc. 明确【不是】的那个量。
 run,tier,steps,wall_min,conc,slo_pct,sd_pp,family
-default,200,997,288.6,1.69,3.0,9.1,static
+default,200,997,288.6,94.91,3.0,9.1,static
 cap1,200,999,527.4,1.00,94.8,2.4,static
 cap2,200,999,304.2,1.99,89.5,6.4,static
 cap3_fixed,200,999,258.7,2.89,74.4,7.5,static
@@ -22,10 +29,10 @@ foyer_hz1,200,999,255.8,2.58,84.8,7.5,foyer
 foyer_hz1_r2,200,999,260.8,2.69,80.9,12.9,foyer
 foyer_hz2,200,997,306.1,2.22,86.9,5.6,foyer
 foyer_hz0,200,995,290.0,2.69,77.2,8.8,foyer
-foyer_bres,200,999,295.5,2.40,83.8,7.2,foyer
-foyer_breshz1,200,999,310.9,2.77,72.3,14.2,foyer
+foyer_bres_r2,200,999,265.9,2.41,85.9,5.4,foyer
+foyer_breshz1,200,999,310.9,2.77,72.3,11.2,foyer
 foyer_nogate,200,999,272.3,3.25,66.6,9.3,foyer
-foyer_rg4,200,998,282.3,3.03,64.3,8.9,foyer
+foyer_rg4,200,998,282.3,3.03,64.3,8.5,foyer
 foyfix_hc,200,999,415.0,2.58,46.1,14.4,foyer
 aimd2,200,999,264.6,3.87,52.8,13.2,aimd
 aimd2_paper,200,999,364.3,1.91,81.4,8.2,aimd

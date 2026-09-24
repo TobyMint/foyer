@@ -1,4 +1,4 @@
-# 发现：同机 ≥4 条车道会把步成本抬高 25~40%，四条控制器臂的数据作废
+# 发现：同机 ≥4 条车道会把步成本抬高 24~41%，四条控制器臂的数据作废
 
 **日期** 2026-09-24 · **脚本** `scripts/lab/gen_concurrency.py`（审计）、
 `scripts/lab/probe_concurrency.py`（时间分箱） · **数据** `paper/data/concurrency.csv`

@@ -17,7 +17,7 @@ import csv, os, statistics, sys
 # 这张表、也不在 decomp.csv，导致「九臂归因」那一节没有它（2026-09-24 审稿人指出）
 RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap4_hc",
         "cap4_hc_r2","cap3_hc_r2","foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz2",
-        "foyer_hz0","foyer_bres","foyer_breshz1","foyer_nogate","foyer_rg4",
+        "foyer_hz0","foyer_bres_r2","foyer_breshz1","foyer_nogate","foyer_rg4",
         "foyfix_hc","aimd2","aimd2_paper","foyer_sf0_r2"]
 
 
@@ -28,14 +28,19 @@ def main():
     print("%-14s %9s %9s %9s %9s" % ("run", "占用中位%", "占用均值%", "队列均值", "在跑均值"))
     for r in runs:
         p = os.path.join(root, "pois200_" + r, "metrics.csv")
+        # 缺 run 必须【报错】而不是跳过：本表被 §V-A 的「二十条臂」口径引用，
+        # 少两行会让正文的计数与数据文件对不上（2026-09-24 就是这样：
+        # RUNS 列了 23 条，CSV 只有 21 行 —— cap4_hc_r2 与 cap3_hc_r2 是在
+        # 这张表生成之后才跑完的，于是它们无声地不在表里）。
+        # 见 CLAUDE.md 纪律 3：生成器的 run 列表不全会静默改变下游口径。
         if not os.path.exists(p):
-            continue
+            raise SystemExit("!! %s 缺 metrics.csv（目录 %s）—— 缺 run 不静默跳过" % (r, p))
         rd = list(csv.DictReader(open(p)))
         def col(name):
             return [float(x[name]) for x in rd if x.get(name) not in (None, "")]
         u = col("sglang:token_usage")           # 比例，不是 token 数
         if not u:
-            continue
+            raise SystemExit("!! %s 的 metrics.csv 里没有 token_usage" % r)
         q, n = col("sglang:num_queue_reqs"), col("sglang:num_running_reqs")
         rows.append({
             "run": r,

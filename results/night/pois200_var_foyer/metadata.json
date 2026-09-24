@@ -1,0 +1,65 @@
+{
+ "lane": "var_foyer",
+ "policy": "budget3:hw=0;target=0.95",
+ "trace": "/data/xbw/turnstile/data/replay_varload_lo2hi.csv",
+ "trace_md5": "facf9c8edb",
+ "gpu": 2,
+ "port": 30065,
+ "started": 1790165442.2285945,
+ "code": {
+  "run_matrix.py": "a8605b1e77d5",
+  "controller_budget3.py": "f825bc768188",
+  "controller_foyer.py": "43462c276ec4",
+  "controller_aimd2.py": "51602440d103",
+  "controller_aimd.py": "d2b8b7461ddf",
+  "session_runner": "5d40964aad21",
+  "path_divergence": [
+   "controller_budget3.py",
+   "run_matrix.py"
+  ],
+  "git_sha": "unknown (BASE is not a git working copy)"
+ },
+ "build": {
+  "TURNSTILE_HICACHE_ARGS": "--enable-hierarchical-cache --hicache-ratio 2 --hicache-write-policy write_through",
+  "TURNSTILE_EXPECT_POOL": "unset",
+  "TURNSTILE_MEMFRAC": "0.85",
+  "TURNSTILE_RUN_TIMEOUT_H": "12",
+  "TURNSTILE_TRACE": "/data/xbw/turnstile/data/replay_varload_lo2hi.csv",
+  "hicache_enabled": true
+ },
+ "pool_tokens": 101432,
+ "pool_attempts": 1,
+ "memfrac_used": null,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "horizon_rounds": 3,
+  "highwater_decay": 0.995,
+  "slo_ms": 10000,
+  "tuned": "hw=0;target=0.95"
+ },
+ "runner_argv": [
+  "/data/xbw/turnstile/TraceLab/replay/target/release/session_runner",
+  "--trace",
+  "/data/xbw/turnstile/data/replay_varload_lo2hi.csv",
+  "--text-file",
+  "/data/xbw/turnstile/data/enwik9",
+  "--tokenizer",
+  "/data/xbw/turnstile/models/qwen25-coder-7b-yarn96k/tokenizer.json",
+  "--model",
+  "qwen2.5-coder-7b",
+  "--base-url",
+  "http://127.0.0.1:30065/v1",
+  "--log-path",
+  "/data/xbw/turnstile/results/night/pois200_var_foyer/steps.jsonl",
+  "--summary-path",
+  "/data/xbw/turnstile/results/night/pois200_var_foyer/summary.json",
+  "--permit-file",
+  "/data/xbw/turnstile/permit_var_foyer.json",
+  "--admission-log",
+  "/data/xbw/turnstile/results/night/pois200_var_foyer/admissions.jsonl"
+ ],
+ "runner_rc": 0,
+ "wall_s": 20212.2,
+ "finished": 1790185745.6708872
+}

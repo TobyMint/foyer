@@ -1,0 +1,21 @@
+{
+ "lane": "pois_foyer",
+ "policy": "budget3:hw=0;target=0.95",
+ "trace": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+ "trace_md5": "df4bdd37e5",
+ "gpu": 3,
+ "port": 30028,
+ "started": 1789443826.4745374,
+ "pool_tokens": 101432,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "horizon_rounds": 3,
+  "highwater_decay": 0.995,
+  "slo_ms": 10000,
+  "tuned": "hw=0;target=0.95"
+ },
+ "runner_rc": 0,
+ "wall_s": 17960.3,
+ "finished": 1789461888.372502
+}
