@@ -21,6 +21,7 @@ LABEL = {
     "cap4": "cap4", "cap5": "cap5",
     "pairB_cap2hc": "cap2+HC", "cap3_hc": "cap3+HC", "cap4_hc": "cap4+HC",
     "cap4_hc_r2": "cap4+HC (repeat)", "cap3_hc_r2": "cap3+HC (repeat)",
+    "foyer_hc_r2": "horizon$=$3 (2nd run)", "foyer_sf0_r2": "single-flight off",
     "foyer_hz1": "horizon$=$1",
     "foyer_hz1_r2": "horizon$=$1 (repeat)", "foyer_hc": "horizon$=$3 (base)",
     "foyer_hz2": "horizon$=$2", "foyer_bres": "resident base",

@@ -8,22 +8,20 @@ plane and draws the upper-left envelope of the static points. Table~\ref{tab:run
 gives the numbers and each controller's signed distance from that envelope.
 
 The result is unambiguous. Of nine controller variants, \emph{none} is above
-the envelope---not one, on any run. The closest is a growth-reserve setting of
-one round instead of the default three, and it lands $0.92$ percentage points
-\emph{below} the line: inside our $\pm1.0$\,pp tie band, so we record it as
-\emph{on} the line rather than below it, but on the below side of it. We ran it
-again, and the repeat lands at $-5.57$. Same code, same trace, same pool,
-guarded the same way: 260.8 minutes against 255.8, and 80.9\% SLO against
-84.8\%.
+the envelope---not one, on any run, and the pair we repeated most tightly says
+so at a resolution the others do not. The closest arm of all is the one with
+single-flight admission disabled, at $0.55$ percentage points \emph{below} the
+line---inside our $\pm1.0$\,pp tie band, so we record it as \emph{on} the
+line rather than below it, but on the below side of it.
 
-That is not an isolated unlucky pair. Four configurations have been run more
-than once, and while their wall clocks are stable across repeats---coefficients
-of variation of 0.9\%, 1.0\%, 1.6\% and 1.8\%---their SLO is not: the
-ranges are 3.9, 5.1, 1.0 and 0.5\,pp. The two widest belong to configurations
-that \emph{decide} something---the leftmost envelope anchor and the best
-controller arm---so the front we compare against, and the best result we report
-against it, are both uncertain at a scale larger than the $\pm1.0$\,pp band
-we judge with. A fifth pair, two runs of \texttt{cap3}+HiCache, \emph{is} used, and an
+The base configuration is the one whose repeats we can trust, and they are
+tight: four runs spanning 0.5\,pp of SLO (89.5\% mean, 279.8 to 293.2 minutes),
+against the 3.3\,pp that separates it from the single-flight-off arm. So that
+difference is several times the noise of its own configuration rather than
+inside it, and it is a trade rather than a win: 28 minutes of wall clock bought
+with 3.5\,pp of SLO, moving the arm onto the tie band from below it. Not one
+configuration in the table gets above the line, and the tightest pair we have
+is what makes us willing to say the near misses are misses. A fifth pair, two runs of \texttt{cap3}+HiCache, \emph{is} used, and an
 earlier draft of this paper wrongly set it aside saying one of them exceeded
 its own cap. That was a different run: the over-cap one is the device-only
 \texttt{cap3} repeat (peak in-flight five against a cap of three, 126
@@ -31,20 +29,25 @@ over-cap samples), while both HiCache runs peak at three with none. The
 repeat is also both faster and higher on SLO (230.3 minutes, 81.9\% against
 236.4 and 81.1\%), so by the same rule that displaced \texttt{cap4}+HiCache's
 first run it displaces this one---and moving that anchor is what puts our
-best arm below the line rather than on it. Against that, the best controller's
-distance is not merely inside the noise---it is well inside it. We record it as
-\emph{on} the line rather than above it, and we state plainly that resolving a
-margin this small would need several repeats per configuration, which we did
-not run.
+best arm below the line rather than on it.\footnote{The repeats are uneven, and
+we do not want the tightest pair to stand for all of them. Five configurations
+have been run more than once; their SLO spreads are 0.5, 0.8, 1.0, 3.9 and
+5.1\,pp (\texttt{replicates.csv}). The two widest belong to the two arms that
+decide something---\texttt{horizon}=1 and the leftmost anchor---so where a small
+margin matters our repeats are weakest, and where they are strongest (the base
+configuration and the \texttt{cap3}+HiCache anchor) the margin is not small. We
+report both ends rather than the average.}
 
-The same repeat moved the frontier and changed nothing. The leftmost anchor's
-second run came out both faster (209.1 against 213.0 minutes) and higher on SLO
-(68.5 against 63.4), so it displaces the first as the envelope's leftmost
-point. Not one controller verdict moves: every one of them finishes to the
-right of the next anchor at 236 minutes, so none of them is judged against the
-segment that changed. We report both runs rather than keeping the better one,
-because a frontier whose anchors are single measurements is the weakness this
-whole subsection is about.
+The anchor repeats moved the frontier twice and we report both moves. The
+leftmost anchor's second run came out both faster (209.1 against 213.0 minutes)
+and higher on SLO (68.5 against 63.4), displacing the first; no controller
+verdict moves, because every controller finishes to the right of the next
+anchor. The middle anchor's repeat moved it the other way for us: it is also
+faster and higher, and taking it moves our best arm from \emph{on} the line to
+\emph{on the line, below it}. We report every repeat we ran rather than keeping
+the better of each pair, because a frontier whose anchors are single
+measurements is the weakness this whole subsection is about---and here it is
+the weakness biting.
 
 The other end of the front deserves its own sentence, because the rest of this
 paper is negative and a reader could close it thinking the answer is to do
@@ -108,8 +111,10 @@ appearance of the mechanism that drives the whole frontier.
     cap4+HC (repeat)  & 209.1 & 3.87 & 68.5 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
+    single-flight off & 263.3 & 2.43 & 86.3 & $-$0.55 \\
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.92 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.25 \\
+    horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.73 \\
     horizon$=$2       & 306.1 & 2.22 & 86.9 & $-$4.85 \\
     horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.57 \\
     resident base     & 295.5 & 2.40 & 83.8 & $-$7.81 \\
