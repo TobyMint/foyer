@@ -90,6 +90,14 @@ def main():
             "reuse_host_tok": host_hit,
             "recompute_tok": unc,
             "reuse_frac": "%.4f" % (reuse / prompt),                 # 占总 prompt
+            # bound_frac 必须作为【数据列】出现，不能只写在注释里 —— 审计脚本
+            # 会跳过 # 开头的行，于是正文里的 75.5% 在数据文件里找不到出处
+            # （2026-09-24 审计报了 9 处假阳性才发现）。与 reuse_x.csv 的列名一致。
+            "bound_frac": "%.4f" % ce["ceiling_frac"],
+            # 上界的【原始 token 数】也要落成列：正文引用了 21,540,371 与 28,526,871，
+            # 而它们原来只在注释里（审计跳过注释行）。
+            "bound_tok": ce["ceiling_tok"],
+            "prompt_total_tok": ce["prompt_tok"],
             "realized_frac": "%.4f" % (reuse / ce["ceiling_tok"]),   # 占 trace 上界 <<< 关键列
             "tau1_ms": d["step_back_ms"],
             "contested": conc.get(run, "?"),
@@ -117,7 +125,8 @@ def main():
         "#               reuse/recompute 是体积量，实测与同族干净 run 一致。",
         "run,family,Rbar_busy,prompt_tok,reuse_tok,reuse_host_tok,recompute_tok,reuse_frac,realized_frac,tau1_ms,contested"])
     fields = ["run", "family", "Rbar_busy", "prompt_tok", "reuse_tok", "reuse_host_tok",
-              "recompute_tok", "reuse_frac", "realized_frac", "tau1_ms", "contested"]
+              "recompute_tok", "reuse_frac", "bound_frac", "bound_tok",
+              "prompt_total_tok", "realized_frac", "tau1_ms", "contested"]
     body = header + "\n" + "\n".join(",".join(str(r[k]) for k in fields) for r in rows) + "\n"
     assert isinstance(body, str)
     with open(out_p, "w") as fh:

@@ -67,6 +67,42 @@ def _frontier_mod():
     return m
 
 
+def emit_csv(runs, env, delta, front_slo, conc, out_p):
+    """把表 I 的每一列落成一个 CSV —— 包括 Δ。
+
+    为什么必须落盘：论文声称「每个判决都由一个脚本产出」，而 Δ 是【渲染时算的】，
+    不存任何数据文件。审计于是把正文里每一个 Δ 数字都报成"找不到源头"
+    （2026-09-24 一类假阳性有十几个）。判决列必须和其它列一样可被引用。
+    """
+    FR = _frontier_mod()
+    fields = ["run", "label", "wall_min", "conc", "slo_pct", "front_slo",
+              "delta_pp", "verdict", "contested", "anchor"]
+    out = ["# 表 I 的每一列（含 Δ）—— 由 scripts/lab/gen_table.py 生成，勿手改",
+           "# front_slo = frontier.py 的 front_slo(wall)（同一函数，不是另写一遍）",
+           "# delta_pp  = slo_pct - front_slo；超出锚点范围为空",
+           "# verdict   = 按 ±1.0pp 判带：>+1 越过 / 在带内平局 / <-1 在线下",
+           "# contested = 同机争用窗口标记（concurrency.csv），与表里的 ‡ 同源",
+           ",".join(fields)]
+    env_w = {n for _, _, n in _envelope(ENV_KEYS, runs)}
+    lines = []
+    for k in sorted(runs, key=lambda k: float(runs[k]["wall_min"])):
+        r = runs[k]
+        w, sl = float(r["wall_min"]), float(r["slo_pct"])
+        f = FR.front_slo(w)
+        d = "" if f is None else "%.4f" % (sl - f)
+        v = ("OUT-OF-RANGE" if f is None else
+             "ABOVE" if sl - f > 1.0 else "TIE" if sl - f >= -1.0 else "BELOW")
+        lines.append(",".join(str(x) for x in [
+            r["run"], LABEL.get(k, k), "%.4f" % w, r["conc"], "%.4f" % sl,
+            "" if f is None else "%.4f" % f, d, v, conc.get(k, "?"),
+            "1" if k in env_w else "0"]))
+    body = "\n".join(out + lines) + "\n"
+    assert isinstance(body, str)
+    with open(out_p, "w") as fh:
+        fh.write(body)
+    print("  判决表 -> %s（%d 行）" % (out_p, len(lines)))
+
+
 def main():
     runs = {r["run"]: r for r in load(sys.argv[1]) if r["tier"] == "200"}
 
@@ -143,6 +179,11 @@ def main():
     print("    \\multicolumn{5}{l}{\\emph{Independent adaptive controller (\\S\\ref{sec:results:aimd})}}\\\\")
     for k in sorted(["aimd2", "aimd2_paper"], key=lambda k: -delta(k)):
         print(row(k))
+    # 同时把每一列（含 Δ）落成 CSV
+    import sys as _sys
+    if "--csv" in _sys.argv:
+        i = _sys.argv.index("--csv")
+        emit_csv(runs, env, delta, front_slo, conc, _sys.argv[i + 1])
 
 
 if __name__ == "__main__":

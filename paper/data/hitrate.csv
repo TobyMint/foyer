@@ -1,0 +1,14 @@
+# round-1+ 命中率 —— 由 scripts/lab/gen_hitrate.py 生成，勿手改
+# 口径：观测的 server_prefix_hit_rate，round>=1，逐步【非加权均值】
+# ⚠ 与 reuse.csv 的 reuse_frac 不是一回事（那个是全部步、按 token 加权），
+#   两者不可换算、不可混引。planned_round1_pct 是 trace 常量，不随 cap 变。
+run,n_round1_steps,observed_round1_pct,planned_round1_pct
+pois200_cap1,800,80.8,80.87
+pois200_cap2,800,78.5,80.87
+pois200_cap3_fixed,800,70.6,80.87
+pois200_cap4,800,56.0,80.87
+pois200_cap5,800,32.8,80.87
+pois200_pairB_cap2hc,800,80.7,80.87
+pois200_cap3_hc,800,79.6,80.87
+pois200_cap4_hc,800,78.7,80.87
+pois200_foyer_hc,800,80.6,80.87

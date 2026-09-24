@@ -78,9 +78,9 @@ def main():
                      "measured_p90_s": "%.2f" % (pct(me, 0.9) / 1000)})
 
     header = "\n".join([
+        "# trace: %s（%d 行 - %d 会话 = %d 次转换）" % (os.path.basename(trace), nrows, nsess, len(dem)),
         "# 轮次间隔：trace 要求 vs 实测 —— 由 scripts/lab/gen_toolwait.py 生成，勿手改",
-        "# 轮次转换 = 同会话相邻两轮 = 每会话除最后一轮外的每一行（%d 行 - %d 会话 = %d）"
-        % (nrows, nsess, len(dem)),
+        "# 轮次转换 = 同会话相邻两轮 = 每会话除最后一轮外的每一行",
         "# ⚠ 分母不同，均值差很多，正文引用时必须指明口径：",
         "#     全部 999 行（含每会话最后一轮，无后继）  均值 12.65 s",
         "#     799 次轮次转换（本表）                  均值 15.82 s   <- 论文用的",
