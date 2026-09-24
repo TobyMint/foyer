@@ -26,15 +26,14 @@ whether a controller will win.
 We serve a replay of 200 real coding-agent sessions on a single RTX 3090
 (Qwen2.5-Coder-7B, 96K context, SGLang, a 101{,}432-token KV pool) and compare
 a family of admission policies against a sweep of static concurrency caps.
-Nine controller variants, spanning four mechanistically distinct ideas, all
-land below the static Pareto front---six of them on clean measurements, three
-on ones we are re-measuring because other jobs shared the host---and so does a
+Nine controller variants span four mechanistically distinct ideas, and a
 reimplementation of an independent congestion-based controller from the
-literature
+literature runs alongside them. Six of the nine have measurements we can
+compare, and none of those six is above the static Pareto front
 (Fig.~\ref{fig:frontier}). The best of them misses by under a point---inside the
 $\pm1.0$\,pp band we call a tie, but on the below side of it---and the closest
 arm we repeated misses by 0.9 with its repeat at 5.6. Four of the nine were
-measured while other jobs shared the host. We re-measured one: it moved 6.5
+measured while other jobs shared the host; we re-measured one, which moved 6.5
 points closer to the front without crossing it, and \S\ref{sec:results} says
 what the verdict rests on until the other three land.
 

@@ -46,3 +46,25 @@
 - 不许在结果出来之后改判据；
 - 不许因为「这一对没支持我们」就不写进论文；
 - 若两条没有背靠背跑成（比如中间被别的东西插进来），要在正文里说明实际时间差。
+
+## 落地后的清点清单（两条都会是新 run）
+
+`cap3_pd` 与 `cap3_ph` 是**新的静态点**，所以要进的地方比一条控制器臂还多。
+按 2026-09-25 那次 `bres` 连锁改动的教训（**按数字清点，不只按名字清点**），
+逐处列出：
+
+| 文件 | 加什么 |
+|---|---|
+| `gen_runs.py` | `cap3_pd 200 static` / `cap3_ph 200 static` 两行 |
+| `gen_table.py` 的 `LABEL` | 两个新标签（如 `cap3 (paired, dev)` / `cap3 (paired, +HC)`） |
+| `gen_occupancy.py` / `gen_arm_running.py` | 各自的 run 列表 |
+| `gen_decomp.py` / `gen_hitrate.py` | 命令行传的 `pois200_` 前缀列表 |
+| `gen_attribution.py` 的 `STATIC` | 两条（它们是静态点，会成为臂的对照候选） |
+| `gen_eviction.py` 的 `RUNS` | 两条（HC 那条进 host-tier 集合，device 那条进 device-only） |
+| `slo_sensitivity.py` 的 `RUNS` 与 `stat` | 两条 |
+| `idle_segments.py` / `gen_arrival_slo.py` 的 run 列表 | 两条 |
+| 图 | `make_figs.py` 读 `decomp.csv`/`runs.csv`，跟着走 |
+| 实验机 | `gen_concurrency.py` / `gen_gate_attrib.py` / `gen_projection.py` / `gen_repeat_spread.py` |
+
+⚠ **它们是静态点，会成为包络候选。** 若其中一条比现有锚点更快且更高，按论文既有规矩
+顶掉锚点、移动所有人的 Δ —— 照实改，不能因为「不想动」而不动。
