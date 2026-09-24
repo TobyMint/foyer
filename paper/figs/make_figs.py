@@ -43,8 +43,15 @@ def load(name):
 
 
 def short(run):
-    """pois200_foyer_hz1 -> F:hz1。图上位置紧张，统一缩写。"""
-    s = run.replace("pois200_", "").replace("pairB_", "").replace("pairA_", "")
+    """pois200_foyer_hz1 -> F:hz1。图上位置紧张，统一缩写。
+
+    ⚠ 缩写必须【唯一】。原来把 pairA_/pairB_ 前缀整个删掉，于是
+    `pairA_cap2hc` / `pairB_cap2hc` 都变成 "cap2hc"，`foyer_hc` /
+    `pairA_foyerhc` / `pairB_foyerhc` 三条都变成 "foyerhc" —— 图 2 有 28 根柱子
+    却有 3 组重名，读者分不出哪根是哪条（2026-09-25 把图渲出来看才发现的，
+    此前只核对过数据没看过图）。现在保留配对的前缀。"""
+    s = run.replace("pois200_", "")
+    s = s.replace("pairA_", "A:").replace("pairB_", "B:")
     return s.replace("foyer_", "F:").replace("_fixed", "")
 
 
