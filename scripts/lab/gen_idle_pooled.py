@@ -33,11 +33,23 @@ def main():
     # 从 5.60 跳到 10.00；而均值（18.3~21.0）与 >20s 占比（64.8~70.6%）稳定。
     # 实测被争用损害的【重跑前】那几条。foyer_bres 已由 foyer_bres_r2 替代、
     # 不再进入正文，所以它从这一组里拿掉（2026-09-25）。
-    damaged = {"foyer_hz2", "foyer_hz0", "foyer_breshz1"}
+    # 【从数据推导，不硬编码】—— 2026-09-25 教训：这一行原来是
+    #     damaged = {"foyer_hz2", "foyer_hz0", "foyer_breshz1"}
+    # 一个硬编码的集合。两条被干净重跑替代后它**匹配不到任何东西**，
+    # `minus_damaged3` 于是退化成与 `all_runs` 一模一样的重复行，
+    # 而正文还写着「四个 pooling」——实际上只剩三个不同的。
+    # 新定义：**仍带旗且 τ₂ 确实被抬高的**（≥30ms）。重跑前恰好就是那三条，
+    # 重跑后只剩 breshz1 —— 集合随数据走，不再随记忆走。
+    _tau = {r["run"].replace("pois200_", ""): r.get("tau2_ms") for r in load(conc_p)}
+    damaged = {k for k in bad
+               if (lambda v: v is not None and v >= 30.0)(
+                   (lambda t: float(t) if t not in (None, "", "None") else None)(_tau.get(k)))}
+    if damaged == (bad & {r["run"] for r in rows}):
+        print("  注：minus_damaged 与 minus_contested 现在是同一个集合（重跑后只剩一条带旗且受损的臂）")
     out = []
     for name, excl in (("all_runs", set()),
                        ("minus_cap1", {"cap1"}),
-                       ("minus_damaged3", damaged),
+                       ("minus_damaged", damaged),
                        ("minus_contested4", bad & {r["run"] for r in rows})):
         sel = [r for r in rows if r["run"] not in excl]
         v = [float(r["duration_s"]) for r in sel]

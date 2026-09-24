@@ -430,6 +430,14 @@ def main():
     # 现在改成引闸门归因与占用投影。这几个数必须能从表里追到。
     _ga = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/gate_attrib.csv"))}
     _pj = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/projection.csv"))}
+    # §V「准入率基本没变」那句：2.35% 与 2.44% 是 gate_attrib 的 total_admits /
+    # samples，**不是** controller.jsonl 里 n_admitted 的逐周期求和（那个是 209，
+    # 2026-09-25 我自己用错列、险些把它当错误报出来）。
+    for _k, _lab in (("pois200_foyer_hc", "基线"), ("pois200_foyer_sf0_r2", "sf=0")):
+        if _k in _ga:
+            ck("§V %s 的准入周期占比" % _lab,
+               "%.2f" % (100.0 * float(_ga[_k]["total_admits"]) / float(_ga[_k]["samples"])),
+               "sec_results.tex")
     _k25 = "pois200_foyer_push_25"
     if _k25 in _ga:
         ck("§VII 25 档被挡周期数", _ga[_k25]["blocked_cycles"], "sec_discussion.tex")
@@ -489,6 +497,27 @@ def main():
         if r.get("kind") == "arm" and r["name"].startswith("realhr_foyer"):
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
+
+    # ---- nocontrol.csv 与 arrival_slo.csv：此前【零覆盖】----
+    # 2026-09-25 全量重生成时发现 arrival_slo.csv 的生成器 run 列表被改名了、
+    # 表却没重生成（还留着旧的 foyer_hz0/hz2）—— 两张表此前一条检查都没有。
+    _nc = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/nocontrol.csv"))}
+    if "default" in _nc:
+        ck_near("§V 无控制臂的首 token 中位（秒）",
+                str(int(float(_nc["default"]["ttft_p50_s"]))), "sec_results.tex", "median")
+        ck_near("§V 无控制臂的 SLO", _nc["default"]["slo_pct"], "sec_results.tex", "envelope")
+    _as = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arrival_slo.csv"))}
+    _CTRL = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
+             "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc", "aimd2", "aimd2_paper"]
+    _mv = [(r["run"], float(r["move_pp"])) for k, r in _as.items()
+           if k in _CTRL and r["move_pp"] not in ("", "None")]
+    if _mv:
+        ck("§VI ready 时钟：控制器臂条数", len(_mv), "sec_discussion.tex")
+        ck("§VI ready 时钟：移动 ≤2.5pp 的条数",
+           sum(1 for _, v in _mv if abs(v) <= 2.5), "sec_discussion.tex")
+        for _k, _v in _mv:
+            if abs(_v) > 2.5:
+                ck_near("§VI %s 的 ready 位移" % _k, "%.1f" % abs(_v), "sec_discussion.tex", "move more")
 
     # ---- 表 I 脚注的「本 trace 跑完但不在表里」的条数 ----
     # 2026-09-25 中立子 agent 第 10 轮说这个「十」拼不出来、且被重跑替代的三条

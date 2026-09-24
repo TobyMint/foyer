@@ -5,10 +5,9 @@ run,n_windows,total_s,max_s,pct_wall,waiting_med,lengths
 foyer_hc,0,0.0,,0.0,,-
 foyer_hc_r2,0,0.0,,0.0,,-
 foyer_sf0_r2,0,0.0,,0.0,,-
-foyer_hz0,1,191.5,191.5,1.08,88,191
+foyer_hz0_r2,1,195.0,195.0,1.2,128,195
 foyer_hz1,0,0.0,,0.0,,-
-foyer_hz2,0,0.0,,0.0,,-
-foyer_bres,0,0.0,,0.0,,-
+foyer_hz2_r2,0,0.0,,0.0,,-
 foyer_bres_r2,1,240.1,240.1,1.47,89,240
 foyer_breshz1,1,170.5,170.5,0.9,130,171
 foyer_nogate,0,0.0,,0.0,,-
