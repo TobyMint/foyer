@@ -424,6 +424,14 @@ def main():
     # 键改成 (run, window) —— 原来按 run 建字典会静默只留后一行。
     _bl = {(r["run"], r["window"]): r
            for r in load(os.path.join(ROOT, "paper/data/backlog.csv"))}
+    _early = [v for (r, w), v in _bl.items()
+              if r.startswith("load25c_budget3") and w == "run"]
+    if _early:
+        ck("§VII 更早一代 25 档的上界",
+           "%.0f" % max(float(x["waiting_p50"]) for x in _early), "sec_discussion.tex")
+        ck("§VII 更早一代 25 档的下界",
+           "%.0f" % min(float(x["waiting_p50"]) for x in _early), "sec_discussion.tex")
+
     for _r in ("pois200_foyer_hc", "pois200_foyer_push_25"):
         if (_r, "run") in _bl:
             _k = _bl[(_r, "run")]
@@ -433,14 +441,23 @@ def main():
             # 运行窗口的周期数正文不逐条印（印的是全周期数 + 窗口外的条数，
             # 两者相减就是它）。降为次要档，别拿「没印」当 MISS。
             ck("§VII %s 周期数（运行窗口）" % _r, _k["samples"], "sec_discussion.tex", tier="S")
+            # 2026-09-25 中立子 agent 重写了这一段：现在引的是【归一化后的份额】、
+            # 三个相位中位、以及非零周期占比 —— 都不是「哪个窗口的中位」。
+            ck("§VII %s 本档会话数" % _r, _k["n_sessions"], "sec_discussion.tex")
+            ck("§VII %s 扣住本档的比例" % _r, "%.0f" % float(_k["pct_of_tier"]), "sec_discussion.tex")
+            ck("§VII %s 相位中位(前10%%)" % _r, "%.0f" % float(_k["median_p10"]), "sec_discussion.tex")
+            ck("§VII %s 相位中位(中段)" % _r, "%.0f" % float(_k["median_mid"]), "sec_discussion.tex")
+            ck("§VII %s 相位中位(后10%%)" % _r, "%.0f" % float(_k["median_p90"]), "sec_discussion.tex")
+            ck("§VII %s 非零周期占比" % _r, _k["pct_nonzero"], "sec_discussion.tex")
         if (_r, "all") in _bl:
+            # 2026-09-25 重写后，正文【不再跨档比队列长度】（两个 trace 不可比，
+            # 按本档会话数归一后方向反过来）。全周期那一档留在 CSV 里供复算，正文不印。
             _a = _bl[(_r, "all")]
-            ck("§VII %s 队列中位（全周期）" % _r, "%.0f" % float(_a["waiting_p50"]),
-               "sec_discussion.tex")
-            ck("§VII %s 队列最大（全周期）" % _r, _a["waiting_max"], "sec_discussion.tex")
-            ck("§VII %s 周期数（全周期）" % _r, _a["samples"], "sec_discussion.tex")
-            ck("§VII %s 窗口外的周期数" % _r,
-               int(_a["samples"]) - int(_k["samples"]), "sec_discussion.tex")
+            for _lab, _val in (("队列中位", "%.0f" % float(_a["waiting_p50"])),
+                               ("队列最大", _a["waiting_max"]),
+                               ("周期数", _a["samples"])):
+                ck("§VII %s %s（全周期）" % (_r, _lab), _val,
+                   "sec_discussion.tex", tier="S")
 
     # ---- §IV 的 HiCache 弹性曲线（首跑）与「换成重复也不改结论」那句 ----
     import math as _m

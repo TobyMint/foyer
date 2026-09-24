@@ -25,7 +25,11 @@ RUNS = ["pois200_foyer_hc", "pois200_foyer_hz1", "pois200_foyer_hz2",
         "pois200_foyer_hz0", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
         "pois200_foyer_nogate", "pois200_foyer_rg4", "pois200_foyer_sf0_r2",
         "pois200_foyer_push_25",          # §VII 的同代 25 档控制器臂
-        "load25c_budget3"]                # 更早一代的 25 档，正文引作 9--11 那条
+        # 更早一代的 25 档控制器——正文 §VII 写「read 9--11」。原来只列了 budget3 一条，
+        # 于是那句里的「9」在 paper/data/ 里追不到（2026-09-25 中立子 agent 抓）。
+        # 把这一代走同一 policy 的几条都列进来，让区间本身可复算。
+        "load25c_budget3", "load25c_budget3_t80", "load25c_budget3_sf0",
+        "load25c_budget3_zero", "load25c_budget3_hc"]
 
 
 def cycles(d):
@@ -46,13 +50,18 @@ def cycles(d):
 
 
 def run_window(d):
-    """(最早提交, 最后完成) —— 从 steps.jsonl 取，与其它脚本的墙钟口径一致。"""
+    """(最早提交, 最后完成, 完成的会话数) —— 从 steps.jsonl 取，与其它脚本的墙钟口径一致。
+
+    **会话数是归一化必须的分母**：200 档与 25 档的会话数差 8 倍，不做归一化就比队列长度
+    等于拿「8 倍的池子」当「8 倍的负载」。2026-09-25 中立子 agent 指出这个分母原来不在表里，
+    读者无法从 CSV 复算「扣住了本档多少比例的会话」。
+    """
     st = [json.loads(l) for l in open(os.path.join(d, "steps.jsonl")) if l.strip()]
     subs = [s["submit_timestamp"] for s in st if s.get("submit_timestamp")]
     comps = [s["complete_timestamp"] for s in st if s.get("complete_timestamp")]
     if not subs or not comps:
         return None
-    return min(subs), max(comps)
+    return min(subs), max(comps), len({s["session_id"] for s in st if s.get("session_id")})
 
 
 def stats(v):
@@ -94,10 +103,22 @@ def main():
         variants = [("all", [w for _, w in cy])]
         if win:
             variants.append(("run", [w for t, w in cy if win[0] <= t <= win[1]]))
+        # 相位中位：队列长度在窗口内不是平稳的（200 档前 10% 是 21、中段 89、后 10% 是 6），
+        # 只报一个中位会让「跨档比队列长度」看着比实际稳。三个相位都落盘。
+        ph = {}
+        if win:
+            W = win[1] - win[0]
+            for tag, lo, hi in (("p10", 0.0, 0.1), ("mid", 0.25, 0.75), ("p90", 0.9, 1.0)):
+                vv = [w for t, w in cy if win[0] <= t <= win[1] and lo <= (t - win[0]) / W < hi]
+                ph["median_%s" % tag] = "%.1f" % statistics.median(vv) if vv else ""
         for tag, v in variants:
             if not v:
                 continue
-            rows.append(dict(run=os.path.basename(d), window=tag, **stats(v)))
+            rows.append(dict(run=os.path.basename(d), window=tag,
+                             n_sessions=win[2] if win else "",
+                             pct_of_tier="%.1f" % (100.0 * statistics.median(v) / win[2])
+                             if win and win[2] else "",
+                             **ph, **stats(v)))
     with open(out, "w", newline="") as f:
         f.write("# 准入队列长度（每个 2 s 控制周期记一次的 waiting_n）—— gen_backlog.py 生成，勿手改\n")
         f.write("# 用途：§VII 的「200 档等待会话中位 66 / 最大 135，同代 25 档中位 16 / 最大 25」，\n")
@@ -106,8 +127,10 @@ def main():
         f.write("#   window=all  全部控制周期（含首个请求提交之前的空队列段）\n")
         f.write("#   window=run  只算 [最早提交, 最后完成] 之间的周期（正文之比用这个）\n")
         f.write("# 两个窗口的分母都在 samples 列里，读者可复算。\n")
-        w = csv.DictWriter(f, fieldnames=["run", "window", "samples", "waiting_p50",
-                                          "waiting_p90", "waiting_max", "pct_nonzero"])
+        w = csv.DictWriter(f, fieldnames=["run", "window", "n_sessions", "samples",
+                                          "waiting_p50", "pct_of_tier", "median_p10",
+                                          "median_mid", "median_p90", "waiting_p90",
+                                          "waiting_max", "pct_nonzero"])
         w.writeheader()
         w.writerows(rows)
     print("写入 %s：%d 行" % (out, len(rows)))

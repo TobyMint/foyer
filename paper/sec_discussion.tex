@@ -83,27 +83,32 @@ $+51\%$ there costs $-42\%$ at high load. A controller that is competitive
 where load is light and dominated where load is heavy is the pattern this
 paper set out to explain, and it is the pattern we measured.
 
-The second finding is the more useful one. The signal an adaptive controller
-would need is available---the number of sessions waiting for admission is 3.7
-times larger on the 200-session tier than on the same-generation 25-session arm
-(median 66 against 18, maximum 135 against 24). We window the queue to the run,
-as every other timing number here is windowed; counting all control cycles
-instead gives 66 against 16 and 135 against 25---a median ratio of 4.1 rather
-than 3.7---because the
-25-session arm is short enough that the 112 cycles before its first submission
-are 12\% of its 931, against 188 of 8784 (2\%) for the 200-session arm, and it
-is precisely there that its queue is empty. Both windows and both denominators
-are in \texttt{backlog.csv}. The earlier-harness
-25-session arms of \S\ref{sec:load} read 9--11, which is where the 6--7$\times$
-of an earlier draft came from, and we quote the same-generation
-pair. But the signal's
-\emph{interpretation} is not obvious. At the 25-session tier the controller
-holds eighteen sessions back while running one; that backlog is manufactured by
-the throttling itself rather than
-evidence that demand has slackened. Reading it correctly requires combining
-instantaneous backlog with progress through the run, which is a stateful
-computation a cap cannot perform. We regard this as the most promising
-direction we did not finish, and we are explicit that we did not finish it.
+The second finding is the more useful one, and what it establishes is negative.
+A backlog signal exists---on the 200-session tier and on the same-generation 25-session
+arm alike the admission queue is non-empty in nearly every control cycle inside
+the run (97.7\% and 93.2\%). What it will not do is read as load. These two arms
+are not a controlled comparison. The 25-session trace carries no arrival times
+at all, so its twenty-five sessions are submitted together: its queue opens at
+24 of 25 and never returns to that depth, while the 200-session one peaks at 135
+of 200 a quarter of the way in. Normalised by each tier, the ordering reverses
+---the 25-session controller withholds 72\% of its sessions against 33\%---and
+the medians are not stationary either: 21 against 21 over the first tenth of the
+run, 89 against 18 in the middle, 6 against 0 at the end. The number an earlier
+draft quoted, ``four times the backlog'', set a mid-run peak on one trace
+against an opening instant on another; we no longer quote a ratio between them.
+(\texttt{backlog.csv} carries both windows, both denominators, and the phase
+medians, so all of this is recomputable.)
+
+What does survive is the direction of the explanation, and it is the part that
+matters. At the 25-session tier the controller holds eighteen sessions waiting
+---the median over the run---while the engine runs about one request. A queue
+that deep on a tier that small is manufactured by the throttling itself, not
+evidence that demand has slackened. Reading backlog correctly therefore requires
+combining it with progress through the run, which is a stateful computation a
+cap cannot perform. That is the most promising direction we did not finish, and
+we are explicit that we did not finish it. The earlier-harness 25-session arms
+of \S\ref{sec:load} run shallower still (11--13 over the same window), which is
+why we compare only the same-generation pair.
 
 \begin{figure}[tb]
   \centering
