@@ -84,6 +84,17 @@
 （记录谁替代谁的）进 NEVER_TOUCH。** 同理，改名之后要重跑一遍受影响的生成器
 并核对输出，不能只看 diff 行数。
 
+## 2026-09-25 新增：同一个主张会用【不同的词】在全篇说好几遍
+
+把摘要里「1.79× the truth」降级成「1.79× the occupancy the engine reports」之后，
+正文里**还有两处**写着「the truth」；「the engine had room they did not take」
+降级之后，正文里**还有两处**。是 codex 第 20 轮一处一处列出来的。
+
+**规矩：降级一个说法时，先把它的【所有同义说法】找出来** ——
+把关键词（这里 `truth` / `had room` / `did not take`）拿去 grep 全稿，
+而不是只改你碰巧读到的那一处。与「连锁改名要按数字清点」是同一类问题：
+改一处 ≠ 改完。
+
 ## 2026-09-25 新增：lab-only 的表会随「实验机上有什么」漂移
 
 `gen_gate_attrib` 的 all-rows 中位数在实验机上从 27.4 漂到 30.6 —— 一半是修了
