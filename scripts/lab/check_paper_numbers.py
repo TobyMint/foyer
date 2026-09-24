@@ -28,6 +28,44 @@ def paper_text():
     return {os.path.basename(f): open(f, encoding="utf-8").read() for f in TEX}
 
 
+_WORD = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven",
+         8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen",
+         14: "fourteen", 15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen",
+         19: "nineteen", 20: "twenty", 21: "twenty-one", 22: "twenty-two",
+         23: "twenty-three", 24: "twenty-four", 25: "twenty-five", 26: "twenty-six",
+         27: "twenty-seven", 28: "twenty-eight", 29: "twenty-nine", 30: "thirty"}
+
+
+def num_words(n):
+    """整数 -> 英文词（正文里名次、条数常用词写：eighteenth / twenty-eight / nineteen）。
+
+    2026-09-25 加派生量检查时踩到：查 `18` 却写作 `eighteenth`，四条新检查里三条
+    是这么假 MISS 掉的。名次还要 +th 形式。
+    """
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return []
+    out = []
+    if n in _WORD:
+        w = _WORD[n]
+        out.append(w)
+        # 序数词：eighteen -> eighteenth（twenty-one -> twenty-first 也补上）
+        if w.endswith("y"):
+            out.append(w[:-1] + "ieth")
+        elif w.endswith("e"):
+            out.append(w + "th")
+        else:
+            out.append(w + "th")
+        if "-" in w:
+            # 复合词（twenty-eight）：只把后一半变序数
+            a, b = w.split("-")
+            b_ord = {"one": "first", "two": "second", "three": "third", "five": "fifth",
+                     "eight": "eighth", "nine": "ninth", "twelve": "twelfth"}.get(b, b + "th")
+            out.append(a + "-" + b_ord)
+    return out
+
+
 def has(text, v):
     """正文里有没有这个数。试 1~4 位小数、以及千分位两种写法。
 
@@ -59,8 +97,11 @@ def has(text, v):
                 return True
         return False
     n = int(float(s))
-    return (str(n) in text or "{:,}".format(n) in text
-            or ("{:,}".format(n).replace(",", "{,}")) in text)
+    if (str(n) in text or "{:,}".format(n) in text
+            or ("{:,}".format(n).replace(",", "{,}")) in text):
+        return True
+    # 也试英文词形（名次/条数正文常写词）
+    return any(w in text for w in num_words(n))
 
 
 
@@ -326,6 +367,63 @@ def main():
         for x in tw.get(_run, []):
             if x["bucket_min"] == _m:
                 ck("%s 转折前桶（第 %s 分）" % (_key, _m), x["tau2_p50_ms"], "sec_discussion.tex")
+
+    # ---- 派生量检查（排名 / 条数 / 跨带）----
+    # 2026-09-25 中立子 agent 第 11 轮的结构性结论：检查器只问「这个值在不在正文里」，
+    # **不问「旧值还在不在」，也不覆盖派生量** —— 而这一轮的三条 major
+    # （图 2 图注的名次 16→18、§VI 的跨带条数 1→2、图 4 图注的四个 pooling）
+    # **全部落在那个盲区里**。这一块把「算出来的名次/条数/跨带」也变成检查。
+
+    # (1) 图 2 图注的两个名次（28 条 run 里，default 按 idle 升序第几、按墙钟升序第几）
+    _dr = load(os.path.join(ROOT, "paper/data/decomp.csv"))
+    if _dr:
+        _byidle = sorted(_dr, key=lambda x: float(x["idle_pct"]))
+        _bywall = sorted(_dr, key=lambda x: float(x["wall_min"]))
+        _names = [x["run"] for x in _byidle]
+        if "default" in _names:
+            ck_near("图2 图注：default 的 idle 名次", str(_names.index("default") + 1),
+                    "sec_model.tex", "idle share")
+            ck_near("图2 图注：default 的墙钟名次",
+                    str([x["run"] for x in _bywall].index("default") + 1),
+                    "sec_model.tex", "duration")
+        ck_near("图2 图注：run 的条数", str(len(_dr)), "sec_model.tex", "ordered by total duration")
+
+    # (2) §VI ready 时钟的跨带条数：从 arrival_slo.csv 现算
+    _as2 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/arrival_slo.csv"))}
+    _C11 = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
+            "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc", "aimd2", "aimd2_paper"]
+    _t1b = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/table1.csv"))}
+    _cross = []
+    for _k in _C11:
+        if _k in _as2 and _k in _t1b and _as2[_k]["delta_ready_pp"] not in ("", "None"):
+            _a0 = float(_t1b[_k]["delta_pp"])
+            _a1 = float(_as2[_k]["delta_ready_pp"])
+            if (_a0 > -1.0) != (_a1 > -1.0):   # 带内/带外 状态变了
+                _cross.append(_k)
+    if _cross:
+        ck("§VI ready 时钟：跨出 ±1pp 带的控制器臂", str(len(_cross)), "sec_discussion.tex")
+
+    # (3) 正文引、但此前没有检查守的几个数
+    _ip = {r["set"]: r for r in load(os.path.join(ROOT, "paper/data/idle_pooled.csv"))}
+    if "all_runs" in _ip:
+        ck_near("§III >20s 的段数占比", _ip["all_runs"]["pct_segments_gt20s"],
+                "sec_model.tex", "exceed")
+    if "minus_cap1" in _ip:
+        ck_near("§III 去掉 cap1 后的中位", _ip["minus_cap1"]["median_s"],
+                "sec_model.tex", "median is not robust")
+    _dd5 = load(os.path.join(ROOT, "paper/data/decomp.csv"))
+    if _dd5:
+        # 这个区间在 §III，不在引言 —— 我第一版把 where 写成了 sec_intro.tex，
+        # 得到一条假 MISS（正文里根本没有那个数）。**检查写错地方 = 假 MISS。**
+        _ip2 = [float(r["idle_pct"]) for r in _dd5 if r["idle_pct"]]
+        ck_near("§III 的空转占比区间上界", "%.1f" % max(_ip2), "sec_model.tex", "spans")
+        ck_near("§III 的空转占比区间下界", "%.1f" % min(_ip2), "sec_model.tex", "spans")
+    # 摘要的 projection 区间只存在于 projection.csv 的**表头注释**里，不是列 —— 照读
+    _pj_txt = open(os.path.join(ROOT, "paper/data/projection.csv"), encoding="utf-8").read()
+    _m2 = re.search(r"# main_trace: n=(\d+), min=([\d.]+), max=([\d.]+)", _pj_txt)
+    if _m2:
+        ck_near("摘要 projection 区间的上界", _m2.group(3), "main.tex", "occupancy the engine")
+        ck_near("摘要 projection 的条数", _m2.group(1), "main.tex", "occupancy the engine")
 
     # ---- 全局守卫：paper/data/*.csv 里不该再出现【被替代的旧 run】----
     # 2026-09-25：`swap_superseded.py` 只改生成器的 run 列表、**不重生成数据**，
