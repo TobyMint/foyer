@@ -402,8 +402,9 @@ run or did not touch their decode interval. Where the damage is legible it is la
 per-request decode interval $\tau_2$, measured client-side and never touching
 the sampler, sits at 30.9--33.3\,ms for the one affected arm still carrying
 the flag in
-Table~\ref{tab:runs} against 23.7--25.0\,ms across the seven clean runs of the
-same controller family. That is an inflation of 24 to 41\% \emph{across arms},
+Table~\ref{tab:runs} against 23.7--27.5\,ms across the twelve clean runs of
+the same controller family (every \sys{}-family host-tier run that completed
+this trace and is not flagged). That is an inflation of 24 to 41\% \emph{across arms},
 which compares the extremes of two ranges and is therefore wider than any
 single correction; the one arm we have measured both ways, contaminated and
 clean, moved 31.3 to 24.8\,ms---a 26\% excess in the contaminated reading
@@ -425,7 +426,7 @@ Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:breshz1}, and
 the published-parameter AIMD row) and
 eleven are arms we do not report here. The flag is a window, and only one of
 those three is actually damaged---the controller variant whose $\tau_2$
-is 30.9--33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
+is 33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
 inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
 Three further rows carried the flag and the damage, and have been re-measured
 alone under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
@@ -437,10 +438,10 @@ comparison of \S\ref{sec:results}, and the move of \texttt{horizon}=0 and
 \texttt{horizon}=2 out of the
 $\tau$-high column into \texttt{unused mem.} in
 \S\ref{sec:results:attribution}---are restated in those sections rather than
-left provisional. The remaining two damaged rows are still being re-measured,
-and until those runs land we treat their wall-clock, SLO and step-cost
-columns as unusable: the signed distances in Table~\ref{tab:runs} for those
-two rows and the $\tau$-high attributions of
+left provisional. The one remaining damaged row is still being re-measured,
+and until that run lands we treat its wall-clock, SLO and step-cost
+columns as unusable: the signed distance in Table~\ref{tab:runs} for that
+row and the $\tau$-high attribution of
 \S\ref{sec:results:attribution} where it names them. We flag them rather than
 quietly dropping the rows so that a reader can see which conclusions are still
 standing on which measurements.
@@ -449,9 +450,9 @@ Two things we can already say. First, the failure is silent: the engine-side
 counters---running count, pool occupancy, evictions, recomputation---are
 indistinguishable between the affected runs and the clean ones, so nothing in
 the ordinary telemetry would have caught this. Second, the affected runs'
-\emph{volume} columns look untouched: the three damaged host-tier arms reuse
-0.6791--0.6959 of the prompt against 0.5497--0.6981 across the sixteen
-undamaged host-tier arms, so the damaged runs sit inside the clean range
+\emph{volume} columns look untouched: the one damaged host-tier arm still
+out reuses 0.6791 of the prompt, against 0.5497--0.6981 across the eighteen
+undamaged host-tier arms, so it sits inside the clean range
 rather than apart from it---suggestive, but not proof, since co-tenancy could
 in principle also reorder completions and change eviction order.
 
@@ -464,8 +465,8 @@ alone reuses 0.6904, a 0.39-point difference, while its per-request decode
 interval moves 31.3 to 24.8\,ms and its wall clock by 10\%. The volume columns
 therefore carry no signature of the contamination that we can detect---one arm
 is one comparison, and we are not claiming more than that---which is why the
-audit had to run on the client-side clock. For the two arms still
-outstanding, the re-runs will confirm it policy by policy, and we compare
+audit had to run on the client-side clock. For the one arm still
+outstanding, the re-run will confirm it policy by policy, and we compare
 reuse per round and per session between the pairs rather than only the totals.
 
 One caveat about the controller artifact, which a reader with our code would

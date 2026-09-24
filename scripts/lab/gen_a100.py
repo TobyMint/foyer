@@ -121,6 +121,18 @@ def verdict(a100_pts, main_csv):
     if not a100_pts or base is None:
         out["verdict"] = "A100 数据还没落地（或缺 3090 对照），不判决"
         return out
+    # ⚠ **数据充分性守卫**（2026-09-25 中立子 agent 第 10 轮）：
+    # 没有它时，「全程高于 50%」这一支在【只有一个点】时被平凡满足 ——
+    # `crossing()` 单点必返回 None，于是必然落进这一支、打印「支持」。
+    # 而预注册那条「在 R̄ ≤ 1.7344 的范围内一次也没到过 50% 以下」，
+    # 在【该范围内一个点都没有】时是**空真**，不是证据。
+    # 判据本身一个字不改，只是不让它被数据不足触发。
+    if len(a100_pts) < 2 or not any(r <= base for r, _ in a100_pts):
+        out["verdict"] = ("**数据不足，不判决**：A100 只有 %d 个点，其中 R̄ ≤ %.4f 的 %d 个。"
+                          "「全程高于 50%%」需要至少一个点落在交叉点【以下】的区间里才算数。"
+                          % (len(a100_pts), base,
+                             sum(1 for r, _ in a100_pts if r <= base)))
+        return out
     a = crossing(a100_pts)
     out["a100_crossing"] = a
     lo = min(y for _, y in a100_pts)

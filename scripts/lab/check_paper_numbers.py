@@ -490,6 +490,49 @@ def main():
             ck("%s 的 5s 距离" % r["name"], r["delta5_pp"], "sec_xtrace.tex")
             ck("%s 的 10s 距离" % r["name"], r["delta10_pp"], "sec_xtrace.tex")
 
+    # ---- §III 的 13 条拟合集（重测后上界换过）----
+    # 2026-09-25 中立子 agent 第 10 轮：τ₂ 的 **33.1 已无源** —— 那是被撤下的
+    # `foyer_hz0` 的值。集合是「五个 device-only cap + 三个 host-tier cap +
+    # 我们单独报告的五个控制器臂」，实算 τ₂ 上界是 cap5 的 31.2。
+    _dd2 = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/decomp.csv"))}
+    _FIT = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
+            "pairB_cap2hc", "cap3_hc", "cap4_hc",
+            "foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2_r2", "foyer_hz0_r2"]
+    _f = [_dd2[k] for k in _FIT if k in _dd2 and _dd2[k]["step_back_ms"]]
+    if len(_f) == 13:
+        ck("§III 拟合集的 τ₁ 下界", "%.1f" % min(float(r["step_back_ms"]) for r in _f),
+           "sec_model.tex")
+        ck("§III 拟合集的 τ₁ 上界", "%.1f" % max(float(r["step_back_ms"]) for r in _f),
+           "sec_model.tex")
+        ck_near("§III 拟合集的 τ₂ 下界", "%.1f" % min(float(r["step_perreq_ms"]) for r in _f),
+                "sec_model.tex", "ranges from")
+        ck_near("§III 拟合集的 τ₂ 上界", "%.1f" % max(float(r["step_perreq_ms"]) for r in _f),
+                "sec_model.tex", "ranges from")
+
+    # ---- 「同族干净 run 的 τ₂ 区间」（表 I 脚注与 §repro 两处）----
+    # 集合此前从未写明条数；这里把它定成机械可复算的：Foyer 家族 + host-tier +
+    # 未被判 CONTESTED + 有 τ₂。重测落地后是 12 条 / 23.7--27.5。
+    _cc = {r["run"]: r for r in load(os.path.join(ROOT, "paper/data/concurrency.csv"))}
+    _famt = []
+    for _r in load(os.path.join(ROOT, "paper/data/reuse.csv")):
+        _k = _r["run"]
+        if _r["family"] != "hicache" or _r["contested"] == "CONTESTED":
+            continue
+        if not (_k.startswith("foyer_") or _k.startswith("pairA_foyerhc")
+                or _k.startswith("pairB_foyerhc") or _k == "foyfix_hc"):
+            continue
+        _c = _cc.get("pois200_" + _k)
+        if not _c:
+            continue
+        try:
+            _famt.append(float(_c["tau2_ms"]))
+        except (TypeError, ValueError):
+            pass
+    if _famt:
+        ck("§repro 同族干净 run 的条数", len(_famt), "sec_discussion.tex")
+        ck("§repro 同族干净 τ₂ 下界", "%.1f" % min(_famt), "sec_discussion.tex")
+        ck("§repro 同族干净 τ₂ 上界", "%.1f" % max(_famt), "sec_discussion.tex")
+
     # ---- §III 的两个例证（重测后都换过/改过数）----
     # 2026-09-25 codex 第 23 轮：这两处原来用旧 hz0 的数，而重测后
     # ①「两个相似在跑数」那例变成 1.58 / 30.2 ms；

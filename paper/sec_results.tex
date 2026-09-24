@@ -29,21 +29,26 @@ with the rest, and its verdict is \emph{provisional}. The three re-measurements
 we have moved our way---co-tenancy
 inflates the step cost, which pushes an arm \emph{down}, so their measured
 distances overstate how far
-below the line they are---but that is one data point, and co-tenancy could in
+below the line they are---but that is three data points from \emph{one}
+contamination window, and co-tenancy could in
 principle also reorder completions and change which prefixes survive, which
-need not push the same way. Two variants
-carried the flag and have been re-measured (\S\ref{sec:repro}): the resident
-base moved from $7.81$\,pp below the front to $1.33$, and
-\texttt{horizon}$=0$ from $13.60$ to $7.19$. Both are still below and still
-outside the tie band, and the two corrections---$6.5$ and $6.4$\,pp---agree
-with each other, which makes them a warning about extrapolating rather than a
-reassurance: applied unchanged to the other two as they stand, $6.5$\,pp would
-take \texttt{horizon}$=2$ from $-4.81$ to $+1.7$---above the line---while
-leaving \texttt{breshz1} at $-13.0$. Two re-measurements are two data points,
-and the four differ in how long they overlapped and in what else was running,
-so we are not predicting that. We are saying that the correction \emph{could}
-cross the line, and that we cannot rule it out from what we have. If one of
-them does, the headline weakens to ``eight of nine, one win'', and this paper
+need not push the same way. The three variants
+that carried the flag and have been re-measured (\S\ref{sec:repro}) moved
+$6.5$, $6.4$ and $4.5$\,pp closer to the front: the resident base from $7.81$
+to $1.33$, \texttt{horizon}$=0$ from $13.60$ to $7.19$, and
+\texttt{horizon}$=2$ from $-4.81$ to $-0.30$. We do not read the three as
+agreeing: they span $4.5$ to $6.5$, and they are three arms from the same
+window rather than three independent replications. What they do establish is
+that the correction is large---several times the tie band---and one of them
+already moved an arm onto the line. So the question is what the same
+correction would do to the one arm still out. Applied at the smallest value we
+measured, $4.5$\,pp, it takes \texttt{breshz1} from $-19.54$ to $-15.0$, still
+well below; at the largest, $6.5$\,pp, it reaches $-13.0$---still below the
+line, but inside the range where a differently-placed arm might have crossed
+it. We are not predicting that:
+the four differ in how long they overlapped and in what else was running.
+We are saying that we cannot rule it out from what we have. If it does, the
+headline weakens to ``eight of nine, one win'', and this paper
 will say so.
 
 The base configuration is the one whose repeats we can trust, and they are
@@ -153,14 +158,14 @@ appearance of the mechanism that drives the whole frontier.
   table carried the flag; three still do. Four of the six were
   damaged---\texttt{horizon}$=2$, \texttt{horizon}$=0$,
   \texttt{horizon}$=1$ no hw and the resident base---controller variants whose
-  per-request decode interval ran 30.9--33.3\,ms against 23.7--25.0 across the
-  seven clean runs of the same controller family, so their wall clock, SLO and
+  per-request decode interval ran 30.9--33.3\,ms against 23.7--27.5 across the
+  twelve clean runs of the same controller family, so their wall clock, SLO and
   $\Delta$ are not comparable with the rest. Three of those four have since
   been re-measured alone and their rows above carry the clean numbers; the last
-  one is still out. The resident base moved to 24.8\,ms $\tau_2$, 25.4 minutes
-  earlier, $\Delta$ $-$1.33 against the base configuration's $-$1.24;
-  \texttt{horizon}$=0$ moved to 25.5\,ms, 25.8 minutes earlier, $\Delta$
-  $-$7.19. Neither carries the mark now.
+  one is still out. The resident base moved to 24.8\,ms $\tau_2$ and $\Delta$
+  $-$1.33 (against the base configuration's $-$1.24); \texttt{horizon}$=0$ to
+  25.5\,ms and $-$7.19; \texttt{horizon}$=2$ to 24.0\,ms and $-$0.30. None of
+  the three carries the mark now.
   The remaining two, \texttt{cap1}
   and the published-parameter AIMD row, show no aggregate inflation at all
   (20.6 and 24.4\,ms), so we keep their numbers and say why.
@@ -221,10 +226,13 @@ of four, at 209.1 minutes---runs at 71.9\%, and its first run at 70.2\%. Occupan
 and running requests track each other reliably across the arms we have (the two
 columns in \texttt{occupancy.csv} rank the twenty-three arms we have almost
 identically, Spearman $\rho=0.95$), but
-running count does \emph{not} order wall clock: \texttt{horizon}=2 runs 1.21
-requests against the base arm's 1.14 (the all-samples mean, the column
-\texttt{occupancy.csv} carries; \S\ref{sec:model} uses the busy-conditional
-one) and finishes 20 minutes faster. That gap is
+running count does \emph{not} order wall clock. \texttt{cap5} and
+\texttt{cap4}+HC carry almost the same mean running count---1.62 against 1.60,
+the all-samples mean, the column \texttt{occupancy.csv} carries;
+\S\ref{sec:model} uses the busy-conditional one---and finish 48 minutes apart.
+(An earlier draft made this point with \texttt{horizon}=2 against the base
+arm; after that arm was re-measured clean it runs \emph{more} than the base
+and finishes \emph{faster}, so it no longer serves.) That gap is
 what the next subsection is about.
 
 The controller believes it is nearly full. Its own decision log records the
@@ -235,9 +243,9 @@ occupancy at the same instants is 49{,}875 tokens: 48.2\% of that budget, or
 50.8\% of the pool, is idle. The
 projection is 1.79$\times$ the occupancy the engine reports on this
 configuration, of which the growth reserve alone is 28\% of the budget. Across the
-sixteen controller runs that finished on this trace and logged projections the
-ratio runs from 1.32 to 1.90 with a median of 1.78, and from 1.32 to 4.11 with
-the same median once the second trace's controller arm is included
+nineteen controller runs that finished on this trace and logged projections
+the ratio runs from 1.32 to 1.96 with an upper median of 1.75, and from 1.32 to
+4.11 with a median of 1.78 once the second trace's controller arm is included
 (\texttt{projection.csv} records each set, its size and its median; the second
 trace is the 4.11). So 1.79 is this arm's value, not a constant of the design,
 and we name the set because the range depends on it---over every finished run in

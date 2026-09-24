@@ -100,10 +100,11 @@ arms we tested, leaves three with a step cost that no matched comparison can
 confirm, and leaves three as residuals we can measure and cannot yet
 explain. The single step-cost attribution it does make is on a run flagged
 for host co-tenancy but not measurably damaged by it, and we say which is
-which rather than counting it. A fourth flagged variant has been re-measured:
-it moved from 7.8 points below the front to 1.3, still below. They hold nearly half the pool idle while sessions queue---their headroom
+which rather than counting it. Three of the flagged variants have been re-measured,
+moving 6.5, 6.4 and 4.5 points closer to the front without crossing it (the
+first of them from 7.8 points below to 1.3). They hold nearly half the pool idle while sessions queue---their headroom
 estimate on the base configuration is 1.79$\times$ the occupancy the engine
-reports (1.32--1.90$\times$ over the sixteen controller runs that finished on
+reports (1.32--1.96$\times$ over the nineteen controller runs that finished on
 this trace), of which the growth reserve alone is 28\% of the
 budget---and the per-step elasticity on the configuration they actually run
 stays below one across their whole operating range, so the device-only ceiling
