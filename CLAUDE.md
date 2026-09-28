@@ -3163,3 +3163,36 @@ r74 里 codex 说 `_blank` 的失败回落「是较保守的方向（多报）�
 （未闭合字符串后面的真写 ⇒ `False`），而**漏报才是这条审计最怕的方向**。
 ⇒ 两条线的结论**冲突时不要取交集、也不要取「看起来更严」的那条**，
 **回到构造上自己复现**，谁给得出可复现的构造谁赢。
+
+## 2026-09-28 新增：**杀父进程 ≠ 杀子进程** —— 「停干净了」复查过一次还是假的
+
+停补跑 campaign 时我杀了 `chain_rep` ×4 与 `run_matrix` ×2，复查
+`pgrep chain_rep|run_matrix` **是空的**，于是写下「全部停止」。**那是假的。**
+
+实际上 `run_matrix` 被杀之后，它的子进程**变成 PPID=1 的孤儿继续跑**：
+
+```
+session_runner ×2              还在写 steps.jsonl
+controller 的 while 循环 ×2
+controller_budget3_scan.py ×2  还在写 admissions.jsonl / controller.jsonl
+monitor.py ×2                  还在写 metrics.csv
+```
+
+**证据**：19:14 看 scan 是 **3/4 步**，19:16 再看是 **9/11 步** —— 一直在写。
+**若没查，它们会一直跑到写出 `summary.json`，让两条废 run 看起来像正常跑完的。**
+
+**而且我第一次"补杀"还是漏了**：`while` 循环 spawn 出来的 `controller_budget3_scan.py`
+本体 —— **杀了 `while` 不等于杀了它当轮启动的那个进程**。第三次才清掉。
+
+> **规矩（两条）**：
+> 1. **停完不要只 grep 你启动的那个脚本名，要 grep【整个项目的进程族】**
+>    （`pgrep -af 'turnstile|sglang'`）。父进程死了子进程会改 PPID 成 1，
+>    任何按父进程判的检查都看不见它们。
+> 2. **`while [ ... ]; do <脚本>; sleep N; done` 这种循环**：杀循环**不会**杀
+>    它当轮启动的那个 `<脚本>`。要**先杀循环**（否则它会重启），**再杀那一轮的进程**，
+>    然后再复查一遍。
+
+⚠ 这与本文件已有的「孤儿 watcher 会在 run 结束之后继续往证据文件里写两天」是同一族，
+但**触发条件不同**：那一条是 watcher 自己没退出，这一条是**我杀出来的**孤儿。
+本轮顺带清掉两个跑了 **4 天 15 小时** 与 **5 天 6 小时** 的 `monitor.py`
+（`var_switch2b` / `foyer_hz1_r2`），那两份 `metrics.csv` 的尾部是脏的。

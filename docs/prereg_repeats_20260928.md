@@ -74,3 +74,77 @@
 - 每条 run 起跑前确认目标目录**不存在**（存在就拒跑，不搬不删）。
 - 链脚本要**核对 lane 里写的 `--gpu` 与它检查的那张卡是同一张**。
 - 部署用 `scripts/deploy_to_lab.sh`（原子 rename），部署后**核哈希**。
+
+---
+
+## 尝试记录：第一次补跑（2026-09-28）—— **中途停止，未完成**
+
+**状态：暂停（不是跑完）。** 由作者要求停，停于 `2026-09-28 19:14`。
+
+### 实际发生了什么
+
+```
+09:55   两条 lane 起跑（GPU 2 / GPU 3）
+~15:19  foyer_hc ×2 跑完 ✓  999/999 步，failed=0，池子 101432，gpu_watch 1244 样本 0 外人
+~19:03  hz1 ×2 跑到 827 / 847 步时，SGLang server 被杀
+        server 日志：Subprocess scheduler_0 (pid=2542709) crashed with exit code -15
+        ⚠ -15 = SIGTERM。**其中一部分是作者自己杀的**，所以这里不归因给 reaper。
+19:05  hz1 ×2 写出 summary（attempted 828 / 847，failed 44 / 40）→ 视为【失败】
+19:06  chain 自动推进到 scan
+19:12  scan ×2 起来，但**没有 server**，每个请求都失败（steps 3/999，failed=3）
+19:14  杀掉 chain_rep ×4 与 run_matrix ×2 —— ⚠ 复查显示「空」是【假】的
+19:16  才真正停干净（见下「停止是分三步的」）
+```
+
+### 根因（两条，都不是争用）
+
+1. **server 被杀之后 `run_matrix` 没有重启它** —— runner 于是对着一个不存在的 server
+   无限重试（`active=0`，`failed` 一直涨），lane 就此卡死。
+   这是**脚本的缺陷**，不是环境问题：下一轮补跑前应该给 lane 加一条 server 健康检查/重启。
+2. `gpu_watch` 881 个样本里 **0 个外人** ⇒ **不是同机争用**。
+
+### 产物状态（**目录一律不删不改名**）
+
+| run | 状态 | 步数 | 处置 |
+|---|---|---|---|
+| `foyer_hc_rep20260928_01/02` | **有效** | 999 / 999，failed 0 | 保留，可用 |
+| `foyer_hz1_rep20260928_01/02` | **失败** | 828 / 847，failed 44 / 40 | 留档；重跑时需换名或先挪走 |
+| `foyer_scan_rep20260928_01/02` | **失败** | 3 / 4（全失败） | 留档 |
+| 其余 5 组 ×2 | 未开始 | — | — |
+
+⚠ **16 条里只有 2 条可用。** 剩下 14 条要重跑。
+
+### 重跑前必须做的（下一轮）
+
+1. **给 lane 加 server 健康检查**：server 进程消失或 `/metrics` 不通 ⇒ 重启 server 或
+   干净地终止该 run，**不要让 runner 空转**。
+2. **重跑时目标目录已存在** —— `chain_rep.sh` 的设计是「存在就拒跑」。
+   所以要先把失败目录挪到别处（**不删**，例如 `results/night/_failed_rep20260928/`），
+   或者换 run 名。
+3. 待作者整理完思路后再定何时重跑。
+
+### ⚠ 「停止」是分三步的（19:14 → 19:16，我第一次以为停干净了）
+
+**`run_matrix` 被杀之后，它的子进程变成 PPID=1 的孤儿继续跑。** 19:14 复查
+`pgrep chain_rep|run_matrix` 是空的，我就写了「全部停止」—— **那是错的**。实际上还有：
+
+```
+session_runner ×2              还在写 steps.jsonl
+controller 的 while 循环 ×2
+controller_budget3_scan.py ×2  还在写 admissions.jsonl / controller.jsonl
+monitor.py ×2                  还在写 metrics.csv
+```
+
+**证据**：19:14 时 scan 那两条是 **3 / 4 步**，19:16 变成 **9 / 11 步** —— 一直在写。
+若不查，它们可能一直跑到写出 `summary.json`，**让两条废 run 看起来像正常跑完的**。
+
+**还漏了第二次**：`while` 循环 spawn 出来的 `controller_budget3_scan.py` 本体，
+**杀父进程不等于杀子进程**，第三次才清掉。
+
+**判据（下一轮必须用的）**：停完之后不要只 grep 链条名，要
+`pgrep -af 'turnstile|sglang'` —— 把**整个项目的进程族**都列一遍。
+
+**顺带清掉的两个老孤儿**（不是本轮的）：
+`monitor.py` 跑了 **4 天 15 小时**（`var_switch2b`）与 **5 天 6 小时**（`foyer_hz1_r2`），
+一直在往那两条**早已跑完的** run 的 `metrics.csv` 追加。
+⚠ 那两份 CSV 的时间戳尾巴是脏的，将来引用前要先按 run 窗口裁。
