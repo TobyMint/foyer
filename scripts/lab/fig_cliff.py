@@ -97,7 +97,9 @@ fig.text(0.5, 0.015, "并发 = 由 admissions 事件算的时间加权平均；S
                      "段标准差 = 把 run 切成十段后各段 SLO 的标准差，衡量 run 内部稳不稳。",
          ha="center", fontsize=9, color="0.35")
 fig.tight_layout(rect=[0, 0.035, 1, 0.94])
-fig.savefig("/data/xbw/turnstile/scripts/fig_cliff.png")
+fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fig_cliff.png"))
+# ⚠ 2026-09-28：原来写死 `/data/xbw/turnstile/scripts/fig_cliff.png` —— 与
+# `build_supplement.py` 同形（写死的绝对路径，沙箱挡不住）。改成写在脚本自己旁边。
 print("wrote fig_cliff.png")
 for r in sorted(rows, key=lambda r: r["conc"]):
     print("  %-28s %-12s conc=%.2f  SLO=%5.1f  SD=%4.1f  wall=%.1f" % (

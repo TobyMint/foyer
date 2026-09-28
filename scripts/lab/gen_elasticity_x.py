@@ -125,24 +125,21 @@ def run_stats(root, run):
                 steps=len(steps), sessions=len({s.get("session_id") for s in steps}))
 
 
+# ⚠ **本脚本原来自己写了一份上-左包络和一份分段线性插值**（2026-09-26 codex 第 30 轮
+# 抓到，与 `gen_frontier_split.py` 同型）：`envelope()` / `front_slo()` 与
+# `envelope.upper_left` / `envelope.piecewise` 逐字同义，只是变量名不同。
+# 判据是「全仓库只剩一份实现」，所以一律 import，不重写。
+import envelope as _ENV   # noqa: E402
+
+
 def envelope(points):
-    """上左包络：按墙钟升序，只保留 SLO 严格递增的点（被支配的点踢掉）。"""
-    pts = sorted(points, key=lambda p: p[0])
-    out = []
-    for p in pts:
-        if not out or p[1] > out[-1][1]:
-            out.append(p)
-    return out
+    """上左包络 —— 调 `envelope.upper_left`（保留 SLO 创新高的点）。"""
+    return _ENV.upper_left([tuple(p) for p in points])
 
 
 def front_slo(env, wall):
-    """包络在给定墙钟处的 SLO 上界。范围外返回 None，不做端点外推。"""
-    if not env or wall < env[0][0] or wall > env[-1][0]:
-        return None
-    for (w0, s0), (w1, s1) in zip(env, env[1:]):
-        if w0 <= wall <= w1:
-            return s0 + (s1 - s0) * (wall - w0) / (w1 - w0)
-    return None
+    """包络在给定墙钟处的 SLO 上界 —— 调 `envelope.piecewise`。范围外返回 None。"""
+    return _ENV.piecewise(wall, env)
 
 
 def verdict_of(delta, wall, env):

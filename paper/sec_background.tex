@@ -3,144 +3,110 @@
 
 \subsection{Workload}
 
-We replay 200 coding-agent sessions drawn from the {\sc TraceLab} corpus
-\cite{zhu2026tracelab}. Each session is a
-sequence of rounds; a round presents a prompt of median 23{,}187 tokens
-(p90 51{,}064; maximum 89{,}436, which alone is 88\% of the KV pool), and
-between rounds the session waits on a tool before returning with a longer
-context. Arrivals are Poisson at $\lambda=0.04\,\text{s}^{-1}$ over an
-80-minute window, giving 999 steps in total. Two sessions of maximum size
-cannot be co-resident: their combined contexts (89{,}436 and 87{,}821 tokens)
-exceed the pool by 75\%.
+We replay 200 coding-agent sessions drawn from the TraceLab corpus
+\cite{zhu2026tracelab}. Each session is a sequence of rounds; a round presents a
+prompt of median 23{,}187 tokens (p90 51{,}064; maximum 89{,}436, which alone is
+88\% of the KV pool), and between rounds the session waits on a tool before
+returning with a longer context. Arrivals are Poisson at
+$\lambda=0.04\,\text{s}^{-1}$ over an 80-minute window, giving 999 steps in
+total. Two sessions of maximum size cannot be co-resident: their combined
+contexts (89{,}436 and 87{,}821 tokens) exceed the pool by 75\%.
 
-The tool wait is the load's defining property and the one most easily
-misread. Its demanded \emph{median} is 0.34\,s, which invites the conclusion
-that
-sessions never leave the engine. Its demanded \emph{mean} is 15.82\,s, and the
-maximum is 300\,s; 21.8\% of the
-tool waits the trace specifies exceed ten seconds---18.0\% of the 799 round
-transitions, 14.4\% of its 999 steps. We verified that our replay
-harness honors the trace faithfully on the run with no controller: across the
-799 round transitions of the static cap of one the measured
-gap is 15.82\,s mean against a demanded 15.82\,s, and the median of the
-per-transition measured/demanded ratios is 1.001. The
-controller's own run measures 16.85\,s against the same 15.82\,s demanded---a
-ratio of means of 1.065---and \S\ref{sec:model} attributes that 1.03\,s to the
-controller's admission delay rather than to the harness, because the harness is
-exact on the run where the controller is not in the path. The corpus's own characterization makes the same point
-qualitatively---it reports
-``diverse and heavily-tailed tool calls'' and calls these gaps
-``human-paced''---but gives no numeric mean \cite{zhu2026tracelab}, so the
-15.82\,s above is our measurement of the released trace, not a figure we
-quote from that paper.
+The tool wait is the load's defining property and the one most easily misread.
+Its demanded \emph{median} is 0.34\,s, which invites the conclusion that sessions
+never leave the engine; its demanded \emph{mean} is 15.82\,s and its maximum is
+300\,s, and 18.0\% of the 799 round transitions wait more than ten seconds. Our
+replay harness honors the trace: on the run with no controller in the path the
+measured gap is 15.82\,s mean against a demanded 15.82\,s, and the median of the
+per-transition measured/demanded ratios is 1.001. The controller's own run
+measures 16.85\,s, and we attribute the 1.03\,s difference to the controller's
+admission delay rather than to the harness.
 
 \subsection{Engine and the binding constraint}
 
-We use SGLang v0.5.10 \cite{zheng2024sglang} with Qwen2.5-Coder-7B-Instruct
-\cite{qwen2coder} extended to 96K context,
-on one RTX 3090 (24\,GB). KV is paged \cite{kwon2023pagedattention}; at \texttt{mem-fraction-static} 0.85
-the pool is 101{,}432 tokens. Hierarchical caching (HiCache), with a host tier of twice the device pool, is
-enabled on the configurations marked \emph{+HC} and on every \sys{} run; the
-five plain static caps run without it. We keep both because the host tier turns
-out to change the mechanism (\S\ref{sec:model}). Every run is guarded: if the pool does not
-come out at $101{,}432 \pm 20$---which happens when another tenant holds
-memory on the card---the run is aborted rather than recorded, because SGLang
-sizes the pool from free memory at startup and a shrunken pool silently
-produces incomparable numbers.
-
-The relevant consequence is that the pool holds only about four median
-sessions. Concurrency is therefore capacity-bound, not scheduler-bound, and
-this is the premise on which everything below rests.
+We use SGLang v0.5.10.post1 \cite{zheng2024sglang} with Qwen2.5-Coder-7B-Instruct
+\cite{qwen2coder} extended to 96K context, on one RTX 3090 (24\,GB). KV is paged
+\cite{kwon2023pagedattention}; at \texttt{mem-fraction-static} 0.85 the pool is
+101{,}432 tokens. Hierarchical caching (HiCache), with a host tier of twice the
+device pool \cite{flexgen,zerowsap}, is enabled on the configurations marked \emph{+HC} and on every
+\sys{} run of this trace; the five plain static caps run without it. We keep both
+because the host tier turns out to change the mechanism (\S\ref{sec:model}).
+Every run is guarded: a pool that does not come out at $101{,}432 \pm 20$
+voids the run rather than recording it.
 
 \subsection{The controller under test}
 
 \sys{} is an admission controller that reads engine telemetry and issues
-\emph{named} permits rather than a scalar cap: a session is admitted by
-appearing in a permit file, and the runner refuses to start a round for a
-session that is not listed. This design choice matters for the comparison,
-because it is what allows per-session actions at all---including the pause
-primitive we exploit in \S\ref{sec:results:gate}. It also means that a session,
-once admitted, holds its permit for its entire lifetime, so the controller
-never frees capacity by discarding a session's state---it admits fewer sessions
-instead. That is a statement about the \emph{policy}, not about the memory: the
-engine's radix cache still evicts parked prefixes under pressure, and we
-measure that it does and that they are recomputed (\S\ref{sec:model}). We
-return to this distinction in \S\ref{sec:discussion}, because it bounds how far
-our negative result generalises.
+\emph{named} permits rather than a scalar cap \cite{schedconstraints}: a session is admitted by appearing
+in a permit file, and the runner refuses to start a round for a session not
+listed. This is what allows per-session actions at all, including the pause
+primitive of \S\ref{sec:results:gate}: the controller never frees capacity by
+discarding a session, only by admitting fewer, and that is a statement about the
+\emph{policy}, not the memory (\S\ref{sec:model}).
 
 Each control cycle (2\,s) the controller computes
 \begin{equation}
   \Pi \;=\; \max(\rho, \textstyle\sum_i c_i) \;+\; \textstyle\sum_i g_i ,
   \label{eq:proj}
 \end{equation}
-where $\rho$ is the engine's reported occupancy, $c_i$ the context length of
-live session $i$, and $g_i$ its forecast growth over the next
-\texttt{horizon} rounds. A session is admitted when $\Pi + n \le B$, with $n$
-the candidate's estimated need and $B$ the budget. The three terms are
-respectively the measured physical occupancy, a reservation for sessions
-currently parked in a tool wait (whose KV is evictable and therefore absent
-from $\rho$), and a reservation for future growth.
+where $\rho$ is the engine's reported occupancy, $c_i$ the context length of live
+session $i$, and $g_i$ its forecast growth over the next \texttt{horizon} rounds.
+A session is admitted when $\Pi + n \le B$, with $n$ the candidate's estimated
+need and $B$ the budget: a measured physical occupancy, a reservation for
+sessions currently parked in a tool wait (whose KV is evictable and therefore
+absent from $\rho$), and a reservation for future growth.
 
 \subsection{Baselines and the verdict criterion}
 
 Baselines are static caps: at most $N$ sessions resident, $N \in \{1,\dots,5\}$,
-with and without HiCache. We compare on two axes: end-to-end wall clock
-(time from the first submission to the last completion) and SLO attainment
-(fraction of requests whose time-to-first-token is under 10\,s).
+with and without HiCache. We compare end-to-end wall clock (first submission to
+last completion) against the deadline satisfaction rate \cite{liu1973} (SLO
+attainment: the fraction of requests whose time-to-first-token is under the
+10\,s deadline; the miss rate is one minus it). That clock is the engine's and per request---it
+starts when the request is submitted \emph{to the engine}---so a permit wait
+outside the door is not charged, the reading most favourable to a controller
+that imposes one; \S\ref{sec:discussion} reports the ready clock, on which it is
+charged and no run is above the line. We report measured miss rates, not a
+latency bound \cite{wilhelm2008}.
 
-The verdict criterion deserves care, because ``faster than cap-$N$'' is not
-the question. The question is whether a policy reaches a point \emph{above}
-the static front. A point that lies merely between two static caps is not a
-win: mixing cap-$N$ and cap-$M$ by time slice approximates any point on the
-line between them. We flag this segment argument as an argument, not a
-measurement---we did not run the time-sliced policies, and carrying queue state
-and cache contents across a switch could bend the line. It is the criterion we
-apply, and it is the stricter of the two we could have used---stricter than
-comparing each controller against the discrete static points alone, because the
-line sits above them. We state the direction plainly rather than claim it as a
-caution: this choice makes our negative result \emph{easier} to reach, not
-harder. Our best arm is $0.30$\,pp below the line and would be $+5.8$\,pp
-against the nearest static anchor below it in wall clock (\texttt{cap3}+HiCache's
-repeat, 81.9\% at 230.3 minutes; $+6.6$ would be the comparison against that
-anchor's first run at 81.1\% and 236.4 minutes).
-The arm we repeated most tightly is a different one---\texttt{horizon}=1, at
-$0.93$\,pp below the line and $+3.7$\,pp against the same first run---and we
-name both because ``best'' depends on which of the two the reader means. So we take the
-upper-left
-envelope of the static points and report each controller's signed distance
-above or below it. We classify a signed distance of more than $+1.0$\,pp as
-above the front, less than $-1.0$\,pp as below it, and the band between the
-two as \emph{on} it---a tie, not a win. The band is a convention we fixed
-before running anything, and we report it here because every verdict in this
-paper depends on it. Our later replicate measurements (\S\ref{sec:results})
-bracket it rather than justify it: the SLO spread of configurations we ran
-more than once ranges from 0.5\,pp to 5.1\,pp, so for some configurations
-the band is generous and for others it is far too narrow. We flag this as a
-weakness of the criterion, not a defence of it. One further property of the
-envelope deserves flagging, because
-two of the rows in Table~\ref{tab:runs}'s controller section finish slower
-than 295 minutes---one of the nine variants plus the all-throttles-off arm,
-which runs a different controller. Its
-right-hand segment runs from \texttt{cap2}+HiCache at 295 minutes to
+``Faster than cap-$N$'' is not the question: the question is whether a policy
+reaches a point \emph{above} the static front, because mixing cap-$N$ and
+cap-$M$ by time slice approximates any point between two static caps. We flag the segment argument as an argument rather than a curve---carrying
+queue state and cache contents across a switch could bend the line---and we have
+measured it once: a run that alternates the cap between three and two every 60\,s on
+the main trace lands $0.89$\,pp \emph{below} the line at its own wall clock,
+inside the tie band and on the below side (\texttt{slice23.csv})---the direction
+the argument needs, since that is not where an overstated line would show. It is the stricter of the two criteria, which makes our negative result
+\emph{easier} to reach, not harder.
+
+Our best arm reads $-0.30$ and $+0.22$\,pp against the line, and $+5.8$ and
+$+6.8$\,pp against the nearest static anchor below it in wall clock
+(\texttt{cap3}+HiCache's repeat; $+6.6$ and $+7.6$ against that anchor's
+\emph{first} run---so the sign of the comparison is not in question, but its
+size moves with which run and which repeat you take). The arm whose repeats
+bracket the line most widely is a different one---\texttt{horizon}=1, landing
+at $0.93$, $5.58$ and $3.22$\,pp below it across its three runs---and we name
+the run we mean whenever we quote a distance for it, because the spread across
+those runs ($4.4$\,pp of SLO) is wider than the margin that decides our
+headline.
+
+We take the upper-left envelope of the static points and report each
+controller's signed distance above or below it: more than $+1.0$\,pp is above
+the front, less than $-1.0$\,pp below it, and the band between the two is
+\emph{on} it---a tie, not a win: no distinguishable improvement observed. The
+band is a convention we fixed before
+running anything, not a calibrated confidence bound. Our later replicate measurements bracket it rather than
+justify it: the SLO spread of configurations we ran more than once ranges from
+0.5\,pp to 5.1\,pp, so for some configurations it is generous, for others far too
+narrow. We flag this as a weakness of the criterion, not a
+defence of it.
+
+One property of the envelope deserves flagging: one row in
+Table~\ref{tab:runs}'s controller section---the all-throttles-off arm, which
+runs a different controller---finishes slower than 295 minutes, judged against the
+right-hand segment from \texttt{cap2}+HiCache at 295 minutes to
 \texttt{cap1} at 527, and \texttt{cap1} is the only anchor there that runs
-\emph{without} HiCache. Those two---\texttt{breshz1}
-and \texttt{foyfix}---are therefore judged against an
-interpolation between one host-tier point and one device-only point. If the
-envelope is drawn from the host-tier anchors alone, that segment does not exist
-and those two cannot be adjudicated at all; drawn from device-only anchors
-alone, they sit further below. We report the conservative reading and note that
-the honest statement about those two is \emph{below the front as we defined
-it}, not \emph{below every static configuration}. Three arms sat in the same
-position in earlier versions of this paper---\texttt{bres}, \texttt{hz0} and
-\texttt{hz2}---and their re-measured values, 265.9, 264.2 and 271.0 minutes,
-put all three back inside the device-only range, so the class has two members
-and not five. Of those two, \texttt{breshz1} was
-also measured under host co-tenancy and is marked $^\ddagger$ in
-Table~\ref{tab:runs}; whether it is slower than 295 minutes at all is one of
-the things the re-runs will settle. The front and every
-controller's signed distance are computed by one script from the raw per-step
-logs; the table generator computes the distance for the two runs that did not
-complete all 999 steps---both are named in \S\ref{sec:repro}---and that
-script's own first version was wrong: it extrapolated past the end of the
-envelope and declared the slowest static cap a winner. We fixed it and report
-the episode because it is the failure mode this criterion is most prone to.
+\emph{without} HiCache, so it is an interpolation between one host-tier point
+and one device-only point. We report the conservative
+reading: \emph{below the front as we defined it}, not \emph{below every static
+configuration}.

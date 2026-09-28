@@ -1,0 +1,29 @@
+{
+ "lane": "aimd2_grid",
+ "policy": "aimd2:u_low=0.2;u_high=0.75;h_thresh=0.2",
+ "trace": "/data/xbw/turnstile/data/replay_night200_clean.csv",
+ "trace_md5": "4570fc5561",
+ "gpu": 3,
+ "port": 30033,
+ "started": 1789679942.1318128,
+ "code": {
+  "run_matrix.py": "9c7545548a5f",
+  "controller_budget3.py": "2b573829083c",
+  "controller_aimd2.py": "c370cc4c7589",
+  "controller_aimd.py": "d2b8b7461ddf",
+  "session_runner": "34e5cea815f5",
+  "path_divergence": "none",
+  "git_sha": "unknown (BASE is not a git working copy)"
+ },
+ "build": {
+  "TURNSTILE_HICACHE_ARGS": "unset",
+  "TURNSTILE_EXPECT_POOL": "unset",
+  "TURNSTILE_MEMFRAC": "0.85",
+  "TURNSTILE_RUN_TIMEOUT_H": "16",
+  "TURNSTILE_TRACE": "/data/xbw/turnstile/data/replay_night200_clean.csv",
+  "hicache_enabled": false
+ },
+ "pool_tokens": 101432,
+ "pool_attempts": 1,
+ "memfrac_used": null
+}

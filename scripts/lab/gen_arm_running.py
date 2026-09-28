@@ -23,11 +23,19 @@ import gen_decomp as _GD  # noqa: E402  busy 占比的共用定义
 # 与 static 的 pairA/pairB_cap2hc 配对）。它们【不在表 I】但属于 host-tier 族，
 # §model 的「host tier 兑现区间」要把它们算进去 —— 少一条就会让区间说错
 # （2026-09-24 第 12 轮审稿人：foyfix_hc 的 72.8% 被排除在「84.2–92.4%」之外）。
-ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz1_r2", "foyer_hz2_r2",
-        "foyer_hz0_r2", "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4",
-        "foyfix_hc", "pairA_foyerhc", "pairB_foyerhc", "aimd2", "aimd2_paper"]
-STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
-          "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
+# ⚠ `foyer_hz1_r3` 是 horizon=1 的**第三次运行**，属于【同一条臂的重复测量】——
+# **不能进 NINE**（那是「九条变体」的定义，加进去全篇的 nine 都要改）。
+ARMS = ["foyer_sf0_r2", "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz1_r2",
+        "foyer_hz1_r3", "foyer_hz2_r2",
+        "foyer_hz0_r2", "foyer_bres_r2", "foyer_breshz1_r2", "foyer_nogate", "foyer_rg4",
+        # 2026-09-27 落地：头条臂的第一次重复（不进 NINE —— NINE 是「九条变体」的定义），
+        # 以及「扫整个队列」那个一行修复（`budget3scan`，不进 NINE 同上）。
+        "foyer_hz2_r3", "foyer_scan", "foyer_scan_r2", "foyer_scan_r3",
+        "foyer_hc_slru", "foyer_sf0_r3",
+        "foyfix_hc", "pairA_foyerhc", "pairB_foyerhc", "aimd2", "aimd2_paper_r3"]
+STATIC = ["cap1", "cap2", "cap3_fixed", "cap3_pd", "cap4", "cap5",
+          "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_ph", "cap4_hc", "cap5_hc",
+          "cap6_hc", "cap8_hc", "cap3_hc_r2", "cap4_hc_r2"]
 
 
 def one(path):
@@ -43,6 +51,15 @@ def one(path):
     # 正文印到 2 位，不受影响。
     busy_frac = _GD.busy_fraction(_GD.read_metrics(path))
     return allm, (allm / busy_frac if busy_frac else 0.0), busy_frac
+
+
+# 论文 §IV 引用的「控制器运行区间 1.35~1.69」就是这**九条 Foyer 臂**的区间
+# （不含 AIMD、不含 pairA/pairB_foyerhc、不含 foyfix）。
+# 2026-09-25 提到模块级：`gen_frontier_split.py` 原来自己另写了一份「九条」，
+# 两份**不是同一个集合**（那边含 foyfix_hc、漏了 sf0_r2 —— 而 sf0_r2 恰恰是
+# 最接近前沿的那条臂）。统一到这里，改一处即可。
+NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
+        "foyer_breshz1_r2", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
 
 
 def main():
@@ -77,8 +94,6 @@ def main():
         # 论文 §IV/§VI 引用的「控制器运行区间 1.35~1.69」是【九条 Foyer 臂】的区间
         # （不含 AIMD、不含 pairA/pairB_foyerhc、不含 foyfix）。两个都报，
         # 免得看汇总的人以为正文的区间写错了。
-        NINE = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
-                "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2"]
         nb = [r["running_busy"] for r in rows if r["run"] in NINE]
         if nb:
             print("正文 §IV 的九条 Foyer 臂 R̄busy: %.2f ~ %.2f（%d 条）"

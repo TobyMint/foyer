@@ -1,3 +1,5 @@
+# ⚠ 本表**跳过了 R̄ 倒序的段**（分母为负、符号无意义）：cap6_hc→cap8_hc
+#   跳过的段**不是没测**，是测了但算不出有意义的边际弹性；那两条配置仍出现在 decomp.csv / reuse.csv / table1.csv 里。
 # 两条分段弹性曲线并列 —— gen_elasticity_hc.py 生成
 # config: device_only = §IV 现用；hicache = 控制器臂实际配置
 config,from,to,r0,r1,tau0_ms,tau1_ms,epsilon
@@ -7,3 +9,5 @@ device_only,cap3_fixed,cap4,1.53,1.65,29.7,32.4,1.152
 device_only,cap4,cap5,1.65,1.84,32.4,36.7,1.143
 hicache,pairB_cap2hc,cap3_hc,1.25,1.51,27.0,28.0,0.192
 hicache,cap3_hc,cap4_hc,1.51,1.73,28.0,29.8,0.458
+hicache,cap4_hc,cap5_hc,1.73,1.75,29.8,30.8,2.872
+hicache,cap5_hc,cap6_hc,1.75,1.87,30.8,31.8,0.482

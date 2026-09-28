@@ -1,0 +1,131 @@
+% 草稿：A100 第二配置节。**cap1 落地前不要 \input 进 main.tex。**
+% 数字来源：paper/data/a100.csv（gen_a100.py 生成）。
+% 判据：docs/prereg_a100_addendum_20260925.md 第一节，唯一判决轴 = 兑现率穿过 50% 的 R̄。
+% 纪律：判决只有一条轴；ε 是附加佐证，不许抬成判据；A100 上没跑控制器，不许暗示跑过。
+
+\section{The Same Measurements on a Second GPU}
+\label{sec:a100}
+
+\S\ref{sec:xtrace} answers the objection that the trace family is the finding.
+This section answers its hardware twin. Everything up to here is one
+accelerator, and the paper's central variable---the size of the memory tier
+relative to the working set---is exactly the quantity a bigger accelerator
+changes. If the mechanism we name is real, it should move with the tier.
+
+We ran the static sweep, and only the static sweep, on an A100 (80\,GB) with
+the same model, the same trace (the replay file's checksum is identical on both
+machines), the same engine build, and the same \texttt{mem-fraction-static}.
+The pool comes out at 983{,}728 tokens, \textbf{9.70$\times$} the 3090's
+101{,}432. The criterion was fixed before any of these runs finished; the
+pre-registration note records the timestamps.
+
+\subsection{What the tier buys}
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}%
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Machine & Pool & $\overline{R}_{\text{busy}}$ & Occupancy & Realized reuse & $\tau_2$ (ms) & SLO (\%) \\
+    \midrule
+    3090-24G & 101{,}432  & 0.9980 & 22.4\% & 92.5\% & 20.6 & 94.8 \\
+    A100-80G & 971{,}456  & 0.9997 &  2.1\% & 92.5\% & 14.3 & 99.9 \\
+    \midrule
+    3090-24G & 101{,}432  & 1.6505 & 66.4\% & 60.7\% & 25.8 & 55.7 \\
+    A100-80G & 983{,}728  & 1.9702 &  6.5\% & 92.5\% & 14.5 & 100.0 \\
+    \midrule
+    3090-24G & 101{,}432  & 1.8409 & 74.3\% & 36.4\% & 31.2 & 27.1 \\
+    A100-80G & 983{,}728  & 2.3356 &  8.0\% & 92.5\% & 15.5 & 100.0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{The same static caps on two accelerators. Rows are paired at the
+  same nominal cap: one, four and five, top to bottom. The A100's cap-one row
+  came up with a pool of 971{,}456 rather than 983{,}728---see
+  \S\ref{sec:a100:limits}---which does not affect its column: it uses 2.1\% of
+  whatever pool it has. The realized-reuse column is
+  \texttt{reuse\_tok} over the trace's own ceiling (\S\ref{sec:model}); it is
+  the same quantity Table~\ref{tab:runs} is built from, computed by the same
+  function.}
+  \label{tab:a100}
+\end{table}
+
+At the higher of the two running counts the 3090 has lost nearly two-thirds of
+its reuse and most of its SLO; the A100 is at 92.5\% reuse and a 100\%
+success rate, using 8\% of its pool. Its reuse figure is not an artifact of one
+row: the five A100 runs realize 19934952, 19934942, 19934944, 19935064 and
+19934943 tokens respectively---close, but not identical, because they are five
+separate executions of a pool that never evicts anything.
+
+\subsection{The pre-registered test, and its answer}
+
+The criterion was fixed in advance and has a single decision axis: the
+$\overline{R}_{\text{busy}}$ at which a machine's realized reuse crosses 50\%.
+On the 3090 that crossing is at $\overline{R}_{\text{busy}} = 1.7344$. The A100
+does not cross: at its highest running count, 2.3356---well past the 3090's
+crossing point---it is still at 92.5\%, and it is at 92.5\% at its lowest
+count too, so the whole sweep is flat. The pre-registered rule therefore
+returns \emph{supported}.
+
+We report the mechanical output rather than a reading of the table, and we
+note what the test does not cover in \S\ref{sec:a100:limits}.
+
+\subsection{The step-cost elasticity is flat, not steep}
+
+\S\ref{sec:criterion} makes the argument in terms of $\epsilon$, the
+elasticity of per-step cost with respect to the running count. The same
+measurement on the A100, at the same definition (\texttt{a100\_elasticity.csv};
+that file's 3090 rows reproduce the device-only rows of
+\texttt{elasticity\_hc.csv}):
+
+\begin{center}
+\small
+\begin{tabular}{llrr}
+  \toprule
+  Machine & Segment & $\overline{R}_{\text{busy}}$ & $\epsilon$ \\
+  \midrule
+  3090-24G & cap1 $\to$ cap2         & 1.00 $\to$ 1.27 & $-0.21$ \\
+  3090-24G & cap3 (fixed) $\to$ cap4 & 1.53 $\to$ 1.65 & $+1.15$ \\
+  3090-24G & cap4 $\to$ cap5         & 1.65 $\to$ 1.84 & $+1.14$ \\
+  \midrule
+  A100-80G & cap1 $\to$ cap2         & 1.00 $\to$ 1.24 & $-0.74$ \\
+  A100-80G & cap3 $\to$ cap4         & 1.60 $\to$ 1.97 & $+0.03$ \\
+  A100-80G & cap4 $\to$ cap5         & 1.97 $\to$ 2.34 & $+0.34$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+The first segment is negative on both machines---$-0.21$ on the 3090 and
+$-0.74$ on the A100---which is the direction the criterion expects at low
+concurrency, though we measure the A100's steeper value without attributing it.
+The 3090 crosses one at $\overline{R}_{\text{busy}} \approx 1.53$; the A100,
+over a wider and further-right interval, does not come near it. This is the
+mechanism the criterion names, moving with the tier as it should---but it is a
+supporting measurement, not a second criterion, and we do not let it carry the
+verdict.
+
+\subsection{What this section does and does not buy}
+\label{sec:a100:limits}
+
+It buys the tier mechanism a second configuration. The pool grows by
+$9.7\times$; realized reuse stops degrading, the step cost stops rising with
+concurrency, and the engine stops being congested at all. That is the
+mechanism of \S\ref{sec:criterion}---the lever an admission controller would
+need---behaving as a function of the tier rather than as a fact about one
+card. We stop short of the stronger claim: nothing here shows that a
+controller placed on this tier would lose, because none was placed there.
+
+One detail has to be stated rather than discovered: the cap-one run came up
+with a pool of 971{,}456 tokens rather than the 983{,}728 the other four got,
+because the card is shared and SGLang sizes the pool from free memory at
+startup. The difference is 1.25\%; that run uses 2.1\% of whatever it has, and
+its realized reuse is 0.925469---the same to six digits as the others. We
+report it because the comparison rests on holding everything but the card
+fixed, and that premise is very slightly false for one of the five runs.
+
+It does \emph{not} buy a second negative result. \textbf{We did not run the
+controller on the A100.} The four static caps are all that exist there, so this
+section says nothing about whether \sys{} or AIMD would win on a larger
+tier---that is untested, and we would need another batch of runs to say
+anything about it. What the section rules out is narrower and still worth
+having: the tier mechanism is not an artifact of the 24\,GB card.

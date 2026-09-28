@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""九臂逐项归因表 —— codex 第四轮排的最高价值剩余工作。
+"""逐臂归因表 —— codex 第四轮排的最高价值剩余工作。
+
+⚠ 2026-09-27：docstring 原写「**九**臂」、CSV 头注释原写「**十二**臂」，
+而当时文件已是 **13** 行 —— 两处都是落地残留。CSV 那句已改成从 `rows`
+现算；这里去掉写死的数。
 
 论文现在有两个局部机制（分段弹性、没用满内存），但都没对九条臂逐一说清
 「你的败绩由哪个机制解释、剩下多少是没解释的」。这张表把每个臂的
@@ -13,15 +17,28 @@
 """
 import csv, os, sys
 
+# 中文数词表 —— 只用于 CSV 头注释里那个「N 臂」。
+# ⚠ 不写全就会在臂数超范围时**静默退化成阿拉伯数字**（看起来像另一个笔误）。
+# 本项目在 `check_paper_numbers.py` 的 `num_words()` 里已有英文版；
+# 这边只需要覆盖到十几，写死了范围并**在超范围时直接报错**，不静默兜底。
+_NUM_CN = {9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三",
+           14: "十四", 15: "十五", 16: "十六", 17: "十七", 18: "十八"}
+
 # 九条 Foyer 变体 + 两个 AIMD 设置。hz0 原来漏在这里，导致正文说「九条变体」
 # 而表里只有八条 —— codex 抓到的。
 # sf0_r2 必须在里面：它是全表最接近前沿的臂（Δ −0.57），论文反复引用它，
 # 归因表却没有它，正文也没解释为什么不在（2026-09-24 审稿人指出）。
 ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
-        "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc",
-        "aimd2", "aimd2_paper"]
-STATIC = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "pairB_cap2hc", "cap1",
-          "cap4", "cap3_fixed", "cap2", "cap5"]
+        "foyer_breshz1_r2", "foyer_nogate", "foyer_rg4", "foyfix_hc",
+        "aimd2", "aimd2_paper_r3",
+        # ⚠ 2026-09-27：`foyer_scan` 是第 13 个**不同的配置**（新控制器文件），
+        # 而正文 §V 的归因表写「Of the twelve arms …」并说前一句覆盖
+        # 「every controller arm」—— 独立复核实测把它漏了（表里 12 条、应为 13）。
+        # ⚠ `foyer_hz2_r3` **不加**：它是 `hz2_r2` 的同配置重复，本表一向
+        # 「一个配置一个代表」，加进去会把同一条臂数两遍。
+        "foyer_scan"]
+STATIC = ["cap4_hc", "cap4_hc_r2", "cap3_hc", "cap3_ph", "pairB_cap2hc", "cap1",
+          "cap4", "cap3_fixed", "cap3_pd", "cap2", "cap5"]
 
 
 def load(p):
@@ -95,7 +112,11 @@ def main():
         print("%-14s %7s %7s %8s %8s %9s %s" % (
             a, (runs[a]["slo_pct"]), o_a, r_a, t_a, near, cls))
     with open(out, "w", newline="") as f:
-        f.write("# 十二臂逐项归因 —— 由 scripts/lab/gen_attribution.py 生成\n")
+        # ⚠ 2026-09-27（中立复核 r48 第 7a 条）：这里原来**写死「十二臂」**，
+        # 而 `foyer_scan` 进来之后文件是 **13** 行 —— 注释与数据打架，
+        # 而注释是读者第一眼看到的东西。**改成从 `rows` 现算**，不再会漂。
+        f.write("# %s臂逐项归因 —— 由 scripts/lab/gen_attribution.py 生成\n"
+                % _NUM_CN[len(rows)])   # KeyError 是**想要的**：超范围就炸，别静默兜底
         f.write("# 每个控制器臂对照墙钟最接近的静态臂\n")
         f.write("# class 的阈值与正文逐字对应：在跑数 < 对照的 92% -> 内存没用满；\n")
         f.write("#   τ₁ > 对照的 108% 且在跑数相差 <=8% -> 步成本更高；\n")

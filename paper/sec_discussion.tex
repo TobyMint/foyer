@@ -1,608 +1,200 @@
-\section{Load Dependence}
-\label{sec:load}
-
-A negative result about adaptivity invites the obvious objection: adaptivity
-pays when conditions \emph{change}, and a single stationary trace is the one
-case where a static cap should be near-optimal. We agree. What we test here is
-the weaker thing---two separate constant-load tiers---and we also ran the
-stronger one, a trace whose load moves mid-run, whose baselines co-tenancy made
-unusable; \S\ref{sec:discussion} reports both what this section leaves open and
-why that experiment has no result to give.
-
-We run the same controller and the same cap family on a 25-session tier. The
-throttle configuration is reversed: with all safety throttles disabled, the
-25-session tier runs \emph{51\% faster} (58.4 to 28.8 minutes) at a cost of
-only 2.4\,pp of SLO, while on the 200-session tier disabling the same
-throttles costs 42\% (291.3 to 415.0 minutes) and 43.7\,pp of SLO. One switch,
-two regimes, opposite signs, both around 40--50\%
-(Fig.~\ref{fig:loadtier}). No single scalar setting is optimal across both.
-
-We flag the generation gap rather than let the figure imply more than we ran.
-The two 200-session numbers are current; the two 25-session numbers are from an
-earlier harness revision, and we never ran the all-throttles-off arm on the
-25-session tier under the current one. So the reversal is a direction we
-measured across two harness generations, not a same-generation paired
-comparison, and a reviewer should read it that way. The same-generation
-25-session measurement we do have is in Table~\ref{tab:tier25}, and it does not
-contain that arm.
-
-This is the regime in which adaptive control should win, and we now have the
-same-generation measurement that earlier drafts of this paper were missing.
-Four arms on the 25-session tier, all under the current harness
-(Table~\ref{tab:tier25}): static caps of two, three and four finish in 32.4,
-24.2 and 23.6 minutes at 92.8\%, 91.2\% and 79.2\% SLO, and \sys{} finishes
-in 27.6 minutes at 92.8\%.
-
-\begin{table}[tb]
-  \caption{The 25-session tier, all four arms under the current harness.
-  This is the same-generation comparison earlier drafts of this paper were
-  missing; \texttt{cap4} and the \sys{} arm were run for this revision. The
-  segment SD here is over six segments, not the ten Table~\ref{tab:runs} uses
-  for 999-step runs, so the two tables' SD columns are not comparable.}
-  \label{tab:tier25}
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{lrrrr}
-    \toprule
-    Policy & Wall (min) & Conc. & SLO (\%) & Seg.\ SD (pp) \\
-    \midrule
-    cap2          & 32.4 & 1.95 & 92.8 & 11.0 \\
-    cap3          & 24.2 & 2.77 & 91.2 &  5.1 \\
-    cap4          & 23.6 & 3.39 & 79.2 & 21.4 \\
-    \sys{}        & 27.6 & 2.47 & 92.8 &  7.1 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-The finding is a trade, not a defeat, and it is the opposite of what the
-200-session tier shows. Against the same-generation envelope---which runs from
-\texttt{cap4} at (23.6, 79.2) through \texttt{cap3} at (24.2, 91.2) to
-\texttt{cap2} at (32.4, 92.8)---\sys{} sits $+0.9$\,pp above the line. A
-static cap of three is still 12\% faster in wall clock, but it gives up
-1.6\,pp of SLO to do it, so neither dominates the other. On this tier the
-controller is a different point on the front rather than a dominated one,
-which is exactly what the 200-session tier denies it.
-
-We are careful about the size, and about the yardstick. $+0.9$\,pp is
-measured against a straight-line interpolation between static points, not
-against a switching policy anyone ran, so the defensible statement is that
-\sys{} is not dominated by any static point we measured on this tier---not
-that it beats what a static mix could achieve. On 125 requests one request is
-worth 0.8\,pp, so the margin is about one request. The tier's
-segment-to-segment SD (5.1 to 21.4\,pp) is not the right yardstick: segment
-volatility is not run-to-run uncertainty. The right one is the replicate spread
-we have---which, across the five configurations we repeated, is 0.5, 0.8, 1.0,
-3.9 and 5.1\,pp (\texttt{replicates.csv}). Against the two tightest of those $+0.9$\,pp is about a replicate
-wide; against the three widest---which belong to the configurations that decide
-our headline elsewhere---it is inside one. We quote the tightest pair
-because it is the least favourable to us, not because it is the whole
-distribution. What we will defend is the weaker claim: on the
-low-load tier the controller is not worse, and the same switch that is worth
-$+51\%$ there costs $-42\%$ at high load. A controller that is competitive
-where load is light and dominated where load is heavy is the pattern this
-paper set out to explain, and it is the pattern we measured.
-
-The second finding is the more useful one, and what it establishes is negative.
-A backlog signal exists---on \texttt{foyer\_hc}, the 200-session baseline, and on
-\texttt{foyer\_push\_25}, the same-generation 25-session arm, the admission queue
-is non-empty in nearly every control cycle inside the run (97.7\% and 93.2\%).
-What we cannot do is read it as load, and the reason is that these two arms are
-not a controlled comparison. The 25-session trace carries no arrival times at
-all, so its twenty-five sessions are submitted together: its queue opens at 24
-of 25 and never returns to that depth, while the 200-session one peaks at 135 of
-200 a quarter of the way in. Normalised by each tier the ordering reverses---the
-25-session controller withholds 72\% of its sessions, the 200-session one 33\%,
-both at the median cycle---and the medians are not stationary either (200-session
-first, then 25): 21 against 21 over the first tenth of the run, 89 against 18 in
-the middle, 6 against 0 at the end. The number an earlier draft quoted, ``four
-times the backlog'', set a mid-run peak on one trace against an opening instant
-on another; we no longer quote a ratio between them. (\texttt{backlog.csv}
-carries both windows, both denominators, and the phase medians, so all of this
-is recomputable.)
-
-What does survive is the direction of the explanation, and we can point at the
-measurement rather than infer it from the queue's depth. At the 25-session tier
-the controller holds eighteen sessions waiting at the median cycle; over the 739
-cycles in which a session waited and none was admitted, the safety valve
-accounts for 3.7\% of them and the round gate for 0.0\%, and the controller's
-own occupancy \emph{projection} sits at 87.4\% of its budget while the engine
-reports 43.6\%---a factor of two, and the same over-estimate \S\ref{sec:results}
-measures at 1.79 on the baseline arm. The queue is what the controller's own
-accounting produces. (Depth alone would not have shown this: the 200-session
-baseline runs at a mean of 1.137 requests against the 25-session tier's 1.136,
-so ``deep queue, one request in flight'' describes both.) Reading backlog
-correctly therefore requires combining it with progress through the run, which
-is a stateful computation a cap cannot perform. That is the most promising
-direction we did not finish, and we are explicit about how far we did not finish
-it: we never built or tested a backlog-based load estimator, so we do not claim
-to have shown that one cannot work---only that raw queue length does not order
-these two tiers and that the queue is the controller's own artifact. The
-earlier-harness 25-session arms of \S\ref{sec:load} run shallower still (11--13
-over the same window), which is why we compare only the same-generation pair.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig5_loadtier.pdf}
-  \caption{The same throttle switch, two load tiers, opposite signs. The
-  25-session bars are from an earlier harness revision and are shown as a
-  direction, not a magnitude---the current-harness 25-session comparison is in
-  Table~\ref{tab:tier25} instead. The 200-session bars are current. The two
-  panels have independent axes, so the bars are not comparable in height
-  across panels---the annotations give each panel's own change.}
-  \label{fig:loadtier}
-\end{figure}
-
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Admission and scheduling for agentic serving.} Recent systems
-report large gains from treating an agent session, rather than a request, as
-the schedulable unit, and from preserving session state across tool calls:
-session-aware admission with CPU-restorable KV
-\cite{talaria,continuum}, program-level pause/resume with shortest-context-first
-restoration \cite{thunderagent}, and congestion-based control over an
-agent-level window \cite{concur}. A recurring measurement in this line is that
-recomputation, not admission, dominates: \cite{concur} attributes 49.1\% of
-end-to-end latency to recomputation, and \cite{mori} preserves state on the
-CPU at the cost of a reload. Our results are consistent with this literature
-rather than in tension with it, and \S\ref{sec:discussion} explains why: the
-mechanism these systems add is one our controller already has.
-
-\paragraph{Engine-side techniques.} A separate line improves the engine
-rather than the admission decision. Iteration-level batching and paged KV
-\cite{yu2022orca,kwon2023pagedattention} are the substrate every policy here runs
-on; chunked prefill with stall-free batching \cite{sarathi}, prefill/decode
-disaggregation \cite{distserve}, and cache-centric scheduling
-\cite{mooncake} are the refinements. Our \S\ref{sec:model} measures 2.6--8.2\,ms of each
-27--37\,ms step as work that is not decoding---prefill and non-decode
-overhead---which is exactly what this line attacks. We expect these techniques to move the frontier rather than to decide who
-sits above it, but we did not run the interaction and so state it as an
-expectation.
-
-\paragraph{State retention and preemption.} A third line keeps session state
-alive across the gaps we measure in \S\ref{sec:model}: keeping KV on cheaper
-storage across turns \cite{yu2025pensieve,gao2024cachedattention}, migrating it
-between instances \cite{sun2024llumnix}, and preempting at iteration granularity
-\cite{wu2026fastserve}. These systems exercise finer control than our 2\,s
-admission cycle, which is the boundary of our negative result: we falsify one
-control granularity, not the family. What they share with \sys{} is that the
-state is not discarded---which is why, as we argue below, adding admission
-intelligence on top buys nothing here.
-
-\paragraph{Application-level dependencies and replay.} Serving an LLM
-\emph{application} rather than a request means the scheduler sees dependencies
-between calls \cite{lin2024parrot}, and agentic traces have structure that
-request-level benchmarks do not capture \cite{wang2026xperf}. Our replay
-preserves that structure but fixes it in advance, which is exactly the
+\paragraph{Related work.} Recent systems report large gains from treating an agent session rather than a request as the schedulable unit and preserving session state across tool calls
+\cite{talaria,continuum,thunderagent,concur,mori}; one measures what losing that state costs---recomputation at 49.1\% of end-to-end latency \cite{concur}---and we find the same pressure in our runs, whose mechanism our controller already has (\S\ref{sec:discussion}). A second line improves
+the engine rather than the admission decision
+\cite{yu2022orca,kwon2023pagedattention,sarathi,distserve,mooncake,flashattention,splitwise}: our
+own measurements bound, without identifying, 3.3--8.8\,ms of each
+20.6--39.2\,ms step---the overhead that line
+attacks; we expect it to move the frontier rather than decide who sits above it,
+but we did not run the interaction. A third keeps session state alive across the
+gaps we measure
+\cite{yu2025pensieve,gao2024cachedattention,sun2024llumnix,wu2026fastserve} at
+finer control than our 2\,s admission cycle, which bounds our negative result: we
+falsify one control granularity, not the family. Serving an \emph{application}
+also exposes dependencies between calls \cite{lin2024parrot}
+and trace structure that request-level benchmarks miss \cite{wang2026xperf},
+a structure our replay preserves but fixes in advance \cite{genprofiling}---the
 limitation these works would press on.
 
-\paragraph{Prefix caching.} The prefix cache is often proposed as the signal
-an admission policy should use. What we measure is that the \emph{realized}
-reuse is a function of the admission policy and of the host tier, while the
-\emph{planned} reuse is a constant of the trace; an earlier draft of this
-paper conflated the two and got the direction wrong in both. The trace plans
-a round-1-and-later hit rate of 80.9\%. Without HiCache the realized
-round-1+ rate follows the plan only at the loosest cap and then collapses:
-80.8\%, 78.5\%, 70.6\%, 56.0\%, 32.8\% for caps of one through five. With
-HiCache it tracks the plan at every cap we ran: 80.7\%, 79.6\%, 78.7\% for
-caps of two, three and four. Our controller sits at 80.6\%.
-So the honest statement is not that admission does not move this quantity---%
-\texttt{cap4} alone moves it 25 points---but that the host tier is what keeps
-it from moving, which is the same mechanism \S\ref{sec:model} and
-\S\ref{sec:criterion} keep running into. A configuration without a host tier
-that admits four sessions does not have the cache that a host-tier one at the
-same concurrency does. All eight numbers in this paragraph are the
-\emph{observed} per-step hit rate (\texttt{server\_prefix\_hit\_rate} in the
-per-step logs), unweighted mean over rounds $\ge 1$; the planned rate is the
-trace constant 80.9\% and does not move with the cap. \S\ref{sec:model} uses
-a different convention---all steps, token-weighted, so that reuse and
-recomputation partition the prompt---under which the same collapse reads
-92.5\%$\to$36.4\% of the trace's bound for the device-only caps and
-92.4\%$\to$90.2\% for the static host-tier caps. We state both because the paper's earlier
-drafts mixed them. We note the boundary of this claim---we varied admission policy,
-not eviction policy, and SGLang exposes alternate eviction policies we did not
-test. A characterization of production KV-cache traffic at a large cloud
-provider finds that eviction-policy design is ``highly workload-dependent''
-and that reuse patterns differ sharply by request category
-\cite{wang2025kvcachewild}; that is reason to expect a single trace family to
-understate the space, though it is not a policy comparison and we do not
-present it as one.
+\paragraph{Where the pressure comes from.} A parallel literature regulates the
+resource our mechanism turns on rather than the admissions that consume it:
+bandwidth reservation \cite{memguard,yun2016,mempol}, its dynamic and per-bank
+variants \cite{dynamo,perbank24,etm2,perbank26}; on accelerators, memory extension
+across tiers \cite{rtswap,zerowsap} and interference-aware scheduling
+\cite{xiang2019,tpdnndpu,aiheat}. None is a control we deploy.
+
+\emph{Realized} prefix reuse is a function of the admission policy and of the
+host tier, \emph{planned} reuse a constant of the trace (80.9\%); conflating the
+two got the direction wrong. The honest statement is not that
+admission cannot move this quantity---\texttt{cap4} alone moves it 25 points---but
+that the host tier keeps it from moving while the cap stays inside what the
+pool can hold: we varied admission policy, and eviction policy too---one \texttt{slru}
+run reads 80.5\% against 80.6\% for two runs of SGLang's \cite{zheng2024sglang}
+default and 80.87\% planned, though it differs from both in card and launcher and
+from one in controller revision, so it cannot isolate the eviction policy's
+effect. A characterization of
+production KV-cache traffic finds eviction-policy design ``highly
+workload-dependent'' \cite{wang2025kvcachewild}---reason to expect one trace
+family to understate the space, though it is not a policy comparison and we do
+not present it as one.
 
 \section{Discussion}
 \label{sec:discussion}
+% ⚠ `sec:repro` 是 §Discussion 最后一段（\paragraph{Reproducibility.}）的引用名。
+% 那个 label 原来挂在 `\paragraph` 上，而 IEEEtran 的 `\theparagraph` =
+% `\thesubsection` + `\arabic{subsubsection}` + `\alph{paragraph}` —— 本节**没有
+% subsection**（计数器为 0）⇒ 全稿 10 处 `\S\ref{sec:repro}` 都渲染成 `§VIII-0e`。
+% 它没有可挂的编号单元（§Discussion 的五个 `\paragraph` 都是无编号的 run-in 标题），
+% 所以 label 挂在本节上 —— 渲染成 `§VIII`，读者找得到（内容就在 §VIII 里）。
+% ⚠ 别把它移回 `\paragraph` 下面：排版卫兵会报「渲染出的编号里有 `-0`」。
+\label{sec:repro}
 
-\paragraph{Why published gains do not reappear.} The systems cited above win
-by keeping session state alive across tool waits and by pausing at agent
-granularity rather than request granularity. \sys{} has both properties by
-construction: the permit file gives per-session pause and resume, and the
-controller never frees capacity by discarding a session---it admits fewer
-sessions instead. To that extent the mechanism these systems add is one our
-controller already has, which is one reason adding admission intelligence on
-top of it buys nothing here.
+\paragraph{Why published gains do not reappear.} The systems cited above win by keeping session state alive across tool waits and pausing at agent granularity rather than request granularity; \sys{} has both by construction (\S\ref{sec:bg}), so admission intelligence on top adds nothing we can resolve here; the arm above the front is a one-expression change to the \emph{release} rule, above the line on two of its three runs
+(\S\ref{sec:results}). The distinction we must not blur is between \emph{choosing} to discard state and \emph{having} it evicted: retention here is the engine's radix cache doing its ordinary job, not something the controller implements, and \S\ref{sec:model} measures that the cache evicts parked prefixes
+under pressure and that they are recomputed. A system managing the host tier as an explicit policy---as \cite{mori}, \cite{flexgen} and \cite{yu2025pensieve} do---holds a lever we do not, and our negative result does not cover it.
 
-We are careful not to overstate this, because the distinction is between
-\emph{choosing} to discard state and \emph{having} it evicted. Retention here
-is the engine's radix cache doing its ordinary job; it is not something the
-controller implements, and \S\ref{sec:model} measures that the cache evicts
-parked prefixes under pressure and that they are recomputed. What \sys{}
-avoids is the deliberate trade of state for capacity. A system that manages the
-host tier as an explicit policy---as \cite{mori} and \cite{yu2025pensieve}
-do---holds a lever we do not, and our negative result does not cover it.
-
-\paragraph{The threshold decides the verdict, and we report that.} Every SLO
-number in this paper counts a request as good if its time-to-first-token is
-under 10\,s. That constant sets the whole vertical axis, so we re-derived the
-frontier at 5\,s and 20\,s as well, from the same per-request logs. The
-ordering of the static caps does not change. What changes is where the
-controllers sit relative to them, and at the loose end one of them appears,
-in one of its two runs, to cross:
-
-\begin{center}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrr}
-  \toprule
-  SLO threshold & 5\,s & 10\,s & 20\,s \\
-  \midrule
-  \texttt{horizon}=1          & $-2.9$ & $-0.9$ & $+1.5$ \\
-  \texttt{horizon}=1 (repeat) & $-6.8$ & $-5.6$ & $-2.3$ \\
-  \sys{} base                 & $-2.3$ & $-1.2$ & $+0.6$ \\
-  \texttt{bres}               & $-3.6$ & $-1.3$ & $+0.3$ \\
-  Concur-style AIMD           & $-14.2$ & $-11.2$ & $-6.5$ \\
-  \bottomrule
-\end{tabular}
-\end{center}
-
-Two readings, and we give both. The first is that our headline claim is
-conditional: at the strict threshold that interactive serving actually cares
-about, none of the cleanly measured controllers reaches the static front; at a
-loose one, one measurement of one of them does. The
-second is that the crossing is not a win, and there are now two independent
-reasons to say so. The first we gave an earlier draft of this paragraph: the
-margin is not resolvable. $+1.5$\,pp at 20\,s is larger than the replicate
-SLO spread of the three tightest pairs we have---0.5\,pp for the base
-controller, 0.8\,pp for \texttt{cap3}+HiCache and 1.0\,pp for
-\texttt{cap2}+HiCache---but smaller than the two widest, 3.9\,pp for the best
-arm's own repeat and 5.1\,pp for \texttt{cap4}+HiCache, and those two are
-anchors. It is the anchors, not the controllers, that set the line the margin
-is measured against, so the comparison that matters is the one against the
-widest anchor---where the margin is not resolvable. The second reason is
-harder to argue with, and we found it only when the arm's repeat landed:
-\emph{the crossing does not reproduce}. \texttt{horizon}=1 reads $+1.5$\,pp at
-$20$\,s and its own repeat reads $-2.3$---not merely inside the band, but below
-it, on the other side of the line the first run crossed. Two runs of one
-configuration, 3.8\,pp apart on this axis ($+1.5$ against $-2.3$, from 94.4\%
-and 91.1\% of requests served under 20\,s), and the sign of the verdict flips
-with them.
-So the loose-threshold crossing is a single measurement, and the one arm whose
-repeat we have on the axis where it matters does not support it. (An earlier revision discarded
-the \texttt{cap3}+HiCache pair on the ground that one run had exceeded its
-cap. That was wrong: the over-cap run is the \emph{device-only}
-\texttt{cap3} repeat, and both HiCache runs peak at three with none over. The
-pair is a valid replicate and we use it, including as an envelope anchor.)
-A margin that appears only at one threshold
-and only at a size we cannot resolve is not evidence that adaptive admission
-works; it is evidence that the question needs more runs than we have. We state
-the conditional version in the abstract, and we flag this as the second thing
-we would re-run with more GPU time.
+\paragraph{The threshold decides the verdict, and we report that.} Every SLO number
+here counts a request as good if its time-to-first-token is under 10\,s---the whole
+vertical axis---so we re-derived the frontier at 5\,s and 20\,s from the same logs. The ordering of the static caps does not change, but where the
+controllers sit does: at the loose end six cross, \texttt{horizon}$=1$ by $+1.5$,
+\texttt{horizon}$=2$ by $+1.0$, the queue-scanning arm by $+1.4$, \emph{its repeat
+by} $+2.4$ \emph{and its third run by} $+1.2$, and \texttt{single-flight off}'s
+second run by $+2.0$. Our
+headline claim is conditional, and this is where the condition bites, in the
+direction that costs us most. At the strict threshold every other number here is
+judged at, the queue-scanning arm of \S\ref{sec:results} is above the line on
+two of its three runs, by $+1.30$ and $+2.16$\,pp, the third inside it at
+$+0.29$\,pp, against the $0.5$ to $4.6$\,pp that separates repeats of a single
+controller configuration; it is the only arm above the line at all three
+thresholds and the only one whose repeat confirms it---its third run does not. Three of the six that cross
+at the loose end are contradicted by their own repeats. What this supports is neither a verdict on
+admission control nor a single-run anomaly: a one-expression change
+to the \emph{release} rule is above the static envelope on two of its three runs, while
+every arm that changes the \emph{admission} decision is not.
 
 \paragraph{The SLO metric excludes the controller's own cost, and we checked.}
-Every SLO number above counts a request as good if its time-to-first-token is
-under 10\,s, and the runner measures that from the moment the request is
-\emph{submitted to the engine}. A session that waits for a permit has not been
-submitted yet, so the wait is invisible---and that wait is precisely the cost
-an admission controller imposes. We therefore recomputed the runs we have per-step
-logs for on a ready-to-first-token basis, where a round's clock starts when the
-session is actually able to run (its arrival for round~0, the previous round's
-completion plus its tool wait otherwise). That is nineteen of the twenty-five
-200-session runs in Table~\ref{tab:runs}; absent are the no-control baseline,
-the two HiCache anchor repeats and three controller repeats, and we do not
-extend the claim to them.
+The runner measures time-to-first-token from the moment the request is
+\emph{submitted to the engine}, so a permit wait is invisible---and that wait is
+precisely the cost an admission controller imposes. We recomputed all
+thirty-seven 200-session runs we measured on this trace on a
+ready-to-first-token basis, including the two anchor repeats that define the line. The correction is
+large---every run that gates admission loses 0.4--19.5\,pp of SLO, the tightest
+caps queueing the hardest---but the direction of the verdict does \emph{not}
+change: the seven that cross the $\pm1.0$\,pp band all move toward the negative,
+and on this clock \emph{no} run is above the line, the arm that clears
+it on the engine clock falling outside it on one of its three runs. We do not claim the verdict
+is unchanged under every SLO definition---only that moving the clock moves none
+from below the line to above it. We report the engine clock as primary because every other number in
+this paper uses it; the ready clock is the stricter of the two.
 
-The correction is large. Every configuration loses 2.9--19.3\,pp of SLO, and the
-loss is systematic: tight caps queue the hardest, so \texttt{cap1} falls from
-94.8\% to 76.2\% while \texttt{cap5} falls only from 27.1\% to 24.2\%. A
-session admitted last under \texttt{cap1} can wait hours for its turn; its
-engine-side TTFT is still 1.6\,s.
-
-What does \emph{not} change is the verdict, within the subset we recomputed.
-The static envelope keeps the same four anchors---the two anchor
-repeats, which we did not recompute on the ready clock, stand in as their first
-runs, and every distance below carries that substitution
-(\texttt{arrival\_slo.csv} records the columns)---and of the eleven controller
-arms, nine move by no more than
-2.5\,pp. Two move more---the all-throttles-off arm improves by 8.2\,pp and the
-retuned AIMD arm by 3.2\,pp---and both stay below the front either way. Two
-cross out of the $\pm1.0$\,pp band, and one of them decides our headline:
-\texttt{horizon}=1 goes from $-0.93$ (inside the band, a tie) to $-1.21$ (below
-it), because on the ready clock its own SLO falls from 84.8\% to 68.2\% while
-the anchor it is measured against falls less. The other is
-\texttt{horizon}=2, our closest point: $-0.30$ to $-1.48$. Its margin is only
-$0.48$\,pp and the ready clock's anchors are substituted rather than
-re-measured, which \S\ref{sec:results} notes moves every arm by of order
-$0.4$\,pp, so we read that one as \emph{at least one, possibly two} rather
-than as a count; the direction is the same for both. The ready clock therefore moves
-it from a tie to a loss, which is the same direction the paragraph above
-reaches from the other side, and it is why we do not report a ready-clock
-distance for it as a headline: the two anchor repeats that define the line are
-not in the set we could recompute (\S\ref{sec:discussion} says
-which runs are), and inventing a line for them would be the same error this
-subsection is about.
-
-The subset matters and we state its edge. The two configurations whose repeats
-decide how we read the verdict---\texttt{horizon}=1's repeat and the fastest
-anchor \texttt{cap4}+HC's---are not in the nineteen, because we did not
-recompute their per-step logs on the ready clock; the rebuilt envelope
-therefore rests on the original anchors without their repeats, and a
-ready-clock frontier that included them could move the line by the 3.9 and
-5.1\,pp those repeats differ by. We do not claim the verdict is unchanged under
-every SLO definition---only that on the runs we could recompute, moving the
-clock to the ready point costs every configuration 3--19\,pp, moves no
-configuration from below the line to above it, and changes at most two
-controller verdicts: \texttt{horizon}=1 leaves the tie band on the below
-side, and \texttt{horizon}=2 may (see the margin above). (One static cap crosses the other way, \texttt{cap3}+HC from $-1.72$ to
-$-0.79$, which does not help any controller.)
-We report this because a reviewer should ask it,
-and because the answer is the useful part: the negative result is not an
-artifact of choosing an SLO definition that flatters controllers. If anything
-the flattering choice was the one that moved the arm nearest the line from
-$-0.9$ to $+1.5$---that is, from just below the line to just above the tie
-band's upper edge, by a margin of the same order as that pair's own replicate
-spread (3.9\,pp).
-
-\paragraph{Limitations.} Our results come from one 24\,GB accelerator and one
-7B model. The workload axis we did test once more (\S\ref{sec:xtrace}); the
-hardware axis we did not, so generality across devices is untested. Only five configurations
-have been repeated---four of them twice and the base configuration four
-times---so the replicate spread we report in \S\ref{sec:results} is estimated
-from one to three degrees of freedom per configuration; a margin as small as the one that decides our verdict would need several
-more repeats per configuration to resolve, and we did not run them. Two specific boundaries
-matter. First, the pool holds about four median sessions, so concurrency is
-capacity-bound by construction; on a device with a much larger pool the
-premise may not hold and the conclusion may invert---we regard reproducing on
-a larger device as the single most important next experiment. Second, the
-load is stationary, single-tenant and single-SLO. The load-dependence result
-of \S\ref{sec:load} is measured on two \emph{separate} constant-load tiers, so
-it says what to expect when conditions differ, not what happens while they
-change. We did run the experiment that would settle that---a trace whose load
-moves mid-run, with a static cap on each tier and a switcher that changes its
-cap at the trace's designed switch point---and we cannot report a result from
-it, in either direction, because its static baselines were measured under
-host co-tenancy: \texttt{var\_cap3} spent 158 of its 266 minutes at four or
-more concurrent engine instances, and \texttt{var\_cap2} is flagged as a
-watch (\S\ref{sec:repro}). A first look at those runs has the switcher
-finishing 15 minutes ahead of the best static cap at an SLO inside the tie
-band, which would be the first evidence in this paper that adaptivity pays;
-we do not report it as a result, because the baseline it beats is precisely
-the one the audit flags, and a 60\%-contaminated baseline is inflated in
-exactly the direction that manufactures that finding. Clean re-runs of that
-family are in flight, and the honest position until they land is that the
-variable-load case is measured and unusable, not unmeasured. Multi-tenant and
+\paragraph{Limitations.} Our results come from one 7B model: we did test the
+workload axis once more (\S\ref{sec:xtrace}) and the hardware axis on a second
+accelerator (\S\ref{sec:a100})---a static sweep plus one controller run, where the
+controller ties rather than crosses, and one row there we could not get clean---so
+the negative result \emph{across the nine \sys{} variants} is still measured on
+one card. Only nine configurations have been repeated, so the replicate spread in
+\S\ref{sec:results} rests on one to three degrees of freedom per configuration,
+and a margin as small as ours would need several more repeats; we did not run
+them. The front every verdict is measured against is a piecewise interpolation
+between measured static points, not a measured policy (\S\ref{sec:bg})---it is
+the stricter of the
+two comparisons, but \emph{stricter} is not the same as \emph{valid}: we have
+since run that policy once, landing $0.89$\,pp \emph{below} the line at its own
+wall clock inside the tie band (\S\ref{sec:bg}, \texttt{slice23.csv}), and one
+point is not the whole segment, so we cannot exclude that it overstates what a
+static mix could deliver elsewhere on it; if it does, ``no controller is above the
+line'' would not by itself establish that there is no room. That is the single
+assumption this paper's verdict rests on, and it is an assumption. The pool
+holds about four median sessions, so concurrency is capacity-bound by
+construction, and on a device with a much larger pool the premise may not hold and
+the conclusion may invert. Both completed attempts at that baseline were taken
+under co-tenancy, so the one comparison we have there is indicative only, and the
+controller's edge over the no-control arm is the presence of \emph{a} cap, not the
+quality of the choice. The load is stationary, single-tenant and single-SLO, so we
+cannot say what happens while they change, and the experiment that would settle
+that gives us no result---\emph{the switcher never fired}, so what the runs meant to test it
+measure is the run-to-run spread of one configuration and not evidence that
+adaptivity pays, and the baselines are unusable as controls. Multi-tenant and
 heterogeneous-SLO settings are where we would look next.
 
 \paragraph{Reproducibility.}
-\label{sec:repro}
-The front and the signed distance of each controller are computed by
-\texttt{scripts/lab/frontier.py} from the raw per-step logs; Table~\ref{tab:runs}
-is rendered by \texttt{scripts/lab/gen\_table.py} from
-\texttt{frontier.py}'s full-precision coordinates
-(\texttt{paper/data/runs\_precise.csv}), including the four runs that stopped
-short of 999 steps; the live-session column comes from the runner's admission
-log via \texttt{run\_summary.py}, and \S\ref{sec:criterion} is computed by
-\texttt{gen\_elasticity.py} and \texttt{gen\_elasticity\_hc.py}. Every run is
-guarded against a shrunken KV pool.
+Front and signed distances are recomputed from the raw per-step logs over a
+full-precision run table; \S\ref{sec:criterion} from its own elasticity
+generator. Every number has a row in one of our data files, and five quantities
+this paper turns on are re-derived by five checks sharing no code with the
+generators, each reproducing the table it checks. The per-run readings, the full run
+table, the audit forensics and the controller revision history are collected in
+one supplementary document; \emph{no verdict in this paper depends on it.}
 
-\emph{Co-tenancy on the measurement host.} Our runs share a host with other
-tenants and with each other, and late in the campaign we found that this
-matters more than the pool guard catches. An audit
-(\texttt{gen\_concurrency.py}, data in \texttt{paper/data/concurrency.csv})
-reconstructs, for every run, how many other runs were alive for how long. Runs
-that overlapped three or more others for at least an hour are flagged;
-fourteen of ours are, two of which are failed runs we do not report. The flag is a risk marker, not a measurement of damage,
-and we treat it that way: five of the twelve (\texttt{F:t85}, \texttt{F:t90},
-\texttt{var\_foyer}, \texttt{cap1} and the published-parameter AIMD row) show
-no aggregate inflation at all, because their overlap was short relative to the
-run or did not touch their decode interval. Where the damage is legible it is large---the
-per-request decode interval $\tau_2$, measured client-side and never touching
-the sampler, sits at 33.3\,ms for the one affected arm still carrying
-the flag in
-Table~\ref{tab:runs} against 23.7--27.5\,ms across the twelve clean runs of
-the same controller family (every \sys{}-family host-tier run that completed
-this trace and is not flagged). That is an inflation of 24 to 41\% \emph{across arms},
-which compares the extremes of two ranges and is therefore wider than any
-single correction; the one arm we have measured both ways, contaminated and
-clean, moved 31.3 to 24.8\,ms---a 26\% excess in the contaminated reading
-over the clean one, or a 21\% reduction the other way
-(\texttt{superseded.csv})---and that arm is now inside the clean range. Two
-controls pin the cause to co-tenancy rather than to the configuration, and both
-are within-run---the same run, the same policy, the same trace, with the only
-change being who else was on the machine. One run (\texttt{cap1}) reads a
-per-half-hour median $\tau_2$ of 20.3--20.9\,ms for its first five and a half
-hours, and 21.3, 27.1 and 21.1 in the three half-hours after two others start.
-Two runs move the other way as neighbours leave: \texttt{F:t85} from 29.8\,ms
-in the half-hour before to 22.3--22.6 in the four after, \texttt{F:rl99} from
-32.4 to 25.2 and 25.1. We chose the half-hour window because it is the widest
-one that resolves the transition and still puts at least twenty steps in every
-bucket quoted; the finer series is noisier and does not support a
-minute-resolution claim, so we do not make one.
-(\texttt{tau2\_windows.csv} carries the series.) Fourteen of our runs fall in the flagged class; three of them are rows of
-Table~\ref{tab:runs} (\texttt{cap1}, \texttt{F:breshz1}, and
-the published-parameter AIMD row) and
-eleven are arms we do not report here. The flag is a window, and only one of
-those three is actually damaged---the controller variant whose $\tau_2$
-is 33.3\,ms. \texttt{cap1} and the AIMD row show no aggregate
-inflation (20.6 and 24.4\,ms), so we keep their numbers and flag the window.
-Three further rows carried the flag and the damage, and have been re-measured
-alone under the same one-run-per-GPU discipline: \texttt{bres}, whose clean
-$\tau_2$ is 24.8\,ms, \texttt{horizon}=0 at 25.5\,ms, and
-\texttt{horizon}=2 at 24.0\,ms. Their rows in
-Table~\ref{tab:runs} now carry the clean numbers, and the conclusions that
-rested on them---\texttt{bres}'s step-cost attribution and the route-1
-comparison of \S\ref{sec:results}, and the move of \texttt{horizon}=0 and
-\texttt{horizon}=2 out of the
-$\tau$-high column into \texttt{unused mem.} in
-\S\ref{sec:results:attribution}---are restated in those sections rather than
-left provisional. The one remaining damaged row is still being re-measured,
-and until that run lands we treat its wall-clock, SLO and step-cost
-columns as unusable: the signed distance in Table~\ref{tab:runs} for that
-row and the $\tau$-high attribution of
-\S\ref{sec:results:attribution} where it names them. We flag them rather than
-quietly dropping the rows so that a reader can see which conclusions are still
-standing on which measurements.
+\emph{Co-tenancy on the measurement host.} An audit flags every run that
+overlapped three or more others for at least an hour: fourteen are, and the
+incident that created those windows killed four runs outright, none of which
+appears in our tables. The flag is a risk marker, not a measurement of damage: the
+engine-side counters are indistinguishable between affected and clean runs, which
+is why the audit runs on the client-side decode interval $\tau_2$
+\cite{yun2016}---where the damage is legible it is large, with $\tau_2$ at 33.3\,ms on the worst-affected arm
+when flagged against 24.8\,ms on re-measurement, and 23.8--27.5\,ms across seventeen
+clean runs of the same controller family. Four of the fourteen were damaged, have
+all been re-measured alone, and moved 4.5--11.2\,pp without crossing the line they
+were measured against; their rows carry the clean numbers and no damaged row
+remains, and we keep the flag on the one undamaged row rather than quietly
+dropping it.
 
-Two things we can already say. First, the failure is silent: the engine-side
-counters---running count, pool occupancy, evictions, recomputation---are
-indistinguishable between the affected runs and the clean ones, so nothing in
-the ordinary telemetry would have caught this. Second, the affected runs'
-\emph{volume} columns look untouched: the one damaged host-tier arm still
-out reuses 0.6791 of the prompt, against 0.5497--0.6981 across the eighteen
-undamaged host-tier arms, so it sits inside the clean range
-rather than apart from it---suggestive, but not proof, since co-tenancy could
-in principle also reorder completions and change eviction order.
+\emph{The controller artifact.} The runs record four different hashes of our
+controller script, none of them the repository copy, so no single
+revision reproduces every number; \emph{all four} runs recorded under one of those
+copies are flagged by the audit, so the revision and the co-tenancy
+cannot be separated by any comparison in our data. We state the confound rather
+than a resolution: the recorded parameters and build do match the repository, but
+the copy most of our arms ran under diverges in two places, so
+\S\ref{sec:results:idle-memory} tests the fix plus a looser admission rate, not
+the fix as written, and the launcher hashes are ones we can neither diff nor
+certify.
 
-The one arm we have both ways settles the second point directly, and we keep
-the two runs side by side in \texttt{superseded.csv} because the superseded
-one is by construction absent from the tables the rest of this paper reads.
-\texttt{bres}
-measured under co-tenancy reuses 0.6943 of its prompt; the same policy measured
-alone reuses 0.6904, a 0.39-point difference, while its per-request decode
-interval moves 31.3 to 24.8\,ms and its wall clock by 10\%. The volume columns
-therefore carry no signature of the contamination that we can detect---one arm
-is one comparison, and we are not claiming more than that---which is why the
-audit had to run on the client-side clock. For the one arm still
-outstanding, the re-run will confirm it policy by policy, and we compare
-reuse per round and per session between the pairs rather than only the totals.
-
-One caveat about the controller artifact, which a reader with our code would
-otherwise hit. There is no single controller copy behind this paper: the runs
-record four different hashes of \texttt{controller\_budget3.py}, so the artifact
-evolved during the campaign and a reader cannot reproduce every number from one
-revision. Two of the four are the campaign's workhorses---the artifact was
-revised mid-campaign and both revisions account for a large share of the runs,
-so we do not quote those two counts, which grow as runs land. The other two are
-counts we can state without qualification, because nothing has
-landed under either since: \texttt{d692ab11f396} on 4 runs and
-\texttt{e1dd5ae78019} on 3. (These are snapshot counts too---a future run could
-in principle be launched from either copy---but none is planned, whereas the two
-workhorse copies are what the re-runs in this revision are using.) None of the four matches the repository copy
-(\texttt{a21bd2b63774}); the one divergence we measured and wrote down while
-the copies still existed was 23 lines in \texttt{controller\_budget3.py},
-a charge-mode flag added on the machine and not in the repository. Two other
-files diverged by more (\texttt{controller\_foyer.py} by 108 lines,
-\texttt{run\_matrix.py} by 111), so the four copies are not the repository
-under another hash. What we can no longer do is say precisely how each of the
-four differed: they were read while they existed and only the repository
-revision survives on the machine, so that comparison cannot be re-derived from
-what we still have.
-
-One coincidence in those two small counts deserves stating rather than leaving
-for a reader to find, and it is worse than a coincidence. The arms the
-contention audit flags are not a scattered subset: they are \emph{all four} runs
-recorded under \texttt{d692ab11f396}, a whole code copy---and that copy has no
-other run. So there is no run under it that escaped the window, and the two
-explanations, the revision and the co-tenancy, cannot be separated by any
-comparison in our data. The other small copy does not break the tie.
-\texttt{e1dd5ae78019} was used to launch three arms of which one completed, and
-that one, \texttt{horizon}=1, spent only 14 minutes at four lanes against
-282--296 for the four flagged runs: below the one-hour threshold the audit itself
-uses, so it was never exposed to the condition under test. Its being clean is
-what the flag's own definition predicts, whichever copy it ran. We therefore
-state the confound rather than a resolution. The re-runs changed the contention
-window and the controller revision together, and only the repository revision
-survives on the machine, so the campaign copies cannot be diffed after the fact.
-The numbers in this paper therefore describe the pre-fix path, with one
-partial exception we want to state precisely rather than let a reader assume
-the stronger thing. We did run the same configuration with \texttt{sf=0}
-(\S\ref{sec:results:idle-memory}), and on the running copy that changes two
-things at once: it scans the queue \emph{and} drops the one-per-cycle limit,
-because the \texttt{break} that enforces single-flight is inside the same
-conditional. That last sentence is a reading of the copy the run actually used,
-\texttt{f825bc768188}, taken while it was still on the machine; like the other
-three campaign copies it is not in the repository, so the reading cannot be
-re-checked from what we still have, and a reader should weigh it accordingly.
-The repository's fix keeps the limit and only adds the scan. So our
-run is not a test of the fix as written---it is a test of the fix plus a looser
-admission rate, and it moves the arm along the front rather than past it. The
-narrower experiment, scan-with-the-limit-kept, is the one we would do first with
-more GPU time. We report six claims we retracted during
-the work, because the retractions
-were the most informative events. In order of how much they cost us:
-
-\emph{The denominator of the step cost.} Our first \S\ref{sec:model} divided by
-the whole-run mean running count while multiplying by busy time. The two are
-not the same quantity---the whole-run mean includes the idle samples---so
-$\tau$ came out low by exactly the busy fraction, 36\% for \texttt{cap1}, and
-two independent errors cancelled to make our two measurement methods appear to
-agree. This is the one that changed a headline number.
-
-\emph{A mechanism refutation that was itself refuted}: we withdrew the
-eviction-to-recomputation account on the strength of two checks that were both
-identities rather than measurements (\S\ref{sec:model}).
-
-\emph{A median-based reading of the tool wait} that inverted a central
-assumption. \emph{A monotone relation between idle fraction and concurrency}
-that the full data does not show. \emph{A growth-sensitivity conclusion} that
-rested on an arm we had already invalidated. And \emph{the accounting
-double-charge} of \S\ref{sec:results}, falsified twice---once by source
-inspection and once by the end-to-end measurement here.
+\emph{Seven claims were retracted during this work}, and we list them because the
+retractions were the most informative events: an audit whose valve predicate was
+inverted, so the ``windows'' we first reported were the valve doing its job; the
+denominator of the step cost, which divided by the whole-run mean running count
+while multiplying by busy time, making $\tau$ come out low by exactly the idle
+fraction (36\% for \texttt{cap1}); a median-based reading of the tool wait that
+inverted a central assumption; an oracle-monotonicity claim that rested on an
+arm later shown invalid; a double-charging argument; a monotone idle-rate claim;
+and a refutation that was itself refuted. Each is reported with its evidence in
+\texttt{claims\_audit.md}.
 
 \section{Conclusion}
 
 We asked whether an adaptive admission controller can beat a tuned static
-concurrency cap on a memory-bound agentic LLM workload. On our system we could
-not build one that does: nine variants, four routes tested, and of the eight
-whose measurements are clean, none above the interpolated static front---which
-is the strictest of the two baselines we could have used (\S\ref{sec:bg}),
-since it sits above the discrete static points. (Four were measured while
-other jobs shared the host; we have re-measured three of them, which moved
-6.5, 6.4 and 4.5\,pp closer without crossing, and the last one is still
-out.) We expected the reason to be a cancellation---admission policy controls
-how many requests are in flight, the per-step cost rises with that number, and
-the product is what the wall clock sees---and we built a two-part decomposition
-of the wall clock that makes the cancellation measurable. That decomposition
-holds, and the cost it measures is real, but it is not the whole reason and on
-the configuration our controllers run it is not the binding one: there the
-elasticity stays below one across the operating range, so added concurrency was
-still cheap---they did not lose where concurrency was expensive, though that is
-not the same as showing they could have won elsewhere. What we
-can say at the end is narrower than what we set out to say: on this hardware and
-this workload, the admission rules we could build and tune did not beat a static
-cap, the capacity estimate they act on is 1.79$\times$ the occupancy the engine
-reports, and a
-structural idle component that no policy we built recovers at a profit remains.
-The regime in which adaptivity should have paid---where the same switch is worth
-$+51\%$ on the light tier and $-42\%$ on the heavy one, a comparison that spans
-two harness generations (\S\ref{sec:load})---is one where the controller is not
-dominated by any static
-point we measured, and does not dominate one either. The measurement we offer is
-a diagnostic an engineer can take before committing to a sweep; whether it
-predicts the outcome on another workload is a question we tested once and could
-not confirm.
+concurrency cap on a memory-bound agentic LLM workload. On our system none of the
+nine variants we built beats it beyond the tie band, against the interpolated
+static front---the strictest of the two baselines we could have used
+(\S\ref{sec:bg}), since it sits above the discrete static points. One arm's
+readings are above the band on two of its three runs, and we say which: the same
+controller with one expression changed, by $1.3$ and
+$2.2$\,pp---a change to the \emph{release} rule rather than to the admission
+decision. We expected the reason to be a cancellation---admission policy sets how
+many requests are in flight, the per-step cost rises with that number, and the
+product is the wall clock---and our two-part decomposition makes it measurable: it
+holds, but on our configuration it is not the binding one, the elasticity staying
+below one across the operating range. They
+did not lose where concurrency was expensive, though that is not the same as
+showing they could have won elsewhere. What we can say is narrower than what we
+set out to say: on this hardware and workload the admission rules we could build
+and tune did not beat a static cap, the capacity estimate they act on is
+1.79$\times$ the occupancy the engine reports, and a structural idle component
+that no policy we built recovers at a profit remains.
 
-The part we would carry elsewhere is not the negative result but the
-mechanism behind it. Prefix reuse is bounded by the workload---75.5\% of our
-prompt tokens---and whether that bound survives added concurrency is set by
-the memory tier: device-only, realization falls from 92.5\% to 36.4\% as the
-running count rises, and the shortfall reappears as recomputation; with a host
-tier the static caps hold at 90.2--92.4\% across the range our controllers
-occupy, and the worst of the nineteen host-tier runs that completed this
-trace---the one that disables every throttle---still realizes 72.8\%, where the
-nearest device-only point, the cap
-of four at $\overline{R}_{\text{busy}}$ 1.65, manages 60.7\%---while
-the device cache misses \emph{more}. Two configurations at the same running
-count and the same pool occupancy realize 79.0\% and 91.3\% of the bound,
-which is why we describe the tier rather than the occupancy as the variable.
-That claim is measured on one trace family, and the matched pair behind it ran
-on two cards a day apart; the controlled version---one card, back to
-back---is queued rather than done, and we do not extend the claim past what we
-measured---but
-it is the finding a system designer can act on, and it is the one we would
-test first on different hardware. Two boundaries come with it. On a second
-workload both of our measurements survive in direction and neither in level:
-that trace realizes less of its own bound at a lower occupancy, and its
-elasticity turns positive at a lower running count---reaching 1.0 there where
-the main trace reaches 1.15 at 1.53---so neither an occupancy threshold nor a
-concurrency threshold transfers. And the variable-load case, which is where a controller should
-have its best chance, is measured but not usable---its baselines were taken
-under host co-tenancy and we report it as open rather than as a result.
+The part we would carry elsewhere is not the negative result but the mechanism
+behind it: prefix reuse is bounded by the workload, and whether that bound
+survives added concurrency is set by the memory tier---an association across every
+configuration we ran rather than an intervention (\S\ref{sec:model}). That claim
+is measured on one trace family, on a pair that ran on two cards a day apart; a
+same-card pairing returns the same verdict over a smaller gap, and the capacity
+control returns no realization figure at all. Two boundaries come with it: on a
+second workload both measurements survive in direction and neither in level, so
+neither an occupancy nor a concurrency threshold transfers; and the variable-load
+case, where a controller should have its best chance, is measured but not usable,
+its baselines having been taken under host co-tenancy---we report it as open
+rather than as a result.

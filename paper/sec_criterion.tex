@@ -1,106 +1,85 @@
 \section{A Criterion for When Admission Control Can Pay}
 \label{sec:criterion}
 
-The decomposition turns the
-question into one number. Throughput during busy time is
-$\overline{R}/\tau$, so raising concurrency by a factor $f$ buys a factor
-$f^{1-\epsilon}$, where
+Throughput during busy time is
+$\overline{R}/\tau$ \cite{denning1978}, so raising concurrency by a factor $f$
+buys a factor $f^{1-\epsilon}$, where
 \begin{equation}
   \epsilon \;=\; \frac{\mathrm{d}\ln \tau}{\mathrm{d}\ln \overline{R}}
   \label{eq:elasticity}
 \end{equation}
 is the elasticity of per-step cost with respect to the running count. At
 $\epsilon = 0$ the step cost is flat, concurrency converts one for one into
-throughput, and an admission controller has room to work. At $\epsilon = 1$
-the two cancel exactly and it has none. Everything in between is a
-quantitative statement about how much room.
+throughput, and admission control has room; at $\epsilon = 1$ the two cancel
+exactly and it has none.
 
 On the five device-only configurations, where \S\ref{sec:model} establishes
 that the step cost is driven by recomputation, $\overline{R}_{\text{busy}}$
 runs from 1.00 to 1.84. A least-squares fit of Eq.~\ref{eq:elasticity} over
-those five points gives $\epsilon = 0.61$ on the per-request measurement
+them gives $\epsilon = 0.61$ on the per-request measurement
 ($R^2 = 0.89$), or $0.38$ on the model-consistent one (Fig.~\ref{fig:cancel}).
+In the units a controller works in, adding 10\%
+concurrency buys 3.8\% to 6.1\% of busy-time throughput, against the 10\% it
+would buy at $\epsilon = 0$.
 
-That fit is a straight line through a curve, and the curve is what matters. The
-segment elasticities are $\epsilon = -0.21$ from \texttt{cap1} to
+The segment elasticities are $\epsilon = -0.21$ from \texttt{cap1} to
 \texttt{cap2}, $+0.43$ from \texttt{cap2} to \texttt{cap3}, $+1.15$ from
 \texttt{cap3} to \texttt{cap4}, and $+1.14$ from \texttt{cap4} to
 \texttt{cap5}. Below $\overline{R}_{\text{busy}} \approx 1.5$ added
-concurrency still buys something; above it, $\epsilon$ passes one, which means
-busy-time throughput stops rising with the running count---the engine spends
-\emph{more} busy time per generated token. That is not the same as the run
-getting slower end to end: \texttt{cap4} is 8.8 minutes \emph{faster} than
-\texttt{cap3} in total wall clock even though its busy time is longer, because
-it collects less idle. The single
-number $0.38$ averages those regimes and describes none of them.
+concurrency still buys something; above, $\epsilon$ passes one and busy-time
+throughput stops rising with the running count. That is not the same as the run
+getting slower end to end, since less idle time can more than pay for a longer
+busy time. The single number $0.38$ averages those regimes and describes none
+of them.
 
-The operating region is the one that matters, and it is not the region the
-controllers run in. All nine controller arms run with HiCache enabled, which
-the five device-only caps above do not. Measuring the same elasticity on the
-three HiCache configurations we have gives $\epsilon = +0.19$ from
-\texttt{cap2}+HC to \texttt{cap3}+HC and $+0.46$ from \texttt{cap3}+HC to
-\texttt{cap4}+HC, over $\overline{R}_{\text{busy}}$ 1.25 to 1.73. That range
-covers the whole controller operating region (1.35 to 1.69), and over it
-$\epsilon$ never approaches one. At matched running counts the HiCache caps pay
-$1.7$\,ms less per step at $\overline{R}_{\text{busy}} \approx 1.5$.
+The controllers run in a different region: all nine controller arms run with
+HiCache enabled, which the five device-only caps do not. (Every elasticity
+here, fitted or segmented, uses $\overline{R}_{\text{busy}}$ at the two-decimal
+precision of \texttt{decomp.csv}; at six decimals the \emph{fitted} values read
+$0.37$ and $0.60$, and the segments move by $0.01$--$0.03$.) On the three
+HiCache configurations that span the controllers' range, the same elasticity
+gives $\epsilon = +0.19$ from \texttt{cap2}+HC to \texttt{cap3}+HC and $+0.46$
+from \texttt{cap3}+HC to \texttt{cap4}+HC, over $\overline{R}_{\text{busy}}$
+1.25 to 1.73---the range covering the whole controller operating region (1.35 to
+1.69), over which $\epsilon$ stays below one. \texttt{cap5}+HC then adds a
+segment with $\epsilon = +2.87$ whose denominator is near zero: its running
+count moves only from 1.73 to 1.75 while the step cost moves by 1.0\,ms, and
+\texttt{cap6}+HC at $\overline{R}_{\text{busy}}$ 1.87 gives $\epsilon = +0.48$.
+We do \emph{not} read the $+2.87$ segment as ``the spike was an artifact'': both
+step-cost measurements agree something real happens there, but the small
+denominator costs us \emph{resolution}, not the existence of a cost
+difference, and we do not read the difference as an elasticity in the running
+count. The per-request $\tau_2$, which shares no code path with $\tau_1$, gives
+$\epsilon = +4.3$ there and rises monotonically across all six points (22.7, 24.5, 25.7, 26.8, 27.6,
+29.0\,ms). What the sweep does show is the weaker thing we can support: the flat
+regime does not continue indefinitely---\texttt{cap8}+HC realizes 59.7\% of the
+bound at the far end of the swept range---but our six points cannot say where
+the regime ends.
 
-This contradicts what an earlier draft of this paper claimed, and it changes
-what the criterion is for. The cliff in the device-only curve is a
-recomputation effect: \S\ref{sec:model} measures that those runs recompute what
-they evict, while under HiCache the host tier absorbs it. The cliff does not
-survive on the configuration our controllers actually use. So the criterion
-does \emph{not} explain why they lose---on their own configuration they were
-not in a region where added concurrency was self-defeating. What the
-measurement does is rule one explanation out. It does not establish the
-opposite (\S\ref{sec:results}); the failure is not that this workload denies
-admission control its lever, but that we could not build a rule that uses it well,
-which is what
-\S\ref{sec:results:idle-memory} and the attribution of
-\S\ref{sec:results:attribution} measure directly.
+What the measurement does is rule
+one explanation out; it does not establish the opposite
+(\S\ref{sec:results}), and the failure is not that this workload denies
+admission control its lever, but that we could not build a rule that uses it
+well.
 
-We are explicit about what this does and does not establish. The HiCache curve
-rests on three configurations and two segments, one run each, with no
-error bars, and it stops at 1.73---we cannot see whether a cliff appears
-beyond the controllers' region. The run each is the first run of its
-configuration, whereas \S\ref{sec:results}'s frontier uses the repeats where a
-pair exists; substituting them moves the two segments from $+0.19$ and $+0.46$
-to $+0.20$ and $+0.43$, which changes nothing we say here. A $\pm10\%$ perturbation of $\tau$ puts the
-segment elasticities' bounds across one even on the device-only curve, so the
-cliff is a description of the fitted points rather than a threshold we have
-located precisely. And it is measured on
-different policies rather than by an intervention, so it is a
-cross-policy association---the two configurations the tier comparison rests on
-were run a day apart on different cards, which \S\ref{sec:model} states, and a
-same-card pairing is queued. On our data it is also computed from the same wall
-clock the model then explains---$\tau_1$ is derived from $W_{\text{busy}}$, so
-using it to predict $W_{\text{busy}}$ restates rather than tests---and its
-points are different policies, so the slope is a cross-policy association, not
-a transportable causal derivative. $\tau_2$ is genuinely independent of the
-wall clock but measures only decode, so it cannot be dropped into a throughput
-equation that includes prefill.
+What this does and does not establish: the HiCache curve
+rests on six configurations and five segments---four computable, the fifth
+$\overline{R}$-reversed and therefore given no coefficient---one run each, with
+no error bars, stopping at 1.87---so the cliff question is partly answered
+rather than merely unasked, since realization does start to fall at the far end
+of the swept range. Each run is the first of its configuration, whereas
+\S\ref{sec:results}'s frontier uses the
+repeats where a pair exists; substituting them moves the first two segments
+from $+0.19$ and $+0.46$ to $+0.20$ and $+0.44$, which changes nothing we say,
+and it \emph{reverses the third}, because the repeat of \texttt{cap4}+HC sits
+at a slightly \emph{higher} running count than \texttt{cap5}+HC, so that
+segment's $\overline{R}$ interval runs backwards and its $\epsilon$ comes out
+at $-5.2$. We report the third segment and read neither a value nor a location
+off it. It is measured on different policies rather than by an
+intervention---a cross-policy association, not a transportable causal
+derivative. On our data it is also computed from the same wall clock the model
+then explains---$\tau_1$ is derived from $W_{\text{busy}}$, so using
+it to predict $W_{\text{busy}}$ restates rather than tests---while $\tau_2$,
+genuinely independent of the wall clock, measures only decode and cannot be
+dropped into a throughput equation that includes prefill.
 
-We tested whether the curve transfers to a second workload. On a real agent
-trace (117 sessions, median inter-round
-waits of 20.2\,s against 0.34\,s on the synthetic trace,
-\texttt{toolwait.csv}, six static caps and one controller arm) the
-model-consistent elasticity is negative over the first two segments---$-2.40$
-then $-0.28$, at $\overline{R}_{\text{busy}}$ 1.08 to 1.29---and then turns
-positive above 1.29 ($+1.0$, $+0.18$, $+0.87$ over the three segments that
-reach 1.50). The $\varepsilon > 1$ regime is touched and not held there: the
-first of those three segments is the only one at or above one, and a $\pm10\%$
-perturbation of $\tau_1$ carries every one of their bounds across both zero and
-one. The main trace, for contrast, crosses one at 1.53 with $+1.15$ and stays
-above it. So the direction transfers and the location does not, and on this
-trace we can say no more than that added concurrency stopped paying. The
-per-request measure is no steadier on
-that trace ($+0.41$, $+0.48$, $+0.45$, $-1.25$, $+0.73$). The controller arm
-there runs at $\overline{R}_{\text{busy}}$ 1.22---below the running count where
-the branch turns expensive on either trace (1.29 there, 1.53 on the main
-trace), and below every one of the nine main-trace arms---and still does not
-beat the static
-front at the threshold this paper uses, though at a stricter one it does
-(\S\ref{sec:xtrace}). We report this as a boundary:
-the criterion identifies a branch, and where we could check it elsewhere the
-sign of the branch transferred while its location did not; it never explained
-the failure. It is not, as an earlier draft claimed, something that decides the
-question in minutes before building anything.

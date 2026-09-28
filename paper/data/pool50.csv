@@ -1,0 +1,20 @@
+# 池子对照实验：只动池子大小（全池 101432）的净效应 —— gen_pool50.py 生成，勿手改
+# ⚠ 不能直接拿小池子的兑现去比全池的兑现：**R̄ 自己也降了**。
+#   本表在**同一 R̄** 上用全池曲线插值取参照（超出锚点范围不给参照，不端点外推）。
+# 口径：R̄ 与兑现都由 gen_a100.one() 算（共用 gen_decomp / gen_reuse 的定义）。
+# 上界（trace 的 prefix_len 之和）= 21540371
+# 另两条（别的 trace，池子也小于各自的最长 prompt）：
+#   load50_default  池=76018  步=249  退化=7  超池=7
+#   load25_budget   池=72647  步=125  退化=1  超池=1
+# 两条崩掉的 run 里「超池」比「退化」多（73 vs 72、41 vs 39）——
+#   差额是**报错步**（崩溃那条链），所以等式只在【不崩的 run】里成立。
+# status=INFEASIBLE 的行**没有兑现率**，两种坏法（见 note 列）：
+#   (a) degenerate_steps > 0 —— 引擎把 1-token 退化响应记为成功，
+#       `prompt - uncached` 会把没服务的缺口算成复用（安静，failed 为 0）；
+#   (b) error_steps > 0 —— 引擎崩了/请求失败（响亮，failed_steps 里数得到）。
+#   两种都不产生可用的兑现率：活下来的都是有偏的样本。
+run,pool_frac,full,status,attempted_steps,failed_steps,degenerate_steps,error_steps,error_under_pool,steps_over_pool,min_over_pool_tok,max_served_tok,prompt_gap_tok,gap_pct_of_bound,gap_pct_of_prefix,gap_pct_of_prompt,half_Rbar,half_real,full_real_at_same_Rbar,delta_pp,note
+cap2_hp,0.50,cap2,INFEASIBLE,999,0,104,0,0,104,50720,50688,6515669,30.2,23.8,22.8,,,,,104/999 步的 prompt 超过池子（50716 tokens）—— 引擎返回 1-token 退化响应而 runner 记成成功（`failed_steps` 全程为 0，所以这是【安静】的）；计划 prompt 与实测差 6515669 tokens，`prompt - uncached` 会把缺口算成复用；见 docs/finding_pool50_cap4_oom_20260925.md
+cap3_hp,0.50,cap3_fixed,INFEASIBLE,807,50,72,50,49,73,50720,50688,5332783,24.8,16.0,23.9,,,,,72/807 步的 prompt 超过池子（50716 tokens）—— 引擎返回 1-token 退化响应而 runner 记成成功（`failed_steps` 全程为 0，所以这是【安静】的）；计划 prompt 与实测差 5332783 tokens，`prompt - uncached` 会把缺口算成复用；⚠ 与「prompt_len > 池子」的步数（73）不符，需人工查；见 docs/finding_pool50_cap4_oom_20260925.md
+cap4_hp,0.50,cap4,INFEASIBLE,549,116,39,116,114,41,50965,50524,4578525,21.3,8.5,32.7,,,,,39/549 步的 prompt 超过池子（50716 tokens）—— 引擎返回 1-token 退化响应而 runner 记成成功（`failed_steps` 全程为 0，所以这是【安静】的）；计划 prompt 与实测差 4578525 tokens，`prompt - uncached` 会把缺口算成复用；⚠ 与「prompt_len > 池子」的步数（41）不符，需人工查；见 docs/finding_pool50_cap4_oom_20260925.md
+cap3_p75,0.75,cap3_fixed,INFEASIBLE,999,0,14,0,0,14,76085,75445,1141497,5.3,4.6,4.0,,,,,14/999 步的 prompt 超过池子（76074 tokens）—— 引擎返回 1-token 退化响应而 runner 记成成功（`failed_steps` 全程为 0，所以这是【安静】的）；计划 prompt 与实测差 1141497 tokens，`prompt - uncached` 会把缺口算成复用；见 docs/finding_pool50_cap4_oom_20260925.md

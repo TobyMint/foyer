@@ -54,6 +54,26 @@ TRACE_MAIN_SUFFIX = "replay_pois200_l04.csv"
 MIN_STEPS = 995
 EXCLUDED = {"foyer_hz1_r2": "引擎侧 prompt token 计数 1.41x 计划、τ₁ 不成比例（正文已写明排除）"}
 
+# ⚠⚠ 2026-09-27（中立复核 r48 第 5 条）：**判据太粗，`_derive()` 会多收一条。**
+# `pois200_slice23_hc` 是那个**时间片切换**实验（主 trace、HiCache、cap 每 60 秒在
+# 3 与 2 之间切，见 `gen_slice23.py`）—— 它**满足下面三条机械判据**，
+# 于是判据在实验机上给出 **27** 而 `RUNS` 是 **26**，生成器在机器上直接
+# `raise SystemExit`（`!! host-tier 集合与判据不一致 … ['slice23_hc']`）。
+# **正文六处写的 26 是对的，错的是判据。** 本表的集合是「**静态** HiCache 配置
+# 兑现了多少」，而切换策略根本不是这个集合的元素。
+#
+# ⚠ 与 `EXCLUDED` **分开**记：那一条是「数据质量存疑」（正文写「one whose engine
+# prompt-token counter reads 1.41x」），`SUPERSEDED` 是「被干净重跑替代」，
+# 正文那句「Five runs … one … and four superseded」数的是**这两类之和**。
+# 把 slice23_hc 塞进 `EXCLUDED` 会让那个 5 变成 6，是**改错地方**。
+# ⚠ 名字与理由要对上正文：正文 §III 的判据句现在写「host-tier runs that completed
+# this trace **at a single configuration**（…; the one run that alternates its cap,
+# §II, is not one of them）」—— 所以这里的类别名是 **NOT_SINGLE_CONFIG**，
+# 而不是「不是静态配置」：这个集合里**有控制器臂**（`foyer_scan`/`foyer_hc` 等），
+# 它们不是静态 cap，但各自跑**一个**配置。`slice23_hc` 每 60 秒在 cap 3 与 2 之间切，
+# 所以它**没有单一配置**。
+NOT_SINGLE_CONFIG = {"slice23_hc": "每 60 秒在 cap 3 与 2 之间切换 —— 没有单一配置（gen_slice23.py）"}
+
 # 被【干净重跑】替代的旧测量：2026-09-24 查出同机 ≥4 条车道 ≥60 分钟会把 τ₂ 抬高
 # 25~40%（见 docs/finding_concurrency_contamination_20260924.md），受污的控制器臂
 # 已用同名 + `_r2` 重跑。旧名因此仍在镜像里、也仍然满足下面三条判据 —— 判据自检
@@ -66,6 +86,7 @@ SUPERSEDED = {
     "foyer_bres": "争用污染（τ₂ 31.3ms vs 干净 24.8ms），已由 foyer_bres_r2 替代（2026-09-25）",
     "foyer_hz0": "争用污染（τ₂ 33.1ms vs 干净 25.5ms），已由 foyer_hz0_r2 替代（2026-09-25）",
     "foyer_hz2": "争用污染（τ₂ 30.9ms vs 干净 24.0ms），已由 foyer_hz2_r2 替代（2026-09-25）",
+    "foyer_breshz1": "争用污染（τ₂ 33.3ms vs 干净 25.5ms），已由 foyer_breshz1_r2 替代（2026-09-25）",
 }
 
 
@@ -86,7 +107,7 @@ def _derive(root):
         if n < MIN_STEPS:
             bad.append((run, n))
             continue
-        if run in EXCLUDED or run in SUPERSEDED:
+        if run in EXCLUDED or run in SUPERSEDED or run in NOT_SINGLE_CONFIG:
             continue
         if (m.get("build") or {}).get("hicache_enabled"):
             hc.append(run)
@@ -98,10 +119,11 @@ def _derive(root):
 # 这张表的集合 = 论文 §III 引「host tier 兑现区间」的那个集合 + 论文点名的五个静态
 # device-only cap。**必须与 eviction.csv 的行数一致** —— 原来这里是 13 条，而文件是
 # 24 行（上一次是用命令行传的 24 条），裸跑一次就会静默把文件砍掉一半。
-RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
-        "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_hc_r2", "cap4_hc", "cap4_hc_r2",
-        "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
-        "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyer_sf0_r2", "foyfix_hc",
+RUNS = ["cap1", "cap2", "cap3_fixed", "cap3_pd", "cap4", "cap5",
+        "pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_ph", "cap3_hc_r2", "cap4_hc", "cap4_hc_r2", "cap5_hc", "cap6_hc", "cap8_hc",
+        "foyer_hc", "foyer_hc_r2", "foyer_hz1", "foyer_hz1_r3", "foyer_hz2_r2", "foyer_hz2_r3", "foyer_hz0_r2", "foyer_bres_r2",
+        "foyer_breshz1_r2", "foyer_nogate", "foyer_rg4", "foyer_scan", "foyer_sf0_r2", "foyfix_hc",
+        "foyer_scan_r2", "foyer_scan_r3", "foyer_hc_slru", "foyer_sf0_r3",
         "pairA_foyerhc", "pairB_foyerhc"]
 
 
@@ -149,7 +171,12 @@ def main():
     # 「五个静态 cap」（cap1..cap5），不是按判据筛出来的族 —— 主 trace 上还有
     # default/aimd2/rl90 等别的 device-only run，它们不属于那张表。
     want_hc = {r for r in runs if r in hc_d or r.startswith(("foyer_", "pair", "cap3_hc", "cap4_hc", "foyfix"))}
-    want_hc = {r for r in runs if r not in ("cap1", "cap2", "cap3_fixed", "cap4", "cap5")}
+    # ⚠ 这个元组是「device-only 的那些」，**必须跟着 RUNS 一起长**：
+    # 2026-09-26 加了 `cap3_pd`（设备侧的配对点）却没加到这里，于是判据自检
+    # 立刻报「判据里有而列表没有 ['cap3_pd']」—— 守卫起作用了，但根因是这份
+    # 硬编码的名单与 RUNS 是两处定义。
+    want_hc = {r for r in runs if r not in ("cap1", "cap2", "cap3_fixed", "cap3_pd",
+                                            "cap4", "cap5")}
     missing, extra = sorted(want_hc - set(hc_d)), sorted(set(hc_d) - want_hc)
     print("判据重算：host-tier %d 条；未达 %d 步被排除 %d 条 %s（另有 device-only %d 条不在本判据内）"
           % (len(hc_d), MIN_STEPS, len(short_d),
@@ -205,7 +232,7 @@ def main():
             # 成员的集合算的，而漏掉的那个恰是最极端的一点（2026-09-24 审稿人抓）。
             HC_FALLBACK = {"pairB_cap2hc", "cap3_hc", "cap4_hc", "foyer_hc",
                            "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2",
-                           "foyer_bres_r2", "foyer_breshz1"}
+                           "foyer_bres_r2", "foyer_breshz1_r2", "cap6_hc", "cap8_hc"}
             _mj = os.path.join(d, "metadata.json")
             hc_flag = None
             if os.path.exists(_mj):

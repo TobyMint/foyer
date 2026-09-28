@@ -5,18 +5,25 @@
 #   单飞关闭时闸门不可能拦人，其 remainder 只可能是「没有候选者塞得进预算」。
 run,samples,blocked_cycles,valve_pct,round_gate_pct,projection_over_pct,remainder_pct,sf_disabled,forced_admits,total_admits,cycles_over_budget,admitted_while_over,forced_while_over
 pois200_foyer_bres_r2,8029,7431,16.6,0.0,53.6,29.8,N,47,227,4903,46,17
+pois200_foyer_scan_r2,7932,7328,8.4,0.0,53.0,38.5,N,45,203,4531,7,7
 pois200_foyer_bres,8652,8097,17.1,0.0,50.8,32.1,N,52,223,5262,49,20
+pois200_foyer_sf0_r3,7952,7408,11.5,0.0,50.6,38.0,Y,46,195,4386,9,9
+pois200_foyer_scan,8030,7439,12.9,0.0,49.0,38.1,N,46,210,4391,6,6
 thr25_hwsf,1012,768,3.1,0.0,48.8,48.0,Y,5,21,454,1,1
+pois200_foyer_scan_r3,8155,7562,11.2,0.0,47.1,41.7,N,48,209,4247,11,11
 pois200_foyer_push_25,931,739,3.7,0.0,44.4,52.0,N,5,25,370,0,0
 pois200_foyer_sf0_r2,7945,7406,16.2,0.0,44.0,39.7,Y,45,194,4128,8,8
 pois200_var_foyer,9844,8374,8.4,0.0,43.2,48.4,N,50,205,3996,9,9
 pois200_foyer_t85,9928,9349,5.3,0.0,40.8,53.9,N,60,206,4353,8,8
 pois200_foyer_t90,9411,8844,7.6,0.0,40.6,51.9,N,57,209,4035,7,7
 pois200_pairA_foyerhc,8436,7868,7.4,0.0,38.7,53.9,N,49,206,3699,10,10
+pois200_foyer_breshz1_r2,7756,7042,36.6,0.0,38.6,24.8,N,42,266,4329,81,12
 pois200_foyer_hc,8784,8196,6.8,0.0,38.4,54.8,N,51,206,3700,9,9
 pois200_pairB_foyerhc,8723,8140,7.0,0.0,38.4,54.6,N,50,207,3688,10,10
 pois200_foyer,8834,8263,5.8,0.0,37.6,56.6,N,53,205,3597,7,7
+pois200_foyer_hc_slru,8664,8085,5.7,0.0,36.9,57.4,N,50,207,3533,8,8
 pois200_foyer_hz1_r2,7837,7236,26.0,0.0,36.9,37.1,N,42,196,3667,8,8
+pois200_foyer_hz2_r3,8263,7670,9.2,0.0,36.5,54.4,N,47,210,3377,7,7
 pois200_foyer_hz2_r2,8150,7563,8.8,0.0,36.0,55.2,N,46,210,3293,4,4
 pois200_foyer_hc_r2,8830,8236,5.9,0.0,35.8,58.3,N,51,208,3492,7,7
 load25c_budget3_oracle,2743,2517,0.9,0.0,35.8,63.3,N,16,25,926,2,2
@@ -29,6 +36,7 @@ budget200c_budget3_agg_hc,13529,12970,2.1,0.0,30.6,67.4,Y,72,198,4234,4,4
 budget200c_budget3_zero,12511,12034,5.4,0.0,29.4,65.2,N,53,212,3982,0,0
 budget200c_budget3_r2,15941,15632,1.6,0.0,27.4,71.0,N,92,202,4539,6,6
 budget200c_budget3,35381,16937,3.3,0.0,27.0,69.7,N,100,0,4931,0,0
+pois200_foyer_hz1_r3,8279,7673,20.0,0.0,26.8,53.2,N,48,227,2827,7,7
 load25c_budget3_agg_hc,1247,1094,1.9,0.0,26.6,71.5,Y,6,22,312,0,0
 budget200c_budget3_r3,16388,16246,2.0,0.0,25.6,72.4,N,95,0,4384,0,0
 thr25_nosf,1580,1346,0.6,0.0,23.4,76.0,Y,8,23,332,0,0
@@ -48,11 +56,14 @@ thr25_base,1843,1628,1.1,0.0,15.5,83.4,N,10,25,270,0,0
 realhr_foyer,2348,1852,0.2,0.0,13.9,86.0,N,8,117,305,0,0
 realhr_foyer_r2,2336,1836,0.2,0.0,12.3,87.6,N,8,117,273,0,0
 load25c_budget3_sg0,2278,2059,1.5,0.0,8.3,90.2,N,0,25,201,0,0
-# all_rows_median（44 条，正文「over every run in that file」用的就是这一行）,valve_pct=5.4,projection_over_pct=30.6,remainder_pct=58.3
-# 正文用的集合（八条非重复 Foyer 臂）：pois200_foyer_bres_r2 pois200_foyer_breshz1 pois200_foyer_hc pois200_foyer_hz0_r2 pois200_foyer_hz1 pois200_foyer_hz2_r2 pois200_foyer_nogate pois200_foyer_rg4
-# eight_median,valve_pct=34.3,projection_over_pct=32.2
+# all_rows_median（52 条，正文「over every run in that file」用的就是这一行）,valve_pct=5.9,projection_over_pct=33.2,remainder_pct=55.2
+# 正文用的集合（八条非重复 Foyer 臂）：pois200_foyer_bres_r2 pois200_foyer_breshz1_r2 pois200_foyer_hc pois200_foyer_hz0_r2 pois200_foyer_hz1 pois200_foyer_hz2_r2 pois200_foyer_nogate pois200_foyer_rg4
+# eight_median,valve_pct=34.3,projection_over_pct=36.0
 # eight_range,valve=6.8~67.9,projection_over=19.5~53.6
-# convention_delta（上中位 − 两数均值，八条臂）,projection_pp=0.4,valve_pp=7.5
-# 论文正文引用的集合：pois200_foyer_bres_r2 pois200_foyer_breshz1 pois200_foyer_hc pois200_foyer_hc_r2 pois200_foyer_hz0_r2 pois200_foyer_hz1 pois200_foyer_hz2_r2 pois200_foyer_nogate pois200_foyer_rg4 pois200_foyer_sf0_r2
-# paper_set_median,valve_pct=19.2,projection_over_pct=35.8,remainder_pct=44.6
+# convention_delta（上中位 − 两数均值，八条臂）,projection_pp=1.9,valve_pp=7.5
+# 论文正文引用的集合：pois200_foyer_bres_r2 pois200_foyer_breshz1_r2 pois200_foyer_hc pois200_foyer_hc_r2 pois200_foyer_hz0_r2 pois200_foyer_hz1 pois200_foyer_hz2_r2 pois200_foyer_nogate pois200_foyer_rg4 pois200_foyer_sf0_r2
+# paper_set_median,valve_pct=19.2,projection_over_pct=36.0,remainder_pct=44.6
 # paper_set_range,valve=5.9~67.9,projection_over=19.5~53.6
+# named_arm,pois200_foyer_rg2,cycles=6204,blocked=5565,round_gate_pct=29.3,steps=770,attempted=None,failed=None,finished_999_0=N
+# named_arm,pois200_foyer_rg3,cycles=1097,blocked=776,round_gate_pct=18.0,steps=169,attempted=None,failed=None,finished_999_0=N
+# named_arm,pois200_foyer_rg4,cycles=8485,blocked=7731,round_gate_pct=0.6,steps=998,attempted=998,failed=1,finished_999_0=N

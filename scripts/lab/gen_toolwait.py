@@ -117,6 +117,16 @@ def main():
                      # 「典型转换上 harness 什么都没加（中位 1.001），差额全在尾部
                      # （两个均值之比 1.065）」—— 这两个数 2026-09-24 之前只在正文里。
                      # 只在【非零要求】的转换上算（要求为 0 的比值没有意义）。
+                     # >10 s 的**占比**：§I 引了它（「22% of gaps over ten seconds」），
+                     # 而那个 22 是**只拿 662 个正值为分母**算的（144/662=21.8%），
+                     # 与同句的另外两个统计量（都拿 799 个转换当分母）**分母不同** ——
+                     # 本文件的 docstring 早就警告过这一族。这里把两个分母都印出来。
+                     "demand_gt10_pct_of_transitions": "%.1f" % (
+                         100.0 * sum(1 for x in dem if x > 10000) / len(dem)),
+                     "demand_gt10_pct_of_positive": "%.1f" % (
+                         100.0 * sum(1 for x in dem if x > 10000)
+                         / max(1, sum(1 for x in dem if x > 0))),
+                     "demand_positive_n": sum(1 for x in dem if x > 0),
                      "ratio_med": "%.4f" % statistics.median(rr),
                      "ratio_mean": "%.4f" % statistics.mean(rr),
                      "ratio_ratio_of_means": "%.4f" % (
@@ -130,14 +140,21 @@ def main():
         "#     全部 999 行（含每会话最后一轮，无后继）  均值 12.65 s",
         "#     799 次轮次转换（本表）                  均值 15.82 s   <- 论文用的",
         "#     662 个非零 tool_wait                     均值 19.10 s",
+        "# ⚠ >10 s 的占比也有两个分母：demand_gt10_pct_of_transitions（799，18.0%）与",
+        "#   demand_gt10_pct_of_positive（662，21.8%）—— §I 原来写「22% of gaps」用的是后者，",
+        "#   而同句的另外两个统计量用的是前者。两个都印出来，正文必须指明用哪个。",
         "# 论文摘要的 16.85 s 是【实测】列的均值（run 的 steps.jsonl 实测间隔，",
         "# 含等 permit 的门时间），15.82 s 是 trace 要求值。",
         "# ratio_med/ratio_mean: 逐转换的 实测/要求 比值（只在要求>0 的转换上算）；",
         "#   ratio_ratio_of_means: 两个均值之比 —— 正文的「中位 1.001 / 均值比 1.065」是前两者的两个数",
         "run,trace,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,"
-        "measured_mean_s,measured_p90_s,ratio_med,ratio_mean,ratio_ratio_of_means"])
+        "measured_mean_s,measured_p90_s,demand_gt10_pct_of_transitions,"
+        "demand_gt10_pct_of_positive,demand_positive_n,ratio_med,ratio_mean,"
+        "ratio_ratio_of_means"])
     fields = ["run", "trace", "n_transitions", "demand_med_s", "demand_mean_s", "demand_p90_s",
               "measured_med_s", "measured_mean_s", "measured_p90_s",
+              "demand_gt10_pct_of_transitions", "demand_gt10_pct_of_positive",
+              "demand_positive_n",
               "ratio_med", "ratio_mean", "ratio_ratio_of_means"]
     body = header + "\n" + "\n".join(",".join(str(r[k]) for k in fields) for r in rows) + "\n"
     assert isinstance(body, str)

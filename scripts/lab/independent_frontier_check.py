@@ -35,12 +35,37 @@
 """
 import csv, json, os, sys
 
-TOL = 1e-3
+# ⚠ 2026-09-26（codex r43）：容差原来写 1e-3，而 `table1.csv` 的墙钟与 Δ 存**四位小数**
+# ⇒ 半个末位是 5e-5。1e-3 会放过末位不符（本项目的「容差要按被比表的精度定」）。
+TOL = 5e-5
 SLO_MS = 10000.0
-STATIC = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5",
-          "pairB_cap2hc", "cap3_hc", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
-ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hc", "foyer_hz2_r2", "foyer_hz0_r2",
-        "foyer_bres_r2", "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
+# ⚠ 这两个集合是**预选的**（见文件头「独立到什么程度」）。2026-09-26 codex 第 34 轮
+# 指出：新并入的三条（`cap3_pd` / `cap3_ph` / `foyer_hz1_r3`）**不在里面**，
+# 于是它们在 table1.csv 与正文里一起抄错时，这一层独立复算**看不见**。
+# 已补齐 —— **新增 run 时，这一层也要点名**，否则它给的是「其余部分没问题」的错觉。
+# ⚠ 2026-09-26：**`cap6_hc` 必须在这里**。它是 `frontier.py` 的 FRONT 的**最左锚点**
+# （207.847 / 28.9），而这份独立重算原来漏了它 ⇒ 它算出的包络与论文那条**不是同一条**
+# （少一段）。当前所有臂都在 209.1 分钟右侧，所以 Δ 逐位相同、看不出来 ——
+# 但只要有一条落在 209 左边，这份「独立复算」就会静默地拿另一条线去判。
+# 独立复算的**锚点集合**必须与生成器一致（独立的是【实现】，不是【输入】）。
+STATIC = ["cap1", "cap2", "cap3_fixed", "cap3_pd", "cap4", "cap5", "cap6_hc",
+          "pairB_cap2hc", "cap3_hc", "cap3_ph", "cap4_hc", "cap3_hc_r2", "cap4_hc_r2"]
+# ⚠ 2026-09-26：**加入独立控制器的两条臂**。它们也是论文的判决之一
+# （「一个独立控制器也没越过」），而这份独立复算原来只覆盖 foyer 族的 11 条。
+ARMS = ["foyer_sf0_r2", "foyer_hz1", "foyer_hz1_r3", "foyer_hc", "foyer_hz2_r2",
+        "foyer_hz0_r2", "foyer_bres_r2", "foyer_breshz1_r2", "foyer_nogate",
+        "foyer_rg4", "foyfix_hc", "aimd2", "aimd2_paper_r3",
+        # 两条控制器重复（也印在表 I 里，各有 Δ）：`hz1_r3` 既然在，这两条就该在
+        # —— 覆盖面由检查器的「独立复算覆盖面」守卫钉住（2026-09-26 加）。
+        "foyer_hc_r2", "foyer_hz1_r2",
+        # 2026-09-27：`hz2_r3`（头条臂的第一次重复）与 `scan`（改一行放行规则的
+        # 那条 —— 它 Δ 为正、越过 ±1.0pp 带，独立复算更要覆盖它）。
+        "foyer_hz2_r3", "foyer_scan",
+        # 2026-09-27 落地：两条新重复。**`scan_r2` 尤其必须在这里** ——
+        # 它把「scan 越线」从一次读数变成两次读数（Δ=+2.16），
+        # 是全篇头条从「unresolved」升级为「crossing」的依据，
+        # 而独立复算的意义正是「不采信生成器，自己从 trace 重算一遍」。
+        "foyer_scan_r2", "foyer_scan_r3", "foyer_sf0_r3"]
 
 
 def bound(trace_p):
@@ -115,7 +140,16 @@ def main():
     for r in ARMS:
         key = "pois200_" + r
         if not os.path.isdir(os.path.join(root, key)):
-            print("%-16s （本地没有这条 run）" % r); continue
+            # ⚠ 2026-09-26（codex r43）：原来这里只是 `continue` —— 于是**缺臂时脚本
+            # 照样报「全部逐位相符」**（一条没查也算全过）。缺臂本身就是问题
+            # （独立线的覆盖面不该静默缩小），计失败。
+            print("%-16s （本地没有这条 run —— 计失败）" % r)
+            bad += 1
+            continue
+        if r not in ref:
+            print("%-16s （参考表里没有这一行 —— 计失败）" % r)
+            bad += 1
+            continue
         w, s = wall_slo(root, key)
         f = front(w)
         d = s - f if f is not None else float("nan")

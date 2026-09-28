@@ -1,192 +1,99 @@
-\section{The Same Measurements on a Second Workload}
+\section{The Same Measurements on a Second Workload and a Second Accelerator}
 \label{sec:xtrace}
+\label{sec:a100}
 
-Everything so far is one trace family, and a negative result drawn from one
-family invites the objection that the family is the finding. We ran the same
-accounting, a static sweep from a cap of two to a cap of eight, and the same
-controller on a second replay:
-117 real Claude agent sessions, 390 rounds, the same model, the same engine and
-the same 101{,}432-token pool. One difference has to be stated up front,
-because it bears on the paper's central variable: \emph{this trace was run
-entirely without a host tier}. Its static points, its envelope and its
-controller are all device-only. That makes the comparison internally fair---both
-sides of the front are the same configuration---but it means this workload
-tests the negative result and not the tier mechanism, and it leaves an
-alternative account of the controller's failure standing: it failed here under
-a configuration that \emph{cannot} separate the two, because there is no host
-tier to separate. (Its own elasticity does not supply the missing condition
-either---at the controller's operating point $\epsilon(\tau_1)$ is
-$-0.28$ over $\overline{R}$ 1.16--1.29, so added concurrency was still cheap
-there; \S\ref{sec:criterion}.) The two workloads differ in ways that matter for
-this paper, which is why we chose it. Its sessions are smaller (median prompt
-18{,}809 tokens against 23{,}187) and its tool waits are far longer at the
-median: over round transitions---same session,
-adjacent rounds, each session's last round excluded because it has no
-successor---the gap is 20.2\,s against 0.34\,s at the median---about 60$\times$---and
-39.9\,s against 15.8\,s at the mean, which is 2.5$\times$
-(\texttt{toolwait.csv} carries both traces on this definition). The 29.1\,s
-that appears in \texttt{elasticity\_x.csv} is the mean over all 390 rows
-including each session's last round, and is not comparable with the main
-trace's 15.8\,s; we use the transition definition throughout §\ref{sec:xtrace}. So the engine is idle far more of the
-time, and the running counts are lower.
+We repeated the same accounting, sweep and controller on a second replay---117
+real Claude agent sessions, 390 rounds, same model, engine and
+101{,}432-token pool---and the same sweep on an A100 (80\,GB) replaying the main
+trace (nominal pool 983{,}728 tokens, 9.70$\times$ the 3090's). It ran
+entirely without a host tier---device-only points, envelope and controller---so it
+tests the negative result under a configuration that \emph{cannot} separate the
+two.
 
-\subsection{What transfers, and what does not}
+\paragraph{The direction transfers; the level and the place do not.} Higher
+planned reuse (86.3\% of prompt tokens against 75.5\%), less of it realized
+(74.8\% to 57.5\% as the count rises, against 92.5\% to 36.4\%): the direction of
+\S\ref{sec:model} survives, the sharpness does not, and we do not lean on slopes
+spanning ranges of different length and level. Nor does the \emph{level} transfer:
+realization is \emph{less} at 15.8\% median device occupancy than the main trace's
+at a comparable count.
 
-\begin{figure}[tb]
+\paragraph{The tier mechanism moves with the tier.} The A100 criterion was fixed in
+advance on one decision axis: the $\overline{R}_{\text{busy}}$ at which realized
+reuse crosses 50\%. On the 3090 that crossing is 1.7344; the A100 never crosses---at
+3.4077, twice the 3090's, it is still at 92.5\%. The pre-registered rule reads a
+crossing, not a slope, and returns \emph{supported}. The same measurement in
+$\epsilon$ is flat, not steep---$-0.74$ on the first segment against the 3090's
+$-0.21$, then $-0.27$, $+0.03$, $+0.34$, $+0.72$, staying under one and reaching $+1.49$
+on the last, a segment spanning 3.22 to 3.41 that carries the same
+small-denominator caveat we flag on the 3090: read it as the crossing, not as a
+rate. So added concurrency stops paying at roughly twice the running count on the
+larger-pool card---not the pool's factor of $9.7$, and we do not claim it is; a
+supporting measurement, not a second criterion.
+
+The best controller of \S\ref{sec:results} there completes the replay---999 of 999
+steps, no failures---in 88.3 minutes at a 100.0\% deadline satisfaction rate. The
+sweep has since
+extended to caps eight and sixteen: cap eight finishes in 90.1 minutes, cap sixteen
+in 88.3---the same wall clock as the controller---with the front interpolated there
+0.1\,pp below the controller's SLO, inside the $\pm1.0$\,pp band we judge in. The
+verdict is therefore a tie, obtained by \emph{reaching} the controller's operating
+point rather than stopping short of it. \emph{It is a weaker claim on this
+evidence}: \emph{one}
+controller run, our pre-registered criterion for this tier has one axis and does not
+cover it, and the controller was rarely binding---its pool peaked at $52\%$
+utilisation and it admitted after a median wait of 1.6\,s---so a tie is close to what
+``no admission decision at all'' would give. What transfers is the mechanism; we do
+not read the tie as the negative result reproducing at full strength.
+
+\begin{table}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figs/fig8_transfer.pdf}
-  \caption{Realization against the running count on both traces, each
-  normalized to its own trace's reuse bound. Device-only, the main trace falls
-  from 92.5\% to 36.4\% and the second from 74.8\% to 57.5\%; with a host
-  tier the main trace's runs stay at 72.8--92.5\%. The second trace is lower
-  throughout---interpolating the main trace's line at the second trace's
-  running counts gives a 17-point gap at the lowest and 23 at the
-  highest---and it declines more gently, which is what ``the direction
-  transfers and the level does not'' looks like on this axis.}
-  \label{fig:transfer}
-\end{figure}
-
-\paragraph{The reuse accounting transfers in direction, not in level.} The
-second trace plans a higher reuse bound than the first---86.3\% of its prompt
-tokens against 75.5\%---and realizes less of it, at a lower device occupancy
-(Fig.~\ref{fig:transfer}).
-Realization falls from 74.8\% to 57.5\% as the running count rises from 1.08 to
-1.50, so the direction of \S\ref{sec:model} survives. What does \emph{not}
-survive is the sharpness. On the main trace the decline is a threshold: the
-per-unit slope is $-10.4$, $-40.6$, then $-157.1$ and $-127.6$ points per unit
-as the running count passes 1.53, which is the cliff \S\ref{sec:criterion}
-measures. Here the slope stays gentler through the same region---$-31.2$,
-$-36.8$, $-28.4$, $-93.0$ and $-67.6$---and the two steep numbers at the end
-sit on spans of 0.017 and 0.074 of running count, where a difference between
-two runs starts to read as a trend. Taken as a whole the sweep loses 74.8--57.5\%
-of this trace's bound between $\overline{R}$ 1.08 and 1.50 at $-40.9$ points
-per unit. We do compare the two
-traces' overall slopes, which is the one slope comparison the data supports
-because both are taken over their full measured ranges
-(\texttt{slope.csv}): the device-only family runs from 92.5\% to 36.4\% over
-$\overline{R}$ 1.000--1.842, a whole-range slope of $-66.8$ points per unit,
-and this trace from 74.8\% to 57.5\% over 1.08--1.50, a slope of $-40.9$.
-So per unit of running count, the main trace loses its bound about one and a
-half times as fast over its range ($-66.8$ against $-40.9$)---but the
-comparison is between ranges of different length and
-different absolute level, and we do not lean on it.
-What this trace does establish is that the \emph{level} does not transfer, and
-we treat that as a bound on what we can
-claim: it realizes \emph{less} at 15.8\% median device occupancy than the
-main trace does at 22.4\%---the two numbers are the lightest cap on each trace
-(\texttt{realhr\_cap2} realizing 74.8\% and \texttt{cap1} realizing 92.5\%), both
-medians of \texttt{sglang:token\_usage} with means of 13.9\% and 25.2\%
-(\texttt{reuse\_x.csv}, \texttt{occupancy.csv})---so realization is not a
-function of occupancy alone and a
-rule of the form ``the pool collapses above $x$\% occupancy'' is false on our
-own data. Occupancy is instantaneous; reuse depends on whether a prefix
-survives from one round to the next, which is a history the instantaneous
-number does not carry. We do not measure that history here, and we say so
-rather than fitting the two traces to a common curve.
-
-\paragraph{The elasticity criterion transfers in sign, not in place.} On both
-traces the criterion plays the same role, and it is the modest one
-\S\ref{sec:criterion} settles on: it \emph{rules out} the workload-side
-story. The controller on this trace runs at a busy-time mean of 1.223, which
-falls inside the span its own static caps cover (1.08 to 1.50)---more
-precisely inside the cap3$\to$cap4 segment, where
-$\varepsilon(\tau_1) = -0.28$ over $\overline{R}$ 1.16--1.29, so its failure is
-again not explained by the criterion.
-What the completed sweep adds is that this trace does approach the criterion's
-\emph{expensive} branch, later and more gently than the main trace: above
-$\overline{R} \approx 1.29$ the model-consistent elasticity turns positive and
-touches one in the first of the three segments there ($+1.0$, then $+0.18$ and
-$+0.87$ as the sweep reaches 1.50), while the main trace crosses one at 1.53
-with $+1.15$ and stays above it. So the direction is not a property of one
-family; the location is. We report the point estimates and not a threshold, because a $\pm10\%$
-perturbation of $\tau_1$---inside the range our repeat pairs show---carries
-each of those three segments' bounds across zero \emph{and} across one. The per-request
-measure is no steadier ($+0.45$, $-1.25$, $+0.73$). And the controller never
-operates where the branch turns expensive: 1.22, below 1.29 and below the main
-trace's 1.53 alike.
-
-We also record what the noise does, because it is the same weakness the whole
-paper has. Recomputing each segment's $\varepsilon$ with $\tau_1$ perturbed
-by $\pm10$\%---against the 0.3--1.1\% our clean repeat pairs differ by in
-$\tau_1$ (\texttt{decomp.csv}; one anomalous pair reaches 42.5\%), so the
-perturbation is generous rather than conservative---gives bands of
-$[-5.20, +0.41]$ for cap2$\to$cap3,
-$[-2.17, +1.61]$ for cap3$\to$cap4, $[-1.25, +3.26]$ for cap4$\to$cap5,
-$[-14.07, +14.43]$ for cap5$\to$cap6 and $[-3.33, +5.07]$ for
-cap6$\to$cap8. Every one of them crosses zero, and the three at the end cross
-one as well. So at that perturbation no segment's sign is resolvable, and the
-turn the paragraph above describes is a property of the point estimates rather
-than a boundary we have located---which is a bound on that paragraph, not a
-reprieve from it.
-
-\paragraph{The controller's verdict transfers, weakly.} \sys{} finishes the
-second trace in 75.6 minutes, against 66.2 for the fastest static run on it
-(the cap of eight), so \sys{} is 14.3\% slower (14.26\% at full precision).
-We do not report that as a loss. The repeat pairs we have vary by 1.8--4.7\%
-in wall clock (\texttt{replicates.csv}), and this trace gives us two of its
-own on the same clock (\texttt{repeat\_spread.csv}): the cap of four repeats
-to within 1.6\%, and \sys{} itself to within 0.02\%, the latter accompanied
-by 0.03 points of realization on the volume axis. The gap is more than
-eight times the wider of those, so it is not repeat noise on either side of
-it---but two pairs cannot bound the variability of the \emph{other}
-configurations in the comparison, and run-to-run spread on this machine
-reaches 22.0\% across the
-other configurations and tiers we have measured (\texttt{repeat\_spread.csv};
-0.02--6.08\% across the ten repeat \emph{groups} those two traces give us---%
-four runs in one of them, two in each of the rest---the spread between the
-groups themselves being the reason we report a range and not a number).
-So the honest reading is the one we have used throughout: at the threshold
-this paper uses, it did not win on
-either axis.
-Its signed distance from the second trace's
-static envelope is $+0.40$\,pp at $10$\,s on
-the SLO axis---inside the $\pm1.0$\,pp tie band, which is defined on that
-axis---and the repeat of the same configuration reads $+0.40$ as well
-($+0.4012$ and $+0.4017$ at full precision), so this is not a single
-measurement standing alone---and $-0.14$\,pp on the cache-hit axis, against the 14.9 points that
-separate this trace's own six static caps on that axis. That axis is
-threshold-dependent here, and in the opposite direction from the main trace's:
-at $5$\,s this trace's caps separate much more (the cap of eight scores
-$78.2$\% against the cap of two's $99.0$\%) and the controller sits
-$+1.87$\,pp above the envelope---outside the band---whereas
-on the main trace none of the cleanly measured controllers reaches the front at
-$5$\,s, and one appears above it at
-$20$\,s in a single measurement whose repeat lands below the line
-(\S\ref{sec:discussion}). We report both readings rather than the one
-that gives a single answer. The 5\,s win does not survive its repeat: the same
-configuration run
-again reads $+0.86$\,pp---inside the band---against the first run's
-$+1.87$, while at $10$\,s the two agree to three decimals ($+0.40$ each). So
-this trace's one crossing is also a place where a second run puts the
-controller back inside the tie band; \S\ref{sec:discussion} reports the same
-outcome for the main trace's, on its own repeat. (The envelope and the
-elasticity below are both built from all six static caps the sweep now has;
-the three caps the sweep added after the first version of this comparison---the
-caps of five, six and eight---are the reason the last three segments exist
-at all.)
-The SLO number is nearly uninformative, and we flag that rather than let it
-stand as a measurement. At the three caps the envelope was originally built
-from, every point on this trace scored 99.5--100.0\%, so the axis could not
-discriminate at all. The three the sweep has since added do separate---the cap
-of eight scores 93.8\% against the cap of two's 100.0\%---so the axis is not
-flat after all, but its whole spread over six static caps is 6.2 points against
-a $\pm1.0$\,pp tie band, and \sys{} sits at 100.0\% on it.
+  \small
+  \setlength{\tabcolsep}{4pt}%
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Machine & Pool & $\overline{R}_{\text{busy}}$ & Occ. & Reuse & $\tau_2$ & SLO \\
+    \midrule
+    3090-24G & 101{,}432  & 0.9980 & 22.4\% & 92.5\% & 20.6 & 94.8 \\
+    A100-80G & 971{,}456  & 0.9997 &  2.1\% & 92.5\% & 14.3 & 99.9 \\
+    \midrule
+    3090-24G & 101{,}432  & 1.6505 & 66.4\% & 60.7\% & 25.8 & 55.7 \\
+    A100-80G & 983{,}728  & 1.9702 &  6.5\% & 92.5\% & 14.5 & 100.0 \\
+    \midrule
+    3090-24G & 101{,}432  & 1.8409 & 74.3\% & 36.4\% & 31.2 & 27.1 \\
+    A100-80G & 983{,}728  & 2.3356 &  8.0\% & 92.5\% & 15.5 & 100.0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{The same static caps on two accelerators, rows paired at the
+  same nominal cap. The A100's cap-one row came up with a pool of 971{,}456
+  rather than 983{,}728 (\S\ref{sec:a100:limits}), which does not affect its
+  column. Occupancy is a share of the pool, $\tau_2$ is in milliseconds, SLO is
+  the share of first tokens within $10$\,s, and reuse is \texttt{reuse\_tok} over
+  the trace's own ceiling.}
+  \label{tab:a100}
+\end{table}
 
 \subsection{What this section does and does not buy}
+\label{sec:a100:limits}
 
-It buys a negative result that is not a property of one trace family: on a
-second workload, with a different session-size distribution and a
-tool-wait distribution about 60$\times$ longer at the median, the same controller
-still does not beat the same kind of static cap, and the reuse degradation
-still appears. It costs us the transportability of the threshold. On the main trace the
-criterion narrowed the search by excluding the workload-side explanation and
-put the turn of the point estimates at $\overline{R} \approx 1.53$; on this
-trace the same measurement turns positive above 1.29. What we cannot do is
-\emph{locate} either turn---the $\pm10\%$ perturbation puts every segment's
-bounds across zero on both traces---which is the caveat
-\S\ref{sec:criterion} already states for the main trace, now with a second
-trace behind it. The controller is below both turns (1.22), so the criterion
-does not explain its failure on either trace. We
-report both, and we note that the second workload is closer to the regime
-where adaptive control \emph{should} pay---lower concurrency, much longer idle
-gaps---and the controller still did not win there.
+This buys a result that is not one trace family's: the same controller still does
+not beat the same kind of static cap on a second workload, and the tier mechanism
+behaves as the premise predicts on a second accelerator. It costs us the ability
+to \emph{locate} the criterion's turn---the $\pm10\%$ perturbation puts every
+segment's bounds across zero on both traces---and the controller sits below both
+turns; the second workload is closer to the regime where adaptive control
+\emph{should} pay, and it still did not win there. Three things bound the hardware
+half: three of the seven A100 runs did not hold everything but the card fixed---cap
+one's pool 971{,}456 rather than 983{,}728, cap eight 943{,}541, cap sixteen
+983{,}697---none pool-bound, so the shortfall does not reach the realization
+column; our no-control baseline is not clean---a foreign process in 82 of the
+run's 341 in-window samples, all of them in its last 23.8 minutes---so we report
+it as indicative, and co-tenancy inflates a baseline, so the direction is
+conservative; that run finished in 88.6 minutes at 99.7\% SLO against the
+controller's 88.3; and the clean re-run we attempted afterwards did not produce
+one: pool 817{,}527 rather than 983{,}728, a median occupancy of 95.3\%, the
+watcher records a foreign process in 566 of 566 in-window samples,
+148.1 minutes at a 32.9\% deadline satisfaction rate, and a per-request decode
+interval of
+222.7\,ms---a reading of a contended host, not a baseline, which we do not use
+for anything.

@@ -1,0 +1,14 @@
+{
+ "fig1_frontier.pdf": {
+  "points": 38,
+  "rings": 2
+ },
+ "fig2_decomp.pdf": {
+  "bars": 17,
+  "hatched": 1
+ },
+ "fig7_elasticity.pdf": {
+  "device_points": 5,
+  "hicache_points": 6
+ }
+}

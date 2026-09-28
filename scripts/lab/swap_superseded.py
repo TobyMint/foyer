@@ -150,6 +150,7 @@ REGEN = [
                          "paper/data/decomp.csv paper/data/attribution.csv"),
     ("idle_seg.csv",     "python3 scripts/lab/idle_segments.py results/night paper/data/idle_seg.csv  # 同时写 idle_seg_raw.csv"),
     ("idle_pooled.csv",  "python3 scripts/lab/gen_idle_pooled.py paper/data/idle_seg_raw.csv paper/data/concurrency.csv paper/data/idle_pooled.csv"),
+    ("fit.csv",          "python3 scripts/lab/gen_fit.py paper/data paper/data/fit.csv  # §III 的 r 与最大残差"),
     ("stall.csv",        "python3 scripts/lab/gen_stall.py results/night paper/data/stall.csv"),
     ("slo_sensitivity.csv", "python3 scripts/lab/slo_sensitivity.py results/night paper/data/slo_sensitivity.csv"),
     ("— 以下必须在实验机上跑 —", ""),
@@ -159,6 +160,11 @@ REGEN = [
     ("repeat_spread.csv","实验机：gen_repeat_spread.py <results>/night <out>"),
     ("loadtier.csv",     "python3 scripts/lab/gen_loadtier.py results/night paper/data/table1.csv paper/data/loadtier.csv"),
     ("horizon.csv",      "python3 scripts/lab/gen_horizon.py paper/data/table1.csv paper/data/horizon.csv"),
+    ("a100.csv",         "python3 scripts/lab/gen_a100.py data/replay_pois200_l04.csv results/night results/night paper/data/a100.csv "
+                         "# ⚠ 会同时重写 a100_elasticity.csv；本地必须已有 a100_cap1..5，否则静默丢行"),
+    ("pool50.csv",       "python3 scripts/lab/gen_pool50.py results/night paper/data/pool50.csv "
+                         "# 还在跑的 run 用 --pending=<name> 声明；真缺会报错退出"),
+    ("a100_delta.csv",   "python3 scripts/lab/gen_a100_delta.py paper/data/a100.csv results/night --csv paper/data/a100_delta.csv a100_foyer_hz2"),
     ("图",               "python3 paper/figs/make_figs.py"),
 ]
 
@@ -221,9 +227,20 @@ def main():
                     # 是 codex 第 21 轮在 --dry-run 里发现的（hz0/hz2 各有 15 个文件会踩中）。
                     assert isinstance(body, str)
                     left = len(pat_line.findall(body))
-                    assert left == len(run_lines) - n, (
-                        "%s：改完还剩 %d 处旧名，预期 %d（本文件 run 类 %d 处 - 已改 %d 处）"
-                        % (os.path.relpath(p), left, len(run_lines) - n, len(run_lines), n))
+                    # 第三版（2026-09-25）。第二版写的是 `left == len(run_lines) - n`，
+                    # 它**隐含假设「只有 run 类行含旧名」** —— 但注释行也含
+                    # （gen_eviction.py:203 的 `# foyer_breshz1（它 host 接住 14.4M…）`）。
+                    # 于是「run 类行 + 注释行」的文件必然断言失败；而写入是**逐文件**做的、
+                    # 遍历又是 set 的**哈希序**，中止点落在哪儿不确定 →
+                    # 留下【任意位置的半改】，比全不改更难查。
+                    # 按「非 run 类行原本的旧名数」正着写，就没有那个隐含假设：
+                    # 多出来说明有 run 类行没改到，少了说明改坏了非 run 类行。
+                    keep = sum(len(pat_line.findall(ln))
+                               for i, ln in enumerate(lines, 1) if i not in run_lines)
+                    assert left == keep, (
+                        "%s：改完还剩 %d 处旧名，预期恰好 %d 处（非 run 类行原本的旧名数）"
+                        " —— 多了=有 run 类行漏改，少了=改坏了非 run 类行"
+                        % (os.path.relpath(p), left, keep))
                     assert len(out) == len(lines), "%s：行数变了" % os.path.relpath(p)
                     with open(p, "w", encoding="utf-8") as f:
                         f.write(body)

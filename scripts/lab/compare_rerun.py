@@ -90,11 +90,15 @@ def main():
                 "%.1f" % ((tau2(root, new) or 0) - (tau2(root, old) or 0)),
                 "" if (ro is None or rn is None) else "%+.2f" % ((rn - ro) * 100)))
             # 判决是否改变
+            # ⚠ 2026-09-27：原来**内联**了 ±1（`> 1` / `>= -1`）—— 第二份判据。
+            # 改用 frontier 的派生版（阈值只有一份定义）。
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import frontier as _FRc
+
             def verdict(slo, f):
                 if f is None:
                     return "OUT"
-                d = slo - f
-                return "ABOVE" if d > 1 else "TIE" if d >= -1 else "BELOW"
+                return _FRc.classify_short(slo - f)
             vo = verdict(do["slo"], fo) if fo is not None else "OUT"
             vn = verdict(dn["slo"], fn) if fn is not None else "OUT"
             if vo != vn:

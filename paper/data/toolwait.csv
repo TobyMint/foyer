@@ -5,13 +5,16 @@
 #     全部 999 行（含每会话最后一轮，无后继）  均值 12.65 s
 #     799 次轮次转换（本表）                  均值 15.82 s   <- 论文用的
 #     662 个非零 tool_wait                     均值 19.10 s
+# ⚠ >10 s 的占比也有两个分母：demand_gt10_pct_of_transitions（799，18.0%）与
+#   demand_gt10_pct_of_positive（662，21.8%）—— §I 原来写「22% of gaps」用的是后者，
+#   而同句的另外两个统计量用的是前者。两个都印出来，正文必须指明用哪个。
 # 论文摘要的 16.85 s 是【实测】列的均值（run 的 steps.jsonl 实测间隔，
 # 含等 permit 的门时间），15.82 s 是 trace 要求值。
 # ratio_med/ratio_mean: 逐转换的 实测/要求 比值（只在要求>0 的转换上算）；
 #   ratio_ratio_of_means: 两个均值之比 —— 正文的「中位 1.001 / 均值比 1.065」是前两者的两个数
-run,trace,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,measured_mean_s,measured_p90_s,ratio_med,ratio_mean,ratio_ratio_of_means
-pois200_foyer_hc,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.35,16.85,29.33,1.0007,11.2769,1.0652
-pois200_cap1,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.34,15.82,27.72,1.0007,1.0663,1.0001
-realhr_cap2,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000
-realhr_cap4,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000
-realhr_foyer,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,1.0001,1.0002,1.0000
+run,trace,n_transitions,demand_med_s,demand_mean_s,demand_p90_s,measured_med_s,measured_mean_s,measured_p90_s,demand_gt10_pct_of_transitions,demand_gt10_pct_of_positive,demand_positive_n,ratio_med,ratio_mean,ratio_ratio_of_means
+pois200_foyer_hc,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.35,16.85,29.33,18.0,21.8,662,1.0007,11.2769,1.0652
+pois200_cap1,replay_pois200_l04.csv,799,0.34,15.82,27.72,0.34,15.82,27.72,18.0,21.8,662,1.0007,1.0663,1.0001
+realhr_cap2,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,70.3,70.6,272,1.0001,1.0002,1.0000
+realhr_cap4,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,70.3,70.6,272,1.0001,1.0002,1.0000
+realhr_foyer,replay_realhr.csv,273,20.20,39.87,86.21,20.20,39.87,86.21,70.3,70.6,272,1.0001,1.0002,1.0000

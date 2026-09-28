@@ -9,12 +9,14 @@ night traces' shape. `arrival_time` = ms from the day's first session start.
 Usage: export_realday_trace.py DAY OUT_CSV      (DAY = YYYY-MM-DD)
 """
 import csv
+import os
 import sys
 
 import duckdb
 
 DAY = sys.argv[1] if len(sys.argv) > 1 else "2026-05-29"
-OUT = sys.argv[2] if len(sys.argv) > 2 else "/data/xbw/turnstile/data/replay_realday.csv"
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(_ROOT, "data", "replay_realday.csv")
 MAXPEAK, MAX_ROUNDS = 98304, 5
 
 con = duckdb.connect("/data/xbw/turnstile/data/syfi_coding_trace.duckdb", read_only=True)

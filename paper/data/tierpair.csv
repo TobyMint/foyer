@@ -1,0 +1,17 @@
+# 同卡背靠背的层级配对 cap3_pd / cap3_ph —— gen_tierpair.py 生成，勿手改
+# 预注册：docs/prereg_tierpair_20260925.md（2026-09-25 00:2x，数据落地前写下）
+# 判据：占用率与在跑数各差 <10% 且 host 侧兑现高 >=10 个点 -> 支持；
+#       <5 个点或反向 -> §III 匹配对段落必须改写；5–10 -> 照实报差距。
+# 口径：全部走 gen_a100.one()（上界 gen_reuse.trace_ceiling = 21540371，
+#       R̄ 与 τ₁ 走 gen_decomp.busy_stats），**不另写一份实现**。
+# realized = reuse_tok / 上界；代数上等于预注册写的 (prompt − dev_miss + host_hit)/上界。
+# 同卡这一对：host 侧 − 设备侧 = +10.14 个点
+# 现有那一对（cap3_fixed / cap3_hc，相隔 19.5 小时、不同 GPU，论文自陈有混淆）：
+#   host 侧 − 设备侧 = +12.23 个点 —— 同卡这一对是 更弱 的
+# 前提检查：占用率差 0.60%（中位）/ 0.78%（均值）、在跑数差 3.10%（阈值各 10%，两个占用统计量都要过）-> 成立
+# 判决：差 10.14 个点（>=10）且前提成立（占用差 0.6%（中位）/ 0.8%（均值）、R̄ 差 3.1%，均 <10%）—— 判据第 1 行：与现有那一对一致，匹配对主张得到同卡支持
+run,pair,side,steps,wall_min,pool_tokens,Rbar_busy,occ_p50_pct,occ_mean_pct,tau1_ms,tau2_ms,slo_pct,reuse_tok,realized_frac,realized_pct
+cap3_pd,paired,device-only,999,246.4,101432,1.508167,59.3,56.3,29.0,24.6,79.3,17550694,0.814781,81.48
+cap3_ph,paired,host-tier,999,233.8,101432,1.555672,58.9,56.7,28.1,24.8,81.5,19734581,0.916167,91.62
+cap3_fixed,pre-existing (confounded),device-only,999,258.7,101432,1.534018,59.0,55.8,29.7,24.9,74.4,17027267,0.790482,79.05
+cap3_hc,pre-existing (confounded),host-tier,999,236.4,101432,1.509427,57.8,55.5,28.0,24.5,81.1,19661972,0.912796,91.28

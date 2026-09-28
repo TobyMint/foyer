@@ -1,0 +1,21 @@
+{
+ "fig2_decomp.pdf": [
+  "cap6+HC",
+  "cap4+HC",
+  "cap3+HC",
+  "cap8+HC",
+  "cap4",
+  "horizon=1",
+  "cap3",
+  "cap5",
+  "sf=0",
+  "horizon=2",
+  "no control",
+  "base",
+  "cap2+HC",
+  "cap2",
+  "AIMD (paper)",
+  "all throttles off",
+  "cap1 \u2021"
+ ]
+}

@@ -11,8 +11,8 @@ import csv, os, statistics, sys
 
 SAMPLE_S = 5.0
 # foyer_bres 是争用作废的那条，已由 foyer_bres_r2 替代（2026-09-25）。
-RUNS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
-        "cap4_hc", "foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2"]
+RUNS = ["cap1", "cap2", "cap3_fixed", "cap3_pd", "cap4", "cap5", "pairB_cap2hc", "cap3_hc",
+        "cap3_ph", "cap4_hc", "cap5_hc", "cap6_hc", "cap8_hc", "foyer_hc", "foyer_hz1", "foyer_hz1_r3", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2"]
 
 
 def segments(path):
@@ -58,9 +58,14 @@ def main():
     runs = sys.argv[3:] or RUNS
     pooled = open(out.replace(".csv", "_raw.csv"), "w", newline="")
     raw = csv.writer(pooled)
+    # 表头注释：本项目的不变量是「每张表都要能追到生成器」。
+    # 这两张此前是 42 张里仅有的三张没写的（2026-09-26 清点发现）。
+    raw.writerow(["# 每个空转段的时长（原始）—— 由 scripts/lab/idle_segments.py 生成，勿手改"])
     raw.writerow(["run", "duration_s"])
     with open(out, "w", newline="") as f:
         w = csv.writer(f)
+        w.writerow(["# 空转段汇总 —— 由 scripts/lab/idle_segments.py 生成，勿手改"])
+        w.writerow(["#   段 = metrics.csv 里 sglang:num_running_reqs == 0 的连续区间；见 gen_idle_pooled.py"])
         w.writerow(["run", "n_segments", "median_s", "p90_s", "max_s", "total_idle_min"])
         for r in runs:
             p = os.path.join(root, "pois200_" + r, "metrics.csv")

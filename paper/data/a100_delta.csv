@@ -1,0 +1,10 @@
+# A100 上控制器 vs A100 自己的静态前沿 —— gen_a100_delta.py 生成
+# 墙钟/SLO/R̄/τ 调 gen_a100.one()（与 a100.csv 同一函数）；
+# 前沿插值调 envelope.front_slo（与 3090 的 frontier.py 同一实现）。
+# verdict=LEFT-OF-FRONT **不等于赢** —— 先看 front_left_min 是不是
+# 扫描的端点，以及 valve/shed/准入等待那三列说没说「没在限流」。
+# contested=CONTESTED 的行**受同机争用**（由 --contested 显式声明），
+# 它的墙钟只能当上界用：争用会抬高它，不会压低它。
+run,contested,wall_min,slo_pct,steps,Rbar_busy,occ_p50_pct,tau1_ms,tau2_ms,reuse_frac,front_left_min,front_left_anchor,front_slo_at_wall,delta_pp,verdict,valve_true_pct,shed_max,usage_max_pct,active_max,admit_wait_p50_ms,admit_wait_max_ms,admit_n,ctrl_samples
+a100_foyer_hz2,clean,88.3473,100.0000,999,3.103184,8.8,21.6,17.5,0.6966,88.3,a100_cap16,99.9000,0.1000,ON,0.0000,0,51.9000,14,1609.3,51694.1,200,2762
+a100_default,CONTESTED,88.5907,99.6997,999,3.583371,9.5,25.5,18.6,0.6966,88.3,a100_cap16,99.9030,-0.2033,ON,,,,,,,,

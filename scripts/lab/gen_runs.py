@@ -25,6 +25,7 @@ ROWS = """default 200 static
 cap1 200 static
 cap2 200 static
 cap3_fixed 200 static
+cap3_pd 200 static
 cap4 200 static
 cap5 200 static
 pairA_cap2hc 200 static_hc
@@ -32,25 +33,36 @@ pairB_cap2hc 200 static_hc
 cap4_hc_r2 200 static_hc
 cap3_hc_r2 200 static_hc
 cap3_hc 200 static_hc
+cap3_ph 200 static_hc
 cap4_hc 200 static_hc
+cap5_hc 200 static_hc
+cap6_hc 200 static_hc
+cap8_hc 200 static_hc
 foyer_hc 200 foyer
 foyer_hz1 200 foyer
+foyer_hz1_r3 200 foyer
 foyer_hz1_r2 200 foyer
 foyer_hz2_r2 200 foyer
+foyer_hz2_r3 200 foyer
+foyer_scan 200 foyer
 foyer_hz0_r2 200 foyer
 foyer_bres_r2 200 foyer
-foyer_breshz1 200 foyer
+foyer_breshz1_r2 200 foyer
 foyer_nogate 200 foyer
 foyer_rg4 200 foyer
 foyfix_hc 200 foyer
 aimd2 200 aimd
 aimd2_paper 200 aimd
+aimd2_paper_r3 200 aimd
 cap2_25 25 static_hc
 cap3_25 25 static_hc
 cap4_25 25 static_hc
 foyer_push_25 25 foyer
 foyer_hc_r2 200 foyer
-foyer_sf0_r2 200 foyer""".split("\n")
+foyer_sf0_r2 200 foyer
+foyer_scan_r2 200 foyer
+foyer_scan_r3 200 foyer
+foyer_sf0_r3 200 foyer""".split("\n")
 
 
 def tw_conc(d):

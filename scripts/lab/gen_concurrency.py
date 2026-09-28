@@ -32,7 +32,7 @@ decode 间隔中位 τ₂】抬高 25~40%。τ₂ 是客户端实测的、不经
 错的是输入集合。下面有 MIN_RUNS 断言，镜像不全时会直接报错而不是静默给错判决。
 
 """
-import csv, glob, json, os, statistics, sys
+import csv, glob, json, os, statistics, sys, time
 
 OVERLAP_MIN_S = 600.0
 EXPECT_TAU2 = True
@@ -95,8 +95,50 @@ def main():
         if not s or not f:
             skipped.append(os.path.basename(os.path.dirname(d)))
             continue
+        # ⚠ 2026-09-26：**「还在跑的 run」不能进表**，但它必须留在车道计算里。
+        # 判据是 `summary.json`（与 `frontier.py --csv` 修的是同一个坑）。
+        # 两个方向都要对：
+        #   (a) 它自己的行**不写** —— 窗口还在长，τ₂ 只是截到此刻的读数，
+        #       写进数据文件就成了一个会自己变化的「事实」；
+        #   (b) 它**留在 `rows` 里**参与 lane 扫描 —— 它确实占着一条车道，
+        #       而且对任何【已跑完】的 run 来说，`[start, now]` 已经盖住了它们
+        #       的全部重叠区间，所以算出来的争用分钟数与最终值相同。
+        # ⚠ **判据不能只用 `summary.json`**：实测实验机上有 19 条【早就跑完】的 run
+        # 根本没有这个文件（老 run 从没写过、或被清理过），只用它会把它们整行删掉
+        # —— 而 `concurrency.csv` 的 `contested` 列是 `table1.csv` / `reuse.csv` 的上游。
+        # 所以「还在跑」的定义是**两条件的合取**：既没有 `summary.json`，
+        # 日志又是刚刚才写过的（mtime < 30 分钟）—— 前者说「没有完成标记」，
+        # 后者说「它此刻还在长」。只要有完成标记、或者日志已经静了半小时，就算已结束。
+        # ⚠⚠ 2026-09-26（codex r42）：**判据不能用文件 mtime**。
+        # mtime 会被【拷贝】刷新：rsync 保时间戳没问题，但一次 `cp`/`scp` 之后，
+        # 一条**早就跑完、也从没写过 summary.json** 的老 run 会看起来「刚写过」
+        # 而被判成还在跑 → **整行从表里消失**（而这张表的 `contested` 列是
+        # `table1.csv`/`reuse.csv` 的上游）。改用**日志内容里的时间戳**：
+        # `steps.jsonl` 最后一行的 `complete_timestamp` 是该 run 自己记的墙钟，
+        # 拷贝不会改它。
+        _dd = os.path.dirname(d)
+        _sp = os.path.join(_dd, "steps.jsonl")
+        _last = None
+        if os.path.exists(_sp):
+            try:
+                with open(_sp, "rb") as _fh:          # 只读最后 4KB，别把大文件读进来
+                    _fh.seek(max(0, os.path.getsize(_sp) - 4096))
+                    _tail = _fh.read().decode("utf-8", "replace").strip().split("\n")
+                for _ln in reversed(_tail):
+                    try:
+                        _last = json.loads(_ln).get("complete_timestamp")
+                    except Exception:
+                        continue
+                    if _last:
+                        break
+            except Exception:
+                _last = None
+        _age = (time.time() - float(_last)) if _last else 1e9
+        _live = (not os.path.exists(os.path.join(_dd, "summary.json"))) and _age < 1800
+        _done = not _live
         rows.append({"run": os.path.basename(os.path.dirname(d)),
                      "started": s, "finished": f, "gpu": m.get("gpu"),
+                     "done": _done,
                      "window_src": fallback or "metadata"})
     rows.sort(key=lambda r: r["started"])
 
@@ -138,6 +180,10 @@ def main():
             "watch" if r["min_at_ge3"] >= 60.0 else "clean")
         r["tau2_ms"] = tau2(root, r["run"])
 
+    # 落盘只写跑完的；还在跑的另行打印（不静默）。
+    _live = [r["run"] for r in rows if not r["done"]]
+    rows = [r for r in rows if r["done"]]
+
     header = "\n".join([
         "# 并发争用审计 —— 由 scripts/lab/gen_concurrency.py 生成，勿手改",
         "# peak_lanes: 生命周期内同时活着的 run 数峰值（事件扫描，不是重叠对象数+1）",
@@ -158,6 +204,11 @@ def main():
 
     nbad = sum(1 for r in rows if r["verdict"] == "CONTESTED")
     nw = sum(1 for r in rows if r["verdict"] == "watch")
+    if _live:
+        print("⚠ 以下 %d 条 run 还在跑，**没有写进本表**（窗口还会变长；它们仍参与车道扫描）："
+              % len(_live))
+        for n in _live:
+            print("   %s" % n)
     if skipped:
         print("!! 以下 run 的 metadata 既没有 finished 也没有 wall_s，未能纳入（会静默丢数据）：")
         for n in skipped:

@@ -1,0 +1,6 @@
+# 本 tier 的 7 个静态 run 的 τ₂ 上界 = 21.4 ms（正文写 “ten times the 21.4 ms maximum”）
+# 复用列【不报】：第 2 次尝试有 2 步失败，实测 prompt 比计划少 126,897，`prompt - uncached` 会把缺口算成复用（gen_a100.one 的断言会直接退出）。
+# 由 scripts/lab/gen_a100_baseline.py 生成；两次尝试都不是可用的基线
+run,attempt,pool_tokens,wall_min,slo_pct,steps,failed_steps,tau2_ms,occ_p50_pct,occ_mean_pct,watch_n,watch_foreign,dirty_span_min,dirty_before_end_min
+a100_default,1,983728,88.5907,99.6997,999,0,18.6199,9.5183,13.2623,341,82,23.7215,23.8470
+a100_default_r2,2,817527,148.0592,32.9329,999,2,222.6867,95.3428,81.2783,566,566,147.5941,147.8312

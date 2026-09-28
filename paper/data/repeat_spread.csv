@@ -1,28 +1,39 @@
 # 同 policy + 同 trace 的重复 run 之间的墙钟散布 —— gen_repeat_spread.py 生成（实验机上跑）
-# 判据：同 policy + 同 trace 且落地 >=2 条；散布 = (max-min)/mean，单位 %。
-# 论文 §VI 引的上限（跨配置与档位）就是本表的 max；全表 21 组，min 0.0%、max 21.96%。
-# 分组键 = policy + trace + HiCache，只算【跑完的】run；same_code_gen 标注该组是否同代码代
-#   （代码在两次之间会变，所以精确同代的分组太稀疏 —— 上界因此含少量代码漂移）。
-# 不进表：被争用作废的旧测量（pois200_foyer_bres pois200_foyer_hz0 pois200_foyer_hz2）—— 它与 _r2 同 policy 但不同类，
-policy,trace,n,same_code_gen,wall_min_min,wall_min_max,spread_pct,runs
-budget3,replay_night200_clean.csv,3,N,540.07,669.25,21.96,"budget200c_budget3 budget200c_budget3_r2 budget200c_budget3_r3"
-static=6,replay_night25.csv,3,N,22.81,27.91,19.68,"load25_cap6 load25c_cap6 load25c_cap6_hc"
-budget2,replay_night200.csv,3,N,227.13,263.62,15.16,"budget2 budget2_r2 budget2_r3"
-budget3,replay_night25.csv,3,N,54.83,62.07,12.34,"load25c_budget3 load25c_budget3_hc thr25_base"
-budget2,replay_night25.csv,2,N,27.85,31.09,11.00,"load25_budget2 load25c_budget2"
-foyer:target=0.90;gs=0.35,replay_pois200_l04.csv,2,N,300.24,319.05,6.08,"pois200_foyer_rl90 pois200_foyer_rl90fix"
-static=3+HC,replay_varload_lo2hi.csv,4,N,254.90,269.60,5.68,"pois200_var_cap3 pois200_var_switch pois200_var_switch2 pois200_var_switch2b"
-static=4,replay_night200.csv,3,N,223.39,233.78,4.58,"cap4 cap4_r2 cap4_r3"
-budget3:hw=0;target=0.95+HC,replay_pois200_l04.csv,4,N,285.98,299.29,4.52,"pois200_foyer_hc pois200_foyer_hc_r2 pois200_pairA_foyerhc pois200_pairB_foyerhc"
-foyer:target=0.99;gs=0.05;hs=0.98,replay_pois200_l04.csv,2,N,362.00,377.55,4.20,"pois200_foyer_rl99 pois200_foyer_rl99fix"
-aimd,replay_night200.csv,3,N,267.05,277.29,3.76,"aimd aimd_r2 aimd_r3"
-budget3:hw=0;target=0.95,replay_night25.csv,2,N,33.04,33.93,2.68,"thr25_push thr25_push_r2"
-static=3+HC,replay_pois200_l04.csv,2,N,236.40,242.47,2.54,"pois200_cap3_hc pois200_cap3_hc_r2"
-static=2+HC,replay_pois200_l04.csv,2,Y,303.38,310.61,2.35,"pois200_pairA_cap2hc pois200_pairB_cap2hc"
-static=3,replay_pois200_l04.csv,2,N,259.18,264.79,2.14,"pois200_cap3_fixed pois200_cap3_r2"
-default,replay_night25.csv,2,N,31.55,32.22,2.11,"load25_default load25c_default"
-budget3:hw=0;target=0.95;horizon=1+HC,replay_pois200_l04.csv,2,N,261.99,266.96,1.88,"pois200_foyer_hz1 pois200_foyer_hz1_r2"
-static=4,replay_realhr.csv,2,N,70.53,71.66,1.59,"realhr_cap4 realhr_cap4_r2"
-static=4+HC,replay_pois200_l04.csv,2,N,215.83,218.98,1.45,"pois200_cap4_hc pois200_cap4_hc_r2"
-static=2,replay_night200_clean.csv,2,N,298.16,301.75,1.20,"budget200c_cap2 budget200c_cap2_hc"
-budget3:hw=0;target=0.95,replay_realhr.csv,2,N,79.28,79.30,0.02,"realhr_foyer realhr_foyer_r2"
+# 判据：同 policy + 同 trace + 同 HiCache + 同驱逐政策 + 同池子 且落地 >=2 条；散布 = (max-min)/mean，单位 %。
+# 论文 §VI 引的上限（跨配置与档位）就是本表的 max；全表 24 组，min 0.0%、max 21.96%。
+# 分组键 = policy + trace + HiCache + 驱逐政策 + 池子（池子按 ±20 聚类），只算【跑完的】run；
+#   same_code_gen 标注该组是否同代码代（代码在两次之间会变，所以精确同代的分组太稀疏），
+#   pool 列给出该组的池子区间 —— 缺了它，读者无法判断两条 run 是不是同一个配置。
+#   ev 列给出该组的驱逐政策（从 build.TURNSTILE_HICACHE_ARGS 里机械读，读不到记字面 unset）——
+#     它是 2026-09-27 补的第四根轴：foyer_hc_slru 与 foyer_hc 的 policy 串逐字相同，
+#     只差 --radix-eviction-policy slru，不进键就会被当成「同一配置的重复」。
+# 不进表：被争用作废的旧测量（pois200_foyer_bres pois200_foyer_breshz1 pois200_foyer_hz0 pois200_foyer_hz2）—— 它与 _r2 同 policy 但不同类，
+# ⚠ hc_src=unknown 的组：那一组的 run 的 metadata 里【没有】hicache_enabled 字段
+#   （老 run，2026-09-25 实测 78/155 缺该字段），因此这一组可能把 +HiCache 与
+#   device-only 混在一起 —— 名字里的 _hc 只是线索不是证据，不能据此改分组。
+#   全表只在 policy 列显示 +HC，hc_src=unknown 的行【不代表】该组是 device-only。
+policy,trace,n,pool,ev,hc_src,same_code_gen,wall_min_min,wall_min_max,spread_pct,runs
+budget3,replay_night200_clean.csv,3,101432~101432,unset,unknown,N,540.07,669.25,21.96,"budget200c_budget3 budget200c_budget3_r2 budget200c_budget3_r3"
+static=6,replay_night25.csv,2,101432~101432,unset,unknown,N,22.81,27.91,20.12,"load25c_cap6 load25c_cap6_hc"
+budget2,replay_night200.csv,3,114495~114495,unset,unknown,N,227.13,263.62,15.16,"budget2 budget2_r2 budget2_r3"
+budget3,replay_night25.csv,3,101432~101432,unset,unknown,N,54.83,62.07,12.34,"load25c_budget3 load25c_budget3_hc thr25_base"
+budget2,replay_night25.csv,2,101432~101432,unset,unknown,N,27.85,31.09,11.00,"load25_budget2 load25c_budget2"
+budget3:hw=0;target=0.95;horizon=1+HC,replay_pois200_l04.csv,3,101432~101432,unset,meta,N,261.99,280.63,6.91,"pois200_foyer_hz1 pois200_foyer_hz1_r2 pois200_foyer_hz1_r3"
+foyer:target=0.90;gs=0.35,replay_pois200_l04.csv,2,101430~101432,unset,meta,N,300.24,319.05,6.08,"pois200_foyer_rl90 pois200_foyer_rl90fix"
+static=3+HC,replay_pois200_l04.csv,4,101432~101432,unset,meta,N,236.40,251.09,6.06,"pois200_cap3_hc pois200_cap3_hc_r2 pois200_cap3_ph pois200_slice23_hc"
+static=3+HC,replay_varload_lo2hi.csv,4,101432~101434,unset,meta,N,254.90,269.60,5.68,"pois200_var_cap3 pois200_var_switch pois200_var_switch2b pois200_var_switch2"
+static=3,replay_pois200_l04.csv,3,101432~101432,unset,mixed,N,252.57,264.79,4.72,"pois200_cap3_fixed pois200_cap3_pd pois200_cap3_r2"
+static=4,replay_night200.csv,3,114495~114495,unset,unknown,N,223.39,233.78,4.58,"cap4 cap4_r2 cap4_r3"
+budget3:hw=0;target=0.95+HC,replay_pois200_l04.csv,4,101432~101432,unset,meta,N,285.98,299.29,4.52,"pois200_foyer_hc pois200_foyer_hc_r2 pois200_pairA_foyerhc pois200_pairB_foyerhc"
+foyer:target=0.99;gs=0.05;hs=0.98,replay_pois200_l04.csv,2,101432~101432,unset,meta,N,362.00,377.55,4.20,"pois200_foyer_rl99 pois200_foyer_rl99fix"
+aimd,replay_night200.csv,3,114495~114495,unset,unknown,N,267.05,277.29,3.76,"aimd aimd_r2 aimd_r3"
+budget3scan:hw=0;target=0.95+HC,replay_pois200_l04.csv,3,101432~101432,unset,meta,Y,268.84,277.80,3.28,"pois200_foyer_scan pois200_foyer_scan_r2 pois200_foyer_scan_r3"
+static=1,replay_pois200_l04.csv,2,101432~101432,unset,meta,N,517.88,533.55,2.98,"pois200_cap1 pois200_cap1_r2"
+budget3:hw=0;target=0.95,replay_night25.csv,2,101432~101432,unset,unknown,N,33.04,33.93,2.68,"thr25_push thr25_push_r2"
+static=2+HC,replay_pois200_l04.csv,2,101432~101432,unset,meta,Y,303.38,310.61,2.35,"pois200_pairA_cap2hc pois200_pairB_cap2hc"
+static=4,replay_realhr.csv,2,101432~101432,unset,meta,N,70.53,71.66,1.59,"realhr_cap4 realhr_cap4_r2"
+static=4+HC,replay_pois200_l04.csv,2,101432~101432,unset,meta,N,215.83,218.98,1.45,"pois200_cap4_hc pois200_cap4_hc_r2"
+static=2,replay_night200_clean.csv,2,101432~101432,unset,unknown,N,298.16,301.75,1.20,"budget200c_cap2 budget200c_cap2_hc"
+budget3:hw=0;target=0.95;horizon=2+HC,replay_pois200_l04.csv,2,101432~101432,unset,meta,N,277.09,280.22,1.12,"pois200_foyer_hz2_r2 pois200_foyer_hz2_r3"
+budget3:hw=0;target=0.95;sf=0+HC,replay_pois200_l04.csv,2,101432~101432,unset,meta,N,269.47,269.59,0.04,"pois200_foyer_sf0_r2 pois200_foyer_sf0_r3"
+budget3:hw=0;target=0.95,replay_realhr.csv,2,101432~101432,unset,mixed,N,79.28,79.30,0.02,"realhr_foyer realhr_foyer_r2"

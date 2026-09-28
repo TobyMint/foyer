@@ -4,21 +4,33 @@
 # verdict   = 按 ±1.0pp 判带：>+1 越过 / 在带内平局 / <-1 在线下
 # contested = 同机争用窗口标记（concurrency.csv），与表里的 ‡ 同源
 run,label,wall_min,conc,slo_pct,front_slo,delta_pp,verdict,contested,anchor
+cap6_hc,cap6+HC,207.8470,5.85,28.9289,28.9289,0.0000,TIE,clean,1
 cap4_hc_r2,cap4+HC (repeat),209.1372,3.87,68.4685,68.4685,0.0000,TIE,clean,1
 cap4_hc,cap4+HC,213.0021,3.93,63.3634,70.9172,-7.5539,BELOW,clean,0
+cap5_hc,cap5+HC,227.6382,4.74,47.3473,80.1902,-32.8429,BELOW,clean,0
 cap3_hc_r2,cap3+HC (repeat),230.3082,2.97,81.8819,81.8819,0.0000,TIE,clean,1
+cap3_ph,"cap3 (paired, +HC)",233.8256,2.97,81.4815,82.4096,-0.9282,TIE,clean,0
 cap3_hc,cap3+HC,236.4166,2.93,81.0811,82.7984,-1.7173,BELOW,clean,0
+cap8_hc,cap8+HC,241.8400,7.63,9.5095,83.6122,-74.1026,BELOW,clean,0
+cap3_pd,"cap3 (paired, dev)",246.4463,2.97,79.2793,84.3033,-5.0240,BELOW,clean,0
 cap4,cap4,249.9184,3.94,55.6557,84.8243,-29.1686,BELOW,clean,0
 foyer_hz1,horizon$=$1,255.8371,2.58,84.7848,85.7123,-0.9275,TIE,clean,0
+foyer_breshz1_r2,"horizon$=$1, no hw",256.9884,2.92,77.5776,85.8851,-8.3075,BELOW,clean,0
 cap3_fixed,cap3 (fixed),258.6963,2.89,74.3744,86.1413,-11.7670,BELOW,clean,0
 foyer_hz1_r2,horizon$=$1 (repeat),260.7962,2.69,80.8809,86.4564,-5.5755,BELOW,clean,0
 cap5,cap5,260.8966,4.89,27.1271,86.4715,-59.3443,BELOW,clean,0
+foyer_scan_r2,scans the queue (2nd run),262.6125,2.41,88.8889,86.7289,2.1600,ABOVE,clean,0
 foyer_sf0_r2,single-flight off,263.3403,2.43,86.2863,86.8381,-0.5519,TIE,watch,0
+foyer_sf0_r3,single-flight off (2nd run),263.4591,2.44,86.9870,86.8560,0.1310,TIE,clean,0
 foyer_hz0_r2,horizon$=$0,264.2349,2.64,79.7798,86.9724,-7.1926,BELOW,clean,0
 aimd2,"AIMD, retuned",264.6104,3.87,52.7528,87.0287,-34.2759,BELOW,clean,0
 foyer_bres_r2,resident base,265.8658,2.41,85.8859,87.2171,-1.3312,BELOW,clean,0
+foyer_scan,scans the queue,266.3133,2.34,88.5886,87.2842,1.3044,ABOVE,clean,0
 foyer_hz2_r2,horizon$=$2,270.9757,2.28,87.6877,87.9838,-0.2961,TIE,clean,0
+foyer_scan_r3,scans the queue (3rd run),271.7073,2.29,88.3884,88.0936,0.2948,TIE,clean,0
 foyer_nogate,"no gate, no resv.",272.3026,3.25,66.5666,88.1829,-21.6163,BELOW,watch,0
+foyer_hz2_r3,horizon$=$2 (2nd run),274.2295,2.22,88.6887,88.4720,0.2167,TIE,clean,0
+foyer_hz1_r3,horizon$=$1 (3rd run),274.4405,2.37,85.2853,88.5036,-3.2184,BELOW,clean,0
 foyer_rg4,running gate$=$4,282.3023,3.03,64.2929,89.6833,-25.3904,BELOW,watch,0
 default,no control,288.6046,94.91,3.0090,90.6289,-87.6198,BELOW,clean,0
 foyer_hc,horizon$=$3 (base),291.2765,2.06,89.7898,91.0298,-1.2400,BELOW,clean,0
@@ -26,7 +38,7 @@ foyer_hc_r2,horizon$=$3 (2nd run),293.2012,2.07,89.5896,91.3186,-1.7290,BELOW,cl
 pairB_cap2hc,cap2+HC,295.0208,1.99,91.5916,91.5916,0.0000,TIE,clean,1
 cap2,cap2,304.2467,1.99,89.4895,91.7187,-2.2293,BELOW,clean,0
 pairA_cap2hc,pairA_cap2hc,304.4554,1.96,90.5906,91.7216,-1.1310,BELOW,clean,0
-foyer_breshz1,"horizon$=$1, no hw",310.8542,2.77,72.2723,91.8098,-19.5375,BELOW,CONTESTED,0
-aimd2_paper,"AIMD, paper params",364.2547,1.91,81.3814,92.5458,-11.1644,BELOW,CONTESTED,0
+aimd2_paper_r3,"AIMD, paper params",326.8323,2.17,79.3794,92.0300,-12.6507,BELOW,clean,0
+aimd2_paper,aimd2_paper,364.2547,1.91,81.3814,92.5458,-11.1644,BELOW,CONTESTED,0
 foyfix_hc,all throttles off,414.9596,2.58,46.1461,93.2446,-47.0985,BELOW,clean,0
 cap1,cap1,527.4320,1.00,94.7948,94.7948,0.0000,TIE,CONTESTED,1

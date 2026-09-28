@@ -34,27 +34,25 @@ RESULTS = os.environ.get("TURNSTILE_RESULTS", "/data/xbw/turnstile/results/night
 # 而 cap1 因为墙钟 527.4320 > 锚点 527.4 被判成 OUT-OF-RANGE。
 # 上一轮把 gen_table 改成 import 本模块，两条管线【一致】了 —— 但一致在显示值上。
 # 坐标来自 paper/data/runs_precise.csv（frontier.py --csv 的产物），逐位相符。
-FRONT = [(209.137154, 68.468468, "cap4_hc_r2"),
+# ⚠ 2026-09-25：`cap6_hc`（207.8470，SLO 28.93）是**静态点里最快的**，
+# 所以按上左包络的定义它是新的**最左锚点** —— 图 1 一直在这么画（它不硬编码，
+# 而是从 runs.csv 现算包络），而这里的 FRONT 是硬编码的、漏了它，
+# 于是表 I 把 207.8 分钟的 cap6_hc 报成「left of front」（codex 第 26 轮抓到）。
+# 加它**不移动任何已报告的 Δ**：现有控制器臂都比 209.137 慢，插值区间不变。
+import envelope as _ENV  # noqa: E402  （同目录共用定义，见该模块 docstring）
+
+FRONT = [(207.846997, 28.928929, "cap6_hc"),
+         (209.137154, 68.468468, "cap4_hc_r2"),
          (230.308193, 81.881882, "cap3_hc_r2"),
          (295.020816, 91.591592, "pairB_cap2hc"),
          (527.431963, 94.794795, "cap1")]
 
 
 def front_slo(wall):
-    """前沿在给定墙钟处的 SLO 上界（分段线性插值）。超出锚点范围返回 None——
-    范围外没有可比的前沿，不能给判决，否则端点外推会凭空造出"越过"。"""
-    # 容差：锚点 run 自己的墙钟与 FRONT 里的字面量会差几个 ulp，不加容差会把
-    # 锚点自己判成 LEFT-OF-FRONT（2026-09-24 全精度化之后暴露出来的）。
-    EPS = 1e-6
-    if wall < FRONT[0][0] - EPS or wall > FRONT[-1][0] + EPS:
-        return None
-    for (w0, s0, _), (w1, s1, _) in zip(FRONT, FRONT[1:]):
-        # 容差也要加在这里：只加在上面的范围检查是不够的 —— 锚点 run 自己的墙钟
-        # 比 FRONT 里的字面量小 5.7e-8，于是 w0 <= wall 为假、整条循环都不匹配，
-        # 锚点被自己的前沿判成 LEFT-OF-FRONT（2026-09-24 全精度化之后暴露的）。
-        if w0 - EPS <= wall <= w1 + EPS:
-            return s0 + (s1 - s0) * (wall - w0) / (w1 - w0)
-    return None
+    """前沿在给定墙钟处的 SLO 上界。**实现已抽到 envelope.front_slo 共用**
+    （A100 要用同一份逻辑算它自己的前沿，各写一份必然分叉）。
+    超出锚点范围返回 None —— 范围外没有可比的前沿，不能给判决。"""
+    return _ENV.front_slo(wall, FRONT)
 
 
 def summarise(run):
@@ -86,6 +84,42 @@ def summarise(run):
     return dict(run=run, steps=len(rows), wall=wall, conc=sum(act) / N, slo=slo, sd=sd)
 
 
+TIE_PP = 1.0   # ±1.0 pp 打平带 —— **唯一定义**，envelope.classify 与这里共用
+
+
+def classify(delta):
+    """由 Δ 给判词。**与 gen_a100_delta.py 共用同一份阈值与判词表**（CLAUDE.md 纪律 2：
+    两个脚本算同一个量必须共用定义；2026-09-25 codex r28 指出那边各写了一份）。"""
+    # ⚠ 边界必须**两侧一致**。正文（sec_background.tex）写的是「more than $+1.0$pp
+    # 算上方，less than $-1.0$pp 算下方，两者之间算 on」—— 即 **恰好 −1.0 落在带内**。
+    # 原来下界写的是 `delta > -TIE_PP`，于是恰好 −1.0 被判成 BELOW，**与正文相反**
+    # （2026-09-26 codex 第 30 轮抓到；现有报告点没有恰好落在 −1.0 的，所以一直没响）。
+    # 上界本来就是对的：`delta > TIE_PP` 让恰好 +1.0 落回 ON。
+    if delta > TIE_PP:
+        return "ABOVE  (越过前沿)"
+    if delta >= -TIE_PP:
+        return "ON     (在线上, 不算赢)"
+    return "BELOW  (在线下)"
+
+
+# ⚠⚠ 2026-09-27（中立复核 r49 第 C17 条）：**短标签版，从 `classify` 派生**。
+# 为什么要有：`gen_table.py` 与 `compare_rerun.py` 各自**内联**了 ±1.0 的阈值比较，
+# 而检查器里那条「打平带只有 frontier.py 一处定义」的守卫，正则只认**赋值式**
+# （`^\s*([A-Za-z_]\w*)\s*=\s*1\.0\s*$`）—— **内联的 `> 1.0` 它永远看不到**。
+# 也就是说那条不变量**当时是假的**，而守卫报 0 MISS（「看起来在守」）。
+# 现在把短标签也收进 frontier：**判据只有一份**，两处调用它。
+_SHORT = {"ABOVE": "ABOVE", "ON": "TIE", "BELOW": "BELOW"}
+
+
+def classify_short(delta):
+    """`classify` 的短标签版（CSV 的 `verdict` 列用 `ABOVE`/`TIE`/`BELOW`）。
+
+    **从 `classify` 派生**（而不是重写一遍 if）：分支结构只有一处，
+    改阈值/改边界两侧都自动跟着走。
+    """
+    return _SHORT[classify(delta).split()[0]]
+
+
 def verdict(d):
     f = front_slo(d["wall"])
     d["front"] = float("nan") if f is None else f
@@ -95,12 +129,7 @@ def verdict(d):
                         if d["wall"] < FRONT[0][0] else "OUT-OF-RANGE (超出现有静态点范围)")
         return d
     d["delta"] = d["slo"] - f
-    if d["delta"] > 1.0:
-        d["verdict"] = "ABOVE  (越过前沿)"
-    elif d["delta"] > -1.0:
-        d["verdict"] = "ON     (在线上, 不算赢)"
-    else:
-        d["verdict"] = "BELOW  (在线下)"
+    d["verdict"] = classify(d["delta"])
     return d
 
 
@@ -115,10 +144,23 @@ def emit_csv():
     """
     import csv as _csv
     w = _csv.writer(sys.stdout)
+    # 表头注释：这张表**被正文引用**（§results 的脚注与 §repro 各一处），
+    # 而它此前没有一行说明是谁生成的 —— 与「每张表都要能追到生成器」不符。
+    w.writerow(["# 全精度坐标 —— 由 scripts/lab/frontier.py --csv 生成，勿手改"])
+    w.writerow(["# 只收【跑完的】run（判据：summary.json 存在）—— 在跑的 run 的部分日志不算，"])
+    w.writerow(["#   跑完但不足 999 步的算（rg4 998 / no-control 997），步数落在最后一列。"])
     w.writerow(["run", "wall_min", "slo_pct", "steps"])
     short = []
     for nm in sorted(os.listdir(RESULTS)):
         if not nm.startswith("pois200_"):
+            continue
+        # ⚠ **还在跑的 run 不能进这张表。** 「不过滤步数」的初衷是让【跑完了但
+        # 步数不足】的 run（rg4 998、no-control 997）也有全精度坐标，可它同时
+        # 把【在跑的】run 的部分日志也收了进来 —— 2026-09-26 实测：`foyer_hz1_r3`
+        # 以 **31/999 步**的残缺行进了 `runs_precise.csv`，而它当时正在跑。
+        # 判据用 `summary.json`：**跑完的才有**（跑完但只有 998 步的也有）。
+        # 这与「缺了多少步在数据里看得见」不冲突：看见的是【终态】的步数。
+        if not os.path.exists(os.path.join(RESULTS, nm, "summary.json")):
             continue
         d = summarise(nm)
         if not d:

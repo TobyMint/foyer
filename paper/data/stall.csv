@@ -1,15 +1,29 @@
 # 控制器「不放行窗口」审计 —— 由 scripts/lab/gen_stall.py 生成，勿手改
-# 判据：连续控制周期内 (a) 不放行 (b) 阀门开 (c) 引擎空闲 (d) waiting_n>=85，
-#       且窗口 >= 150 s。详见脚本 docstring。
-run,n_windows,total_s,max_s,pct_wall,waiting_med,lengths
-foyer_hc,0,0.0,,0.0,,-
-foyer_hc_r2,0,0.0,,0.0,,-
-foyer_sf0_r2,0,0.0,,0.0,,-
-foyer_hz0_r2,1,195.0,195.0,1.2,128,195
-foyer_hz1,0,0.0,,0.0,,-
-foyer_hz2_r2,0,0.0,,0.0,,-
-foyer_bres_r2,1,240.1,240.1,1.47,89,240
-foyer_breshz1,1,170.5,170.5,0.9,130,171
-foyer_nogate,0,0.0,,0.0,,-
-foyer_rg4,1,173.2,173.2,1.0,111,173
-foyfix_hc,9,3036.2,505.8,12.02,122,225|197|181|506|455|441|447|327|256
+# 判据：连续控制周期内 (a) 不放行 (b) valve【为假】= 阀门没在挡 (c) 引擎空闲
+#       (d) waiting_n>=85；且窗口 >= 150 s。详见脚本 docstring。
+# ⚠ 2026-09-26 修正：判据 (b) 原来写成 valve【为真】，实测极性相反 ——
+#   那选出来的是「阀门正在挡」的周期。旧数见 n_windows_valve_holding 列。
+# pct_span：窗口时长 / metrics 的**采样跨度** —— 不是 run_summary 的墙钟
+#   （两者差约 6 分钟；列名原来叫 pct_wall，字面与含义不符，2026-09-26 改）。
+# resume_forced：窗口结束后第一次放行走的是不是饥饿逃生（forced）。
+# admits/fifo_out_of_order/fifo_pct：放行次数、其中【在更早到达的会话仍在等时
+#   放行别人】的次数与占比 —— 「只看队首」的日志指纹（脚本里带断言）。
+# max_per_cycle：一个控制周期里最多放行几个 —— 单飞关掉时会 >1。
+run,n_windows,total_s,max_s,pct_span,waiting_med,resume_forced,n_windows_valve_holding,old_total_s,old_pct_span,admits,fifo_out_of_order,fifo_pct,max_per_cycle,lengths
+foyer_hc,1,166.6,166.6,0.93,105,yes,0,,,200,0,0.0,1,167
+foyer_hc_r2,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_sf0_r2,0,0.0,,0.0,,,0,,,200,80,40.0,2,-
+foyer_hz0_r2,0,0.0,,0.0,,,1,195.0,1.2,200,0,0.0,1,-
+foyer_hz1,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_hz2_r2,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_hz2_r3,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_bres_r2,0,0.0,,0.0,,,1,240.1,1.47,200,0,0.0,1,-
+foyer_breshz1_r2,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_nogate,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_rg4,0,0.0,,0.0,,,1,173.2,1.0,200,0,0.0,1,-
+foyer_scan,0,0.0,,0.0,,,0,,,200,76,38.0,1,-
+foyer_scan_r2,0,0.0,,0.0,,,0,,,200,77,38.5,1,-
+foyer_scan_r3,0,0.0,,0.0,,,0,,,200,69,34.5,1,-
+foyer_hc_slru,0,0.0,,0.0,,,0,,,200,0,0.0,1,-
+foyer_sf0_r3,0,0.0,,0.0,,,0,,,200,87,43.5,2,-
+foyfix_hc,0,0.0,,0.0,,,9,3036.2,12.02,200,116,58.0,6,-

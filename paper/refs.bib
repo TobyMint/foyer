@@ -189,9 +189,262 @@
 
 @misc{qwen2coder,
   title        = {Qwen2.5-Coder Technical Report},
-  author       = {Hui, Binyuan and Yang, Jian and Cui, Zeyu and Yang, Jiaxi and Liu, Dayiheng and Zhang, Lei and Liu, Tianyu and Zhang, Jiajun and Yu, Bowen and Lu, Keming and Dang, Kai and Yang, An and Men, Rui and Huang, Fei and Quan, Shanghaoran and Ren, Xingzhang and Ren, Xuancheng and Zhou, Jingren and Lin, Junyang},
+  author       = {Hui, Binyuan and Yang, Jian and Cui, Zeyu and Yang, Jiaxi and Liu, Dayiheng and Zhang, Lei and Liu, Tianyu and Zhang, Jiajun and Yu, Bowen and Lu, Keming and Dang, Kai and {Yang Fan} and {Yichang Zhang} and Yang, An and Men, Rui and Huang, Fei and {Bo Zheng} and {Yibo Miao} and Quan, Shanghaoran and {Yunlong Feng} and Ren, Xingzhang and Ren, Xuancheng and Zhou, Jingren and Lin, Junyang},
   year         = {2024},
   eprint       = {2409.12186},
   archivePrefix= {arXiv},
   primaryClass = {cs.CL}
+}
+
+% ============================================================================
+% 2026-09-27 补入（20 -> 46 条），回应作者「引用数量太少」的意见。
+% ⚠ 每一条的 标题/作者/年份/venue/页码/DOI 都经 **Crossref API 按 DOI 逐条核出**
+%   （api.crossref.org/works/<doi>），不是凭记忆写的；RTAS 2026 那批另与本仓
+%   reference_paper/rtas2026/INDEX.md 的页码交叉核对过。
+% ⚠ 红线：arXiv 2608.30830 **禁引**；PrefixShield 2608.01657 已占
+%   "admission responsibility" 术语，不引；CONCUR 已中 ICML 2026，不写「仅预印本」。
+% 引在哪、为什么引见 docs/ 的引用落点表（每条都落在支撑它的那句上，不堆在 Related Work）。
+% ============================================================================
+
+@inproceedings{zerowsap,
+  title     = {{ZeroSwap}: Minimizing Swap Overhead for Real-Time Multi-{DNN} Inference via {SSD}-based {GPU} Memory Extension},
+  author    = {Kang, Woosung and Muzzini, Filippo and Brilli, Gianluca and Kim, Jong-Chan and Lee, Jinkyu and Chwa, Hoon Sung},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {234--246},
+  doi       = {10.1109/RTAS68450.2026.00030}
+}
+
+@inproceedings{etm2,
+  title     = {{ETM}$^2$: Empowering Traditional Memory Bandwidth Regulation using {ETM}},
+  author    = {Zuepke, Alexander and Pradhan, Ashutosh and Ottaviano, Daniele and Bastoni, Andrea and Caccamo, Marco},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {180--193},
+  doi       = {10.1109/RTAS68450.2026.00026}
+}
+
+@inproceedings{perbank26,
+  title     = {Per-Bank Memory Bandwidth Regulation for Predictable and Performant Real-Time Systems},
+  author    = {Sullivan, Connor Rudy and Mamandipoor, Amin and Strickler, Cole Ridge and Yun, Heechul},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {167--179},
+  doi       = {10.1109/RTAS68450.2026.00025}
+}
+
+@inproceedings{perbank24,
+  title     = {Per-Bank Bandwidth Regulation of Shared Last-Level Cache for Real-Time Systems},
+  author    = {Sullivan, Connor and Manley, Alex and Alian, Mohammad and Yun, Heechul},
+  booktitle = {2024 IEEE Real-Time Systems Symposium (RTSS)},
+  year      = {2024},
+  pages     = {336--348},
+  doi       = {10.1109/RTSS62706.2024.00036}
+}
+
+@inproceedings{memguard,
+  title     = {{MemGuard}: Memory bandwidth reservation system for efficient performance isolation in multi-core platforms},
+  author    = {Yun, Heechul and Yao, Gang and Pellizzoni, Rodolfo and Caccamo, Marco and Sha, Lui},
+  booktitle = {2013 IEEE 19th Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2013},
+  pages     = {55--64},
+  doi       = {10.1109/RTAS.2013.6531079}
+}
+
+@inproceedings{mempol,
+  title     = {{MemPol}: Policing Core Memory Bandwidth from Outside of the Cores},
+  author    = {Zuepke, Alexander and Bastoni, Andrea and Chen, Weifan and Caccamo, Marco and Mancuso, Renato},
+  booktitle = {2023 IEEE 29th Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2023},
+  pages     = {235--248},
+  doi       = {10.1109/RTAS58335.2023.00026}
+}
+
+@inproceedings{dynamo,
+  title     = {Analysis of Dynamic Memory Bandwidth Regulation in Multi-core Real-Time Systems},
+  author    = {Agrawal, Ankit and Mancuso, Renato and Pellizzoni, Rodolfo and Fohler, Gerhard},
+  booktitle = {2018 IEEE Real-Time Systems Symposium (RTSS)},
+  year      = {2018},
+  pages     = {230--241},
+  doi       = {10.1109/RTSS.2018.00040}
+}
+
+@article{yun2016,
+  title   = {Memory Bandwidth Management for Efficient Performance Isolation in Multi-Core Platforms},
+  author  = {Yun, Heechul and Yao, Gang and Pellizzoni, Rodolfo and Caccamo, Marco and Sha, Lui},
+  journal = {IEEE Transactions on Computers},
+  volume  = {65},
+  number  = {2},
+  pages   = {562--576},
+  year    = {2016},
+  doi     = {10.1109/TC.2015.2425889}
+}
+
+@inproceedings{rtswap,
+  title     = {{RT-Swap}: Addressing {GPU} Memory Bottlenecks for Real-Time Multi-{DNN} Inference},
+  author    = {Kang, Woosung and Lee, Jinkyu and Lee, Youngmoon and Oh, Sangeun and Lee, Kilho and Chwa, Hoon Sung},
+  booktitle = {2024 IEEE 30th Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2024},
+  pages     = {373--385},
+  doi       = {10.1109/RTAS61025.2024.00037}
+}
+
+@inproceedings{xiang2019,
+  title     = {Pipelined Data-Parallel {CPU}/{GPU} Scheduling for Multi-{DNN} Real-Time Inference},
+  author    = {Xiang, Yecheng and Kim, Hyoseung},
+  booktitle = {2019 IEEE Real-Time Systems Symposium (RTSS)},
+  year      = {2019},
+  pages     = {392--405},
+  doi       = {10.1109/RTSS46320.2019.00042}
+}
+
+@inproceedings{tpdnndpu,
+  title     = {Time-Predictable Acceleration of Deep Neural Networks on {FPGA} {SoCs} with Multi-Core {DPUs}},
+  author    = {Aromolo, Federico and Salamini, Niko and Del Granchio, Jacopo and Biondi, Alessandro and Marinoni, Mauro and Buttazzo, Giorgio},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {275--288},
+  doi       = {10.1109/RTAS68450.2026.00033}
+}
+
+@inproceedings{aiheat,
+  title     = {{AI} Inference in the Heat: Thermal-Aware Strict Partitioning for Configurable Real-Time Gang Tasks},
+  author    = {Sun, Binqi and Li, Jinyang and Kloda, Tomasz and Abdelzaher, Tarek and Caccamo, Marco},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {247--260},
+  doi       = {10.1109/RTAS68450.2026.00031}
+}
+
+@inproceedings{lmjamming,
+  title     = {Real-Time Language Model Jamming: A Case Study for Live Music Accompaniment Generation},
+  author    = {Zheng, Bowen and Yang, Andrew H. and Ruan, Jiaqi and He, Jia and Li, Xinyue and Chen, Yuan-Hsin and Wang, Ziyu and Ma, Xiaosong},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {261--274},
+  doi       = {10.1109/RTAS68450.2026.00032}
+}
+
+@inproceedings{fwagnostic,
+  title     = {Framework-Agnostic Model Inference for Intra-Thread Real-Time Tasks},
+  author    = {Ye, Bite and Markovi{\'c}, Filip and Brandenburg, Bj{\"o}rn B.},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {68--81},
+  doi       = {10.1109/RTAS68450.2026.00013}
+}
+
+@inproceedings{schedconstraints,
+  title     = {Scheduling Constraints: A Universal {OS} Mechanism for Managing Shared Resources},
+  author    = {Lumme, Moritz and Roitzsch, Michael and Lackorzy{\'n}ski, Adam},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {400--413},
+  doi       = {10.1109/RTAS68450.2026.00042}
+}
+
+@inproceedings{genprofiling,
+  title     = {Generative Profiling for Soft Real-Time Systems and its Applications to Resource Allocation},
+  author    = {Bondar, Georgiy A. and Eisenklam, Abigail and Cai, Yifan and Gifford, Robert and Sial, Tushar and Phan, Linh Thi Xuan and Halder, Abhishek},
+  booktitle = {2026 IEEE 32nd Real-Time and Embedded Technology and Applications Symposium (RTAS)},
+  year      = {2026},
+  pages     = {289--302},
+  doi       = {10.1109/RTAS68450.2026.00034}
+}
+
+@article{wilhelm2008,
+  title   = {The worst-case execution-time problem---overview of methods and survey of tools},
+  author  = {Wilhelm, Reinhard and Engblom, Jakob and Ermedahl, Andreas and Holsti, Niklas and Thesing, Stephan and Whalley, David and Bernat, Guillem and Ferdinand, Christian and Heckmann, Reinhold and Mitra, Tulika and Mueller, Frank and Puaut, Isabelle and Puschner, Peter and Staschulat, Jan and Stenstr{\"o}m, Per},
+  journal = {ACM Transactions on Embedded Computing Systems},
+  volume  = {7},
+  number  = {3},
+  pages   = {1--53},
+  year    = {2008},
+  doi     = {10.1145/1347375.1347389}
+}
+
+@inproceedings{flashattention,
+  title     = {{FlashAttention}: Fast and Memory-Efficient Exact Attention with {IO}-Awareness},
+  author    = {Dao, Tri and Fu, Dan and Ermon, Stefano and Rudra, Atri and R{\'e}, Christopher},
+  booktitle = {Advances in Neural Information Processing Systems 35 (NeurIPS 2022)},
+  year      = {2022},
+  pages     = {16344--16359}
+}
+
+@inproceedings{flexgen,
+  title     = {{FlexGen}: High-Throughput Generative Inference of Large Language Models with a Single {GPU}},
+  author    = {Sheng, Ying and Zheng, Lianmin and Yuan, Binhang and Li, Zhuohan and Ryabinin, Max and Chen, Beidi and Liang, Percy and R{\'e}, Christopher and Stoica, Ion and Zhang, Ce},
+  booktitle = {Proceedings of the 40th International Conference on Machine Learning (ICML 2023)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {202},
+  pages     = {31094--31116},
+  year      = {2023},
+  publisher = {PMLR}
+}
+
+@inproceedings{h2o,
+  title     = {{H2O}: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models},
+  author    = {Zhang, Zhenyu and Sheng, Ying and Zhou, Tianyi and Chen, Tianlong and Zheng, Lianmin and Cai, Ruisi and Song, Zhao and Tian, Yuandong and R{\'e}, Christopher and Barrett, Clark and Wang, Zhangyang and Chen, Beidi},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023)},
+  year      = {2023},
+  pages     = {34661--34710}
+}
+
+@inproceedings{scissorhands,
+  title     = {Scissorhands: Exploiting the Persistence of Importance Hypothesis for {LLM} {KV} Cache Compression at Test Time},
+  author    = {Liu, Zichang and Desai, Aditya and Liao, Fangshuo and Wang, Weitao and Xie, Victor and Xu, Zhaozhuo and Kyrillidis, Anastasios and Shrivastava, Anshumali},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023)},
+  year      = {2023},
+  pages     = {52342--52364}
+}
+
+@inproceedings{splitwise,
+  title     = {Splitwise: Efficient Generative {LLM} Inference Using Phase Splitting},
+  author    = {Patel, Pratyush and Choukse, Esha and Zhang, Chaojie and Shah, Aashaka and Goiri, {\'I}{\~n}igo and Maleki, Saeed and Bianchini, Ricardo},
+  booktitle = {2024 ACM/IEEE 51st Annual International Symposium on Computer Architecture (ISCA)},
+  year      = {2024},
+  pages     = {118--132},
+  doi       = {10.1109/ISCA59077.2024.00019}
+}
+
+@article{little1961,
+  title   = {A Proof for the Queuing Formula: $L = \lambda W$},
+  author  = {Little, John D. C.},
+  journal = {Operations Research},
+  volume  = {9},
+  number  = {3},
+  pages   = {383--387},
+  year    = {1961},
+  doi     = {10.1287/opre.9.3.383}
+}
+
+@article{denning1978,
+  title   = {The Operational Analysis of Queueing Network Models},
+  author  = {Denning, Peter J. and Buzen, Jeffrey P.},
+  journal = {ACM Computing Surveys},
+  volume  = {10},
+  number  = {3},
+  pages   = {225--261},
+  year    = {1978},
+  doi     = {10.1145/356733.356735}
+}
+
+@inproceedings{jacobson1988,
+  title     = {Congestion Avoidance and Control},
+  author    = {Jacobson, Van},
+  booktitle = {Symposium Proceedings on Communications Architectures and Protocols (SIGCOMM '88)},
+  year      = {1988},
+  pages     = {314--329},
+  doi       = {10.1145/52324.52356}
+}
+
+@article{liu1973,
+  title   = {Scheduling Algorithms for Multiprogramming in a Hard-Real-Time Environment},
+  author  = {Liu, C. L. and Layland, James W.},
+  journal = {Journal of the ACM},
+  volume  = {20},
+  number  = {1},
+  pages   = {46--61},
+  year    = {1973},
+  doi     = {10.1145/321738.321743}
 }

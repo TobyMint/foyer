@@ -17,7 +17,14 @@ import csv, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = os.path.join(HERE, "..", "..", "paper", "data")
-BAND = 1.0
+# ⚠ **本脚本原来自己写了一份插值、一份上-左包络、一个 `BAND = 1.0`**
+# （2026-09-26 codex 第 30 轮抓到）。注释写着「照抄 frontier.py，不改判据」，
+# 但那是**第二份实现** —— 而且它和 frontier 的 `front_slo` 语义真的不同：
+# 这里越界是**夹到端点值**，frontier 那边是**返回 None**。数值碰巧一致，
+# 所以任何测试都不会响。判据（打平带 / 包络 / 插值）一律 import，不重写。
+import envelope as _ENV   # noqa: E402
+import frontier as _FR    # noqa: E402
+BAND = _FR.TIE_PP
 
 def load(n):
     return [r for r in csv.DictReader(l for l in open(os.path.join(D, n)) if not l.startswith("#"))]
@@ -41,44 +48,44 @@ import importlib.util as _iu
 _sp = _iu.spec_from_file_location("_fr_fs", os.path.join(HERE, "frontier.py"))
 _FR = _iu.module_from_spec(_sp); _sp.loader.exec_module(_FR)
 MIXED_ANCHORS = [n for _, _, n in _FR.FRONT]
-HC_ANCHORS  = ["pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap4_hc",
+HC_ANCHORS  = ["pairA_cap2hc", "pairB_cap2hc", "cap3_hc", "cap3_ph", "cap4_hc",
                "cap3_hc_r2", "cap4_hc_r2"]
-DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
-CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
-               "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
+DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap3_pd", "cap4", "cap5"]
+# ⚠ 名单**必须**与论文的九条同源。这里原来自己写了一份，含 foyfix_hc 而漏了
+# foyer_sf0_r2 —— 而 sf0_r2 是最接近前沿的那条臂（−0.55），判决统计漏掉它
+# 是漏掉最关键的一个点。2026-09-25 改成从 gen_arm_running import，
+# foyfix_hc 单独加上（它是控制器臂，但在论文的「九条变体」之外）。
+sys.path.insert(0, HERE)
+import gen_arm_running as _AR          # noqa: E402
+CONTROLLERS = _AR.NINE + ["foyfix_hc"]
 
 def envelope(anchors):
-    """上-左包络：(wall, slo) 中不被任何点支配的集合，按 wall 升序。"""
+    """上-左包络 —— 调 `envelope.upper_left`（与 frontier.py 的 FRONT 同义）。"""
     pts = []
     for a in anchors:
         if a not in runs or a not in dec:
             continue
         w = float(dec[a]["wall_min"]); s = float(runs[a]["slo_pct"])
         pts.append((w, s, a))
-    pts.sort()
-    env, best = [], -1e9
-    for w, s, a in pts:
-        if s > best:
-            env.append((w, s, a)); best = s
-    return env
+    return _ENV.upper_left(pts)
 
-def interp(env, w):
-    """在包络上对 wall 做线性插值取 SLO。"""
-    if not env: return None
-    if w <= env[0][0]:  return env[0][1]
-    if w >= env[-1][0]: return env[-1][1]
-    for (w0, s0, _), (w1, s1, _) in zip(env, env[1:]):
-        if w0 <= w <= w1:
-            if w1 == w0: return max(s0, s1)
-            return s0 + (s1 - s0) * (w - w0) / (w1 - w0)
-    return env[-1][1]
+# 判词：中文标签从 `frontier.classify()` 的英文前缀**推**出来，不另立一套阈值。
+_LABEL = {"ABOVE": "在线上方", "ON": "打平", "BELOW": "在线下方"}
 
 def judge(env, arm):
+    """Δ = SLO − 包络插值。**插值调 `envelope.piecewise`、阈值调 `frontier.TIE_PP`。**
+
+    ⚠ 越界（墙钟在锚点范围之外）**返回 None**，与 frontier 一致 —— 原来这里夹到
+    端点值，等于**端点外推**：左端外推会凭「扫描没扫到头」造出「越线」
+    （见 docs/finding_a100_controller_20260925.md，A100 上就是这么误判的）。
+    """
     w = float(dec[arm]["wall_min"]); s = float(runs[arm]["slo_pct"])
-    ref = interp(env, w)
+    ref = _ENV.piecewise(w, env)
+    if ref is None:
+        v = ("LEFT-OF-FRONT" if (env and w < env[0][0]) else "OUT-OF-RANGE")
+        return w, s, None, None, v
     d = s - ref
-    verdict = "打平" if abs(d) <= BAND else ("在线上方" if d > 0 else "在线下方")
-    return w, s, ref, d, verdict
+    return w, s, ref, d, _LABEL[_FR.classify(d).split()[0]]
 
 env_hc  = envelope(HC_ANCHORS)
 env_dev = envelope(DEV_ANCHORS)
@@ -104,7 +111,7 @@ for arm in CONTROLLERS:
     for nm, env in (("hc", env_hc), ("dev", env_dev), ("mix", env_mix)):
         w, s, ref, d, v = judge(env, arm)
         vals[nm] = (w, s, ref, d, v)
-        cols.append("%+6.2fpp %s" % (d, v))
+        cols.append(("%+6.2fpp %s" % (d, v)) if d is not None else ("  ——   %s" % v))
     res[arm] = vals
     w, s = vals["hc"][0], vals["hc"][1]
     print("%-14s %6.1f %6.1f | %-28s | %-28s | %-28s" % (arm, w, s, cols[0], cols[1], cols[2]))
@@ -123,5 +130,8 @@ with open(out, "w") as f:
     for arm, vals in res.items():
         for nm, label in (("hc","hicache"),("dev","device"),("mix","mixed")):
             w, s, ref, d, v = vals[nm]
-            f.write("%s,%.1f,%.1f,%s,%.2f,%+.2f,%s\n" % (arm, w, s, label, ref, d, v))
+            if d is None:      # 越界不给参照值，也**不给 Δ** —— 端点外推会凭空造出「越线」
+                f.write("%s,%.1f,%.1f,%s,,,%s\n" % (arm, w, s, label, v))
+            else:
+                f.write("%s,%.1f,%.1f,%s,%.2f,%+.2f,%s\n" % (arm, w, s, label, ref, d, v))
 print("-> %s" % out)

@@ -7,7 +7,15 @@ file always describes a full desired state. Reuses the permit smoke's server rec
 """
 import csv, json, os, shutil, signal, subprocess, sys, time, urllib.request
 
-BASE = "/data/xbw/turnstile"
+# ⚠ 2026-09-28：原来写死 `/data/xbw/turnstile` —— 在**副本树**里跑会写到活树/实验机
+# （与 `build_supplement.py` 同形，两条复核线都点名了）。改成**从 `__file__` 推**：
+# 脚本住在哪棵树，就写哪棵树的 results。
+# ⚠ 带回退：实验机上这三份住在**树根**（`/data/xbw/turnstile/smoke_*.py`）⇒
+# 「上溯两层」会得到 `/data`（那会写 `/data/results/…`）。
+# 判据：推导出来的树里**有 results/** 才用它，否则回退到原来的绝对路径。
+_R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE = (_R if os.path.isdir(os.path.join(_R, "results"))
+        else "/data/xbw/turnstile")
 MODEL = f"{BASE}/models/qwen25-coder-7b-yarn96k"
 PORT = 30002
 GPU = 0

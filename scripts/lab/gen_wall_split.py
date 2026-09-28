@@ -14,7 +14,7 @@
 
 用法: python3 gen_wall_split.py
 """
-import csv, os
+import csv, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = os.path.join(HERE, "..", "..", "paper", "data")
@@ -26,9 +26,16 @@ def load(n):
 dec = load("decomp.csv")
 
 # 控制器臂 -> 曲线族。HiCache 臂只对 HiCache 锚点 —— 跨配置外推正是 codex 抓到的错。
-CONTROLLERS = ["foyer_hc", "foyer_hz1", "foyer_hz2_r2", "foyer_hz0_r2", "foyer_bres_r2",
-               "foyer_breshz1", "foyer_nogate", "foyer_rg4", "foyfix_hc"]
-HC_ANCHORS  = ["pairB_cap2hc", "cap3_hc", "cap4_hc"]
+# ⚠ 与 `gen_frontier_split.py` 同样的坑：这里原来自己写了一份名单，含 foyfix_hc
+# 而**漏了 foyer_sf0_r2**。论文的九条是 `gen_arm_running.NINE`（含 sf0_r2）。
+# 2026-09-25 统一到那一份，foyfix_hc 单独加（它是控制器臂，但在「九条变体」之外）。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_arm_running as _AR          # noqa: E402
+CONTROLLERS = _AR.NINE + ["foyfix_hc"]
+# cap5_hc 是 2026-09-25 入表的静态 HiCache 点，锚点池要含它。
+# （实测不影响任何臂的「最近锚点」选择：R̄ 最大的控制器臂是 rg4 的 1.689，
+#   而 cap4_hc 1.729 仍比 cap5_hc 1.746 近。加它是为了集合完整。）
+HC_ANCHORS  = ["pairB_cap2hc", "cap3_hc", "cap4_hc", "cap5_hc"]
 DEV_ANCHORS = ["cap1", "cap2", "cap3_fixed", "cap4", "cap5"]
 
 def implied_G(r):

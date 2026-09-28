@@ -1,0 +1,13 @@
+{
+ "fig1_frontier.pdf": [
+  "concurrency.csv",
+  "runs.csv"
+ ],
+ "fig2_decomp.pdf": [
+  "concurrency.csv",
+  "decomp.csv"
+ ],
+ "fig7_elasticity.pdf": [
+  "decomp.csv"
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "lane": "e2b",
+ "policy": "budget3:predictor=oracle",
+ "trace": "/data/xbw/turnstile/data/replay_night25.csv",
+ "trace_md5": "b3b06583db",
+ "gpu": 1,
+ "port": 30010,
+ "started": 1789255946.3058074,
+ "pool_tokens": 101432,
+ "controller_params": {
+  "target_util": 0.75,
+  "margin": 1.15,
+  "horizon_rounds": 3,
+  "highwater_decay": 0.995,
+  "slo_ms": 10000,
+  "tuned": "predictor=oracle"
+ },
+ "runner_rc": 0,
+ "wall_s": 5543.8,
+ "finished": 1789261584.8717527
+}

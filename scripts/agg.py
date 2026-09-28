@@ -10,7 +10,16 @@ import json
 import os
 import sys
 
-NIGHT = "/data/xbw/turnstile/results/night"
+# ⚠ 2026-09-28：原来写死 `/data/xbw/turnstile/results/night` —— 本脚本会**写**
+# `comparison.csv` 与一张 PNG 进去，于是从**副本树**里跑就会写回实验机的 results
+# （与 `build_supplement.py` 同形）。改成从 `__file__` 推。
+# ⚠ 带回退：`__file__` 推导只在「脚本住在 <tree>/scripts/ 下」时成立；实验机上本脚本
+# 住在 `TraceLab/replay/scripts/`（深 4 层）⇒ 推导出来的是 `…/TraceLab`。
+# 判据：推导出来的树里**有 results/** 才用它，否则回退到原来的绝对路径。
+_R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NIGHT = (os.path.join(_R, "results", "night")
+         if os.path.isdir(os.path.join(_R, "results"))
+         else "/data/xbw/turnstile/results/night")
 
 
 def load_run(path):

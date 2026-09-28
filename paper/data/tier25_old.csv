@@ -1,0 +1,13 @@
+# 25 档（旧 harness）的单变量分解 —— 由 gen_tier25_old.py 生成，勿手改
+# wall_min 口径与 table1.csv 逐字相同（steps.jsonl 的 submit->complete，
+#   不是 metadata.wall_s —— 后者系统性大约偏 4 分钟）。
+# speedup_vs_base_pct = (基线墙钟 - 本臂墙钟)/基线墙钟。
+# ⚠ 全部是【旧 harness】：与 thr25_base 同代，与 200 档不同代。
+run,policy,what_moved,steps,wall_min,slo_pct,speedup_vs_base_pct
+thr25_base,budget3,"default: target 0.75, high-water on",125,58.3888,95.2000,0.0
+thr25_nohw,budget3:hw=0,high-water off only,125,38.0817,92.8000,34.8
+thr25_t95,budget3:target=0.95,red line 0.95 only,125,39.6816,89.6000,32.0
+thr25_push,budget3:hw=0;target=0.95,both knobs (the pair quoted in the paper),125,28.8154,92.8000,50.6
+thr25_push_r2,budget3:hw=0;target=0.95,"both knobs, repeat",125,30.1291,89.6000,48.4
+thr25_nosf,budget3:sf=0,single-flight off only,125,49.5421,92.8000,15.2
+thr25_hwsf,budget3:hw=0;sf=0,high-water off + single-flight off,125,30.2969,88.0000,48.1

@@ -1,0 +1,14 @@
+# 时间片切换（cap 每 60 s 在 3 与 2 之间切，HiCache，主 trace）—— 由 gen_slice23.py 生成，勿手改
+# 它检验的是：论文用「静态点的分段线性插值」当基线，依据是「时间片混合可逼近线段上任意点」。
+# 跑【之前】写在 lane 脚本头部的预期：时间片应落在弦**下方**（吞吐对 cap 凹）⇒ 线是上界、判决保守。
+# front_slo_at_wall 由 envelope.piecewise 算（全仓库唯一插值实现）；verdict 由 frontier.classify 给。
+field,value
+run,pois200_slice23_hc
+steps,999
+wall_min,244.9229
+slo_pct,83.1832
+front_slo_at_wall,84.0747
+delta_pp,-0.8915
+verdict,ON     (在线上, 不算赢)
+seg_lo,cap3_hc_r2(230.308193, 81.881882)
+seg_hi,pairB_cap2hc(295.020816, 91.591592)

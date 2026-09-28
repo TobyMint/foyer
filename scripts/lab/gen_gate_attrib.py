@@ -1,6 +1,38 @@
 #!/usr/bin/env python3
 """「有会话在等、却一个都不放行」的周期里，到底是什么在挡？
 
+## ⚠⚠ 2026-09-27（中立复核 r48 第 6 条）：**本机与实验机的集合数不一致**
+
+- **实验机上跑**（脚本 docstring 说必须在机器上跑）：**48 行 / 上中位 31.3%**
+- **本地镜像上跑**：**49 行 / 上中位 30.6%** —— 与随文件发布的
+  `paper/data/gate_attrib.csv`（49 个数据行）**逐字相同**
+- 正文 §V 写的是 **49 / 30.6%**，且句子里点名了范围：「over every completed run
+  **in that file**」—— 那个 "file" 就是 `gate_attrib.csv`。所以**正文与工件自洽**，
+  本地镜像也能逐字复现它。
+
+差的那一行是 `load25c_budget3_sf0`（25 档、池 101432、trace `replay_night25.csv`、
+policy `budget3:margin=1.0;sf=0`）。**它的目录在实验机上已被清理，本地镜像还留着。**
+
+⇒ **本轮的决定是保留 49/30.6%**，理由：正文说的是「那份文件里的每一条」，
+而那份文件就是发布出去的那个 49 行的文件；本脚本的选 run 判据是
+`glob(*/controller.jsonl)` + 池子匹配，**不区分档位**，所以 25 档那条本来就该在。
+
+✅ **2026-09-27 08:1x 已复验**：按 docstring 在实验机上重跑，机器值与仓库里的
+`gate_attrib.csv` **逐字节相同**（同一个 50 行、同一批数）—— 因此上面那段
+「机器 48 / 本地 49」的**历史分歧已随两条新 run 落地而消失**（三条 run 的原集合
+现在两侧一致）。同类复验一次做完了四张机器端表：`gen_concurrency` /
+`gen_gate_attrib` / `gen_projection` / `gen_repeat_spread` **全部逐字节相同**。
+
+（历史记录，保留供追溯）⚠ **下一个人应当知道**：此前在实验机上按 docstring 跑会得到 **48**，
+与正文差一行。**不是正文错，是机器上少了一个目录。** 谁要把这个分歧消灭掉，
+要动的是**镜像**（找回或正式声明删除那个 run），不是改正文的数。
+
+⚠ 同类风险还有一处（同一天发现，方向相反）：`gen_eviction.py` 的集合在
+**本地少一条、实验机多一条**（`slice23_hc`）。**同一天同一个病出现两次，
+两个方向各一次** —— 凡「正文数字 = 本地镜像数字」的地方，都要问一句
+「实验机给的也是这个数吗」。
+
+
 ## 撤回记录（2026-09-24）
 
 本脚本的第一版**是错的，且错得方向相反**。它用日志里的 `base` 字段算投影：
@@ -65,7 +97,7 @@ def proj(d):
 # 且与仓库脚本复算的值对不上（正文 39.9/43.5，复算 39.7/44.0）——
 # 2026-09-24 审稿人抓到的。纳进来之后正文只能引用 CSV。
 PAPER_SET = ["pois200_foyer_hz0_r2", "pois200_foyer_hz1", "pois200_foyer_hz2_r2",
-             "pois200_foyer_hc", "pois200_foyer_bres_r2", "pois200_foyer_breshz1",
+             "pois200_foyer_hc", "pois200_foyer_bres_r2", "pois200_foyer_breshz1_r2",
              "pois200_foyer_nogate", "pois200_foyer_rg4",
              "pois200_foyer_sf0_r2", "pois200_foyer_hc_r2"]
 
@@ -82,7 +114,25 @@ def main():
     out_path = sys.argv[2]
     # 只统计控制器臂（有 ctx_sum 的），并把集合显式列出来，避免"十八"这种不可复现的口径
     rows = []
+    # ⚠ 2026-09-27（独立复核 + codex r48）：**按池子把别的机器排除掉**。
+    # 本地镜像里混进了 A100 的 run（`a100_foyer_hz2`，池子 983{,}728），而本表是给
+    # **3090 部署**用的：一个 9.7 倍大的池子上的投影比值跑进来，会把区间从
+    # 1.32--1.96 悄悄撑到 1.32--2.00，读者看不出来。
+    # 判据用项目自己的有效性规则（CLAUDE.md：KV pool 必须落在 101,432 ± 20，
+    # 否则该 run 作废）—— 池子不是 101,432 的，就不是 3090 的 run。
+    POOL_3090, POOL_TOL = 101432, 20
+
+    def _pool_ok(d):
+        try:
+            m = json.load(open(os.path.join(d, "metadata.json")))
+        except Exception:
+            return False
+        pt = m.get("pool_tokens")
+        return pt is not None and abs(pt - POOL_3090) <= POOL_TOL
+
     for p in sorted(glob.glob(os.path.join(root, "*", "controller.jsonl"))):
+        if not _pool_ok(os.path.dirname(p)):
+            continue
         run = os.path.basename(os.path.dirname(p))
         if run.startswith("_"):
             continue
@@ -168,7 +218,7 @@ def main():
         # 「八条」中位数在文件里查不到，而 PAPER_SET 的中位数又对不上正文
         # （2026-09-24 审稿人抓：正文把投影中位 32.7 写进了阀门那一格）。
         eight = {"foyer_bres_r2", "foyer_hc", "foyer_hz2_r2", "foyer_hz1",
-                 "foyer_breshz1", "foyer_nogate", "foyer_hz0_r2", "foyer_rg4"}
+                 "foyer_breshz1_r2", "foyer_nogate", "foyer_hz0_r2", "foyer_rg4"}
         s8 = [r for r in rows if r["run"].replace("pois200_", "") in eight]
         k8 = lambda key: sorted(100.0 * r[key] / r["blocked"] for r in s8)
         v8, p8 = k8("valve"), k8("over")
@@ -208,6 +258,47 @@ def main():
                     % (mid(vp), mid(op), mid(rp)))
             f.write("# paper_set_range,valve=%.1f~%.1f,projection_over=%.1f~%.1f\n"
                     % (vp[0], vp[-1], op[0], op[-1]))
+    # ---- 【部分运行】的闸门臂：正文引了它们的百分比，但上面「只算跑完的 run」
+    # 的过滤把它们排除了（没有 summary.json），于是那两个数**此前只活在正文里**，
+    # 不在任何文件里 —— 2026-09-26 codex 第 31 轮抓到。
+    # 落成**注释行**而不是数据行：进数据行会改 `all_rows` 的条数与中位数，
+    # 而正文引的正是那个中位数（45 条 / 30.6%）。注释行不进任何统计。
+    for _run in ("pois200_foyer_rg2", "pois200_foyer_rg3", "pois200_foyer_rg4"):
+        _d = os.path.join(root, _run)
+        _cp = os.path.join(_d, "controller.jsonl")
+        if not os.path.exists(_cp):
+            print("!! %s 不在镜像里 —— 正文引了它的闸门百分比，缺了就对不上" % _run)
+            continue
+        _L = load(_cp)
+        _blk = [d for d in _L if (d.get("waiting_n") or 0) > 0
+                and (d.get("n_admitted") or 0) == 0]
+        if not _blk:
+            continue
+        _g = sum(1 for d in _blk if not d.get("valve") and d.get("gate_full"))
+        _sp = os.path.join(_d, "steps.jsonl")
+        _n = sum(1 for l in open(_sp) if l.strip()) if os.path.exists(_sp) else 0
+        # ⚠ `finished` 的判据**不是**「summary.json 在不在」—— `rg4` 有 summary，
+        # 但它是 **998 attempted / 1 failed**（codex 第 32 轮抓到：只看 summary 会把它
+        # 标成 Y，而正文说「三条里两条是部分运行」用的却是 999/0 的口径）。
+        # 判据统一成**999 步、0 失败**，并把 attempted/failed 一起落进那一行。
+        _sum = os.path.join(_d, "summary.json")
+        _att = _fail = None
+        if os.path.exists(_sum):
+            try:
+                _rp = json.load(open(_sum)).get("replay", {})
+                _att, _fail = _rp.get("attempted_steps"), _rp.get("failed_steps")
+            except ValueError:
+                pass
+        _fin = "Y" if (_att == 999 and _fail == 0) else "N"
+        print("  named arm %-20s cycles %5d blocked %5d round_gate %.1f%% steps %d "
+              "attempted=%s failed=%s 999/0=%s"
+              % (_run, len(_L), len(_blk), 100.0 * _g / len(_blk), _n,
+                 _att, _fail, _fin))
+        with open(out_path, "a") as f:
+            f.write("# named_arm,%s,cycles=%d,blocked=%d,round_gate_pct=%.1f,steps=%d,"
+                    "attempted=%s,failed=%s,finished_999_0=%s\n"
+                    % (_run, len(_L), len(_blk), 100.0 * _g / len(_blk), _n,
+                       _att, _fail, _fin))
     print("-> %s" % out_path)
 
 

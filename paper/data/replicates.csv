@@ -4,5 +4,9 @@ group,n,wall_min_mean,wall_min_sd,wall_cv_pct,wall_range_pct,slo_mean,slo_sd_pp,
 cap4+HiCache (frontier anchor),2,211.1,1.93,0.92,1.83,65.9,2.55,5.11,cap4_hc cap4_hc_r2
 cap2+HiCache (frontier anchor),2,299.7,4.72,1.57,3.15,91.1,0.5,1.0,pairA_cap2hc pairB_cap2hc
 "Foyer base (hw=0,t=0.95,h=3)",4,288.5,5.17,1.79,4.65,89.5,0.18,0.5,pairA_foyerhc pairB_foyerhc foyer_hc foyer_hc_r2
-horizon=1 (the best arm),2,258.3,2.48,0.96,1.92,82.8,1.95,3.9,foyer_hz1 foyer_hz1_r2
-cap3+HiCache (frontier anchor),2,233.4,3.05,1.31,2.62,81.5,0.4,0.8,cap3_hc cap3_hc_r2
+horizon=1,3,263.7,7.87,2.98,7.05,83.7,1.97,4.4,foyer_hz1 foyer_hz1_r2 foyer_hz1_r3
+cap3+HiCache (frontier anchor),3,233.5,2.5,1.07,2.62,81.5,0.33,0.8,cap3_hc cap3_hc_r2 cap3_ph
+cap3 device-only (paired),2,252.6,6.13,2.43,4.85,76.8,2.45,4.9,cap3_fixed cap3_pd
+horizon=2 (the closest arm),2,272.6,1.63,0.6,1.19,88.2,0.5,1.0,foyer_hz2_r2 foyer_hz2_r3
+scans the queue,3,266.9,3.73,1.4,3.41,88.6,0.21,0.5,foyer_scan foyer_scan_r2 foyer_scan_r3
+single-flight off,2,263.4,0.06,0.02,0.05,86.6,0.35,0.7,foyer_sf0_r2 foyer_sf0_r3

@@ -4,192 +4,88 @@
 \subsection{The frontier}
 
 Fig.~\ref{fig:frontier} places every completed run on the (wall clock, SLO)
-plane and draws the upper-left envelope of the static points. Table~\ref{tab:runs}
-gives the numbers and each controller's signed distance from that envelope.
+plane and draws the upper-left envelope of the static points; Table~\ref{tab:runs}
+gives the numbers and each controller's distance from it. The result is
+the same for the nine policy variants of the controller we deployed, and all nine
+are clean measurements: \emph{none} of their runs is above the envelope at the
+$10$\,s threshold. The \emph{best} is \texttt{horizon}=2, run
+twice: $-0.30$ and $+0.22$\,pp, either side of the line and both inside our
+$\pm1.0$\,pp band. (Best, not closest: \texttt{single-flight off}'s repeat reads
+$+0.13$, nearer the line, but its reported run is $-0.55$.) Against the discrete
+static points rather than the envelope between them, that arm is \emph{not
+dominated}: every static configuration faster than it scores lower on SLO, and
+every one that scores higher is slower. We take the envelope as the baseline, and
+\S\ref{sec:bg} states what that choice costs us.
 
-The result is consistent across every arm we can compare, and we say which
-those are before we lean on it. Of the nine controller variants, eight are clean
-measurements; of those eight, \emph{none} is above
-the envelope---not one, on any run, and the pair we repeated most tightly says
-so at a resolution the others do not. The closest arm of all is
-\texttt{horizon}=2 as re-measured, at $0.30$ percentage points \emph{below} the
-line---inside our $\pm1.0$\,pp tie band, so we record it as \emph{on} the
-line rather than below it, but on the below side of it. On the other reading of
-the same table---against the discrete static points rather than the envelope
-between them---that arm is \emph{not dominated}: every static configuration
-faster than it scores lower on SLO, and every one that scores higher is slower.
-(The arm this one displaced as the closest, \texttt{sf=0} at $0.55$\,pp below,
-is not dominated either.)
-We take the envelope as the baseline because it is the stricter of the two
-readings, and \S\ref{sec:bg} states what that choice costs us.
+Two points in Fig.~\ref{fig:frontier} are above the line, and they are one arm:
+two of its three rows of Table~\ref{tab:runs}, \texttt{scans the queue} and its
+repeat, neither of them one of the nine. All three are the same controller
+revision and flags as the base's own repeat, with exactly one expression changed:
+that revision releases only the \emph{head} of the waiting queue unless single-flight is
+explicitly disabled, and this arm scans the whole queue and releases the first
+session that fits it. Their logs show
+the change to be narrow---one admission per cycle, never two---and the source
+differs in that expression plus a comment block; the launcher differs too and we
+cannot diff its earlier revision (\S\ref{sec:discussion}).
+The three measure $+1.30$, $+2.16$ and $+0.29$\,pp: two clear the band by $0.30$
+and $1.16$\,pp, the third does not. Against the $0.5$ to $4.6$\,pp that
+separates repeats of a single controller configuration in our set (the spread of
+$\Delta$; \texttt{horizon}=2's own two runs are the tightest of the five groups at
+$0.5$\,pp) the arm's own three span $1.87$\,pp---more than the band's $1.0$\,pp
+half-width and straddling its edge, its first and third $1.01$\,pp apart---so two of
+three, not a stable crossing.
+The first's wall clock is $26.9$ minutes ($9.2\%$) below the base's repeat at
+$1.0$\,pp lower SLO. The other clock, which charges the arm for the permit wait it
+imposes, leaves none of the three above the line: $-0.56$, $+0.96$ and
+$-1.07$\,pp. Nor is it simply that scanning the queue
+wins---one of the nine, \texttt{single-flight off}, scans it too, landing
+$0.55$\,pp \emph{below} the line on its first run and $+0.13$\,pp on its repeat.
+These establish the reach of the negative result: the readings above the line
+come from the \emph{release} rule, not from the budget rule admission acts on.
 
-The eight, and why not the other one: it carries the co-tenancy flag of
-Table~\ref{tab:runs}, its wall clock, SLO and $\Delta$ are not comparable
-with the rest, and its verdict is \emph{provisional}. The three re-measurements
-we have moved our way---co-tenancy
-inflates the step cost, which pushes an arm \emph{down}, so their measured
-distances overstate how far
-below the line they are---but that is three data points from \emph{one}
-contamination window, and co-tenancy could in
-principle also reorder completions and change which prefixes survive, which
-need not push the same way. The three variants
-that carried the flag and have been re-measured (\S\ref{sec:repro}) moved
-$6.5$, $6.4$ and $4.5$\,pp closer to the front: the resident base from $7.81$
-to $1.33$, \texttt{horizon}$=0$ from $13.60$ to $7.19$, and
-\texttt{horizon}$=2$ from $-4.81$ to $-0.30$. We do not read the three as
-agreeing: they span $4.5$ to $6.5$, and they are three arms from the same
-window rather than three independent replications. What they do establish is
-that the correction is large---several times the tie band---and one of them
-already moved an arm onto the line. So the question is what the same
-correction would do to the one arm still out. Applied at the smallest value we
-measured, $4.5$\,pp, it takes \texttt{breshz1} from $-19.54$ to $-15.0$, still
-well below; at the largest, $6.5$\,pp, it reaches $-13.0$---still below the
-line, but inside the range where a differently-placed arm might have crossed
-it. We are not predicting that:
-the four differ in how long they overlapped and in what else was running.
-We are saying that we cannot rule it out from what we have. If it does, the
-headline weakens to ``eight of nine, one win'', and this paper
-will say so.
+The base configuration's repeats are tight: four runs spanning 0.5\,pp of SLO
+around an 89.5\% mean---though not one build, since one is a later controller
+revision and one ran on the other card, so 0.5\,pp is the spread we observed, not
+a clean estimate of one revision's noise. Against the 3.5\,pp separating it from \texttt{single-flight
+off} (89.8\% against 86.3\%; \S\ref{sec:repro} says which run)---several times its
+own noise, and a trade rather than a win: 28 minutes of wall clock for 3.5\,pp of
+SLO.
 
-The base configuration is the one whose repeats we can trust, and they are
-tight: four runs spanning 0.5\,pp of SLO (89.5\% mean; 279.8, 289.6, 291.3
-and 293.2 minutes at 89.5\%, 89.3\%, 89.8\% and 89.6\%---the matched-pair
-experiment ran the same configuration twice more, as \texttt{pairA\_foyerhc}
-and \texttt{pairB\_foyerhc}), against the 3.3\,pp that separates it from the
-single-flight-off arm. So that
-difference is several times the noise of its own configuration rather than
-inside it, and it is a trade rather than a win: 28 minutes of wall clock bought
-with 3.5\,pp of SLO, moving the arm onto the tie band from below it. Not one
-configuration whose measurements are clean gets above the line, and the tightest pair we have
-is what makes us willing to say the near misses are misses. A fifth pair, two runs of \texttt{cap3}+HiCache, \emph{is} used, and an
-earlier draft of this paper wrongly set it aside saying one of them exceeded
-its own cap. That was a different run: the over-cap one is the device-only
-\texttt{cap3} repeat (peak in-flight five against a cap of three; at our
-300-point in-flight sample grid, 126 samples sit over the cap, a count that
-scales with the grid rather than with the run), while both HiCache runs peak at three with none. The
-repeat is also both faster and higher on SLO (230.3 minutes, 81.9\% against
-236.4 and 81.1\%), so by the same rule that displaced \texttt{cap4}+HiCache's
-first run it displaces this one---and moving that anchor is what puts our
-best arm on the losing side of the band rather than inside it.\footnote{The repeats are uneven, and
-we do not want the tightest pair to stand for all of them. Five configurations
-have been run more than once; their SLO spreads are 0.5, 0.8, 1.0, 3.9 and
-5.1\,pp (\texttt{replicates.csv}). The two widest belong to the two arms that
-decide something---\texttt{horizon}=1 and the leftmost anchor---so where a small
-margin matters our repeats are weakest, and where they are strongest (the base
-configuration and the \texttt{cap3}+HiCache anchor) the margin is not small. We
-report both ends rather than the average.
-There is also an asymmetry in how the two sides enter the comparison, and it
-runs against the controllers: the envelope takes each anchor's \emph{better}
-run where a repeat exists, while each controller is a single run. The exposure
-is bounded, and by less than the widest anchor's spread suggests. Every
-controller sits to the right of \texttt{cap3}+HiCache's repeat, so the verdicts
-are set by the segment between that anchor and \texttt{cap2}+HiCache---and
-those two anchors' own repeats differ by 0.8 and 1.0\,pp, below the $\pm1.0$\,pp
-band we judge in. The leftmost anchor's 5.1\,pp spread cannot reach any
-controller's $\Delta$, because no controller finishes fast enough to be judged
-against that segment.}
+Four of the nine carried the co-tenancy flag of Table~\ref{tab:runs} and were
+re-measured alone (\S\ref{sec:repro}); we do not read them as
+agreeing---one contamination window, not four independent replications---and even
+the largest correction leaves its arm below the line.\footnote{The repeats are uneven, and we do not want the tightest pair to stand
+for all of them. Nine configurations have been run more than once, their SLO
+spreads spanning 0.5 to 5.1\,pp, and the three widest belong to the three arms
+that decide something, so where a small margin matters our repeats are weakest.
+The asymmetry runs against the controllers: the envelope takes each anchor's
+\emph{better} run where a repeat exists, while most controllers are a single run.
+The exposure is bounded---the verdicts are set by the segment to
+\texttt{cap2}+HiCache, whose repeats differ by 0.8 and 1.0\,pp, below the
+$\pm1.0$\,pp band we judge in.}
 
-The anchor repeats moved the frontier twice and we report both moves. The
-leftmost anchor's second run came out both faster (209.1 against 213.0 minutes)
-and higher on SLO (68.5 against 63.4), displacing the first; no controller
-verdict moves, because every controller finishes to the right of the next
-anchor. The middle anchor's repeat moved it the other way for us: it is also
-faster and higher, and taking it moves our best arm from \emph{inside the tie
-band} to \emph{just below the line}, on the losing side of the same
-$\pm1.0$\,pp band. We report every repeat we ran rather than keeping
-the better of each pair, because a frontier whose anchors are single
-measurements is the weakness this whole subsection is about---and here it is
-the weakness biting.
-
-The other end of the front deserves its own sentence, because the rest of this
-paper is negative and a reader could close it thinking the answer is to do
-nothing. The run with \emph{no} admission control---every session admitted the
-moment it arrives---finishes in 288.6 minutes at 3.0\% SLO, $87.6$\,pp below
-the envelope and the worst SLO we report. Its median
-time-to-first-token is 1{,}774 seconds, its prefix cache hit rate collapses from
-the planned 75.5\% the runner prints in its end-of-run summary (the all-steps
-convention, a different
-one from the round-1+ numbers in \S\ref{sec:related}---for the same trace
-\texttt{gen\_nocontrol.py} reports 73.8\% on that convention) to 1.6\%, and its segment SLO is 30\% in the first
-tenth of the run and exactly zero in each of the nine after that. Uncontrolled
-admission does not degrade gracefully; it destroys the cache and then serves
-almost nobody. The question this paper addresses is therefore not whether to
-admit selectively, but which selective rule to use.
-
-Two features of the front are worth noting before the negative results.
-The envelope is steep between 209 and 230 minutes (0.63\,pp per minute) and
-shallow thereafter (0.15\,pp per minute), so the cost of buying SLO by
-retreating from the fast end is high. And $W$ is not monotone in concurrency:
-five sessions (260.9\,min) is \emph{slower} than four (249.9\,min)---the same
-configuration family, no host cache on either side---because the per-step cost
-rises faster than the request count does. We return to this
-non-monotonicity in \S\ref{sec:model}, where it turns out to be the first
-appearance of the mechanism that drives the whole frontier.
+The no-control arm is the other end of the front:
+every session admitted the moment it arrives finishes in 288.6 minutes at 3.0\%
+SLO, $87.6$\,pp below the envelope, with a median time-to-first-token of
+1{,}774 seconds.
 
 \begin{table}[tb]
-  \caption{The runs we compare. \emph{Conc.} is the time-weighted mean number
-  of \emph{live} sessions, which is not the running-request count $\overline{R}$
-  used in \S\ref{sec:model}---a live session is parked in a tool wait most of
-  the time, so \texttt{cap5} shows 4.89 live against 1.84 running.
-  $^\ast$The no-control arm writes no admission log, so its \emph{Conc.} is the
-  mean number of live sessions taken from the per-step log's session spans; on
-  the five static caps that estimator agrees with the admission-log one to two
-  decimals (and the two 25-session caps too). $\Delta$ is
-  the signed distance from the static envelope at that wall clock; above
-  $+1.0$\,pp counts as a win, below $-1.0$\,pp as a loss, and the band between
-  as a tie (\S\ref{sec:bg}).
-  Eleven further runs on this trace completed but are not listed: six
-  budget-fraction and rate-limit arms of \S\ref{sec:results}
-  (\texttt{rl90}, \texttt{rl90fix}, \texttt{rl99}, \texttt{rl99fix},
-  \texttt{t85}, \texttt{t90}), the two matched-pair arms whose numbers
-  \S\ref{sec:results} cites as extra repeats of the base configuration
-  (\texttt{pairA\_foyerhc}, \texttt{pairB\_foyerhc}), and the three arms
-  superseded by the clean re-measurements of \S\ref{sec:repro}
-  (\texttt{bres}, \texttt{hz0}, \texttt{hz2}). The first two groups belong to
-  sweeps \S\ref{sec:results} names; the third is the subject of
-  \S\ref{sec:repro} and its three replacements are rows of the table above.
-  Where we cite any of them we name them.
-  Two runs stopped short of 999 (\texttt{rg4} 998 and the no-control
-  baseline 997); they are listed with
-  their measured values. Our verdict script excludes runs below 999 steps
-  from its verdict table, so these four are not judged against the front
-  there; their \texttt{$\Delta$} here is computed from the same
-  full-precision coordinates as every other row
-  (\texttt{runs\_precise.csv} records the step count of each run), over a
-  window up to four steps shorter.
-  $^\ddagger$ marks a run measured while three or more other engine
-  instances shared the host for at least an hour. That is a risk flag, not a
-  measurement of damage, and the two come apart in our data. Six rows of this
-  table carried the flag; three still do. Four of the six were
-  damaged---\texttt{horizon}$=2$, \texttt{horizon}$=0$,
-  \texttt{horizon}$=1$ no hw and the resident base---controller variants whose
-  per-request decode interval ran 30.9--33.3\,ms against 23.7--27.5 across the
-  twelve clean runs of the same controller family, so their wall clock, SLO and
-  $\Delta$ are not comparable with the rest. Three of those four have since
-  been re-measured alone and their rows above carry the clean numbers; the last
-  one is still out. The resident base moved to 24.8\,ms $\tau_2$ and $\Delta$
-  $-$1.33 (against the base configuration's $-$1.24); \texttt{horizon}$=0$ to
-  25.5\,ms and $-$7.19; \texttt{horizon}$=2$ to 24.0\,ms and $-$0.30. None of
-  the three carries the mark now.
-  The remaining two, \texttt{cap1}
-  and the published-parameter AIMD row, show no aggregate inflation at all
-  (20.6 and 24.4\,ms), so we keep their numbers and say why.
-  \S\ref{sec:repro} gives the audit, the threshold and the evidence.}
+  \caption{The runs the results below turn on. \emph{Conc.} is the time-weighted
+  mean number of \emph{live} sessions, not the running-request count
+  $\overline{R}$ of \S\ref{sec:model}; $\Delta$ is the signed distance from the
+  static envelope at that wall clock (\S\ref{sec:bg}). The notes below define
+  both.}
   \label{tab:runs}
   \centering
-  \small
-  \setlength{\tabcolsep}{4pt}%
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}%
   \begin{tabular}{lrrrr}
     \toprule
     Policy & Wall (min) & Conc. & SLO (\%) & $\Delta$ (pp) \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps}}\\
-    no control$^\ast$ & 288.6 & 94.9 & 3.0 & $-$87.62 \\
+    no control        & 288.6 & 94.9 & 3.0 & $-$87.62 \\
     cap1$^\ddagger$   & 527.4 & 1.00 & 94.8 & \emph{anchor} \\
-    cap2              & 304.2 & 1.99 & 89.5 & $-$2.23 \\
-    cap3 (fixed)      & 258.7 & 2.89 & 74.4 & $-$11.77 \\
-    cap4              & 249.9 & 3.94 & 55.7 & $-$29.17 \\
-    cap5              & 260.9 & 4.89 & 27.1 & $-$59.34 \\
     \midrule
     \multicolumn{5}{l}{\emph{Static caps + HiCache}}\\
     cap2+HC           & 295.0 & 1.99 & 91.6 & \emph{anchor} \\
@@ -197,464 +93,169 @@ appearance of the mechanism that drives the whole frontier.
     cap3+HC (repeat)  & 230.3 & 2.97 & 81.9 & \emph{anchor} \\
     cap4+HC           & 213.0 & 3.93 & 63.4 & $-$7.55 \\
     cap4+HC (repeat)  & 209.1 & 3.87 & 68.5 & \emph{anchor} \\
+    cap6+HC           & 207.8 & 5.85 & 28.9 & \emph{anchor} \\
     \midrule
     \multicolumn{5}{l}{\emph{\sys{} controller variants}}\\
+    scans the queue (2nd run) & 262.6 & 2.41 & 88.9 & $+$2.16 \\
+    scans the queue   & 266.3 & 2.34 & 88.6 & $+$1.30 \\
+    scans the queue (3rd run) & 271.7 & 2.29 & 88.4 & $+$0.29 \\
+    horizon$=$2 (2nd run) & 274.2 & 2.22 & 88.7 & $+$0.22 \\
+    single-flight off (2nd run) & 263.5 & 2.44 & 87.0 & $+$0.13 \\
+    horizon$=$2       & 271.0 & 2.28 & 87.7 & $-$0.30 \\
     single-flight off & 263.3 & 2.43 & 86.3 & $-$0.55 \\
     horizon$=$1       & 255.8 & 2.58 & 84.8 & $-$0.93 \\
     horizon$=$3 (base) & 291.3 & 2.06 & 89.8 & $-$1.24 \\
+    resident base     & 265.9 & 2.41 & 85.9 & $-$1.33 \\
     horizon$=$3 (2nd run) & 293.2 & 2.07 & 89.6 & $-$1.73 \\
-    horizon$=$2 & 271.0 & 2.28 & 87.7 & $-$0.30 \\
+    horizon$=$1 (3rd run) & 274.4 & 2.37 & 85.3 & $-$3.22 \\
     horizon$=$1 (repeat) & 260.8 & 2.69 & 80.9 & $-$5.58 \\
-    resident base      & 265.9 & 2.41 & 85.9 & $-$1.33 \\
-    horizon$=$0 & 264.2 & 2.64 & 79.8 & $-$7.19 \\
-    horizon$=$1, no hw$^\ddagger$ & 310.9 & 2.77 & 72.3 & $-$19.54 \\
+    horizon$=$0       & 264.2 & 2.64 & 79.8 & $-$7.19 \\
+    horizon$=$1, no hw & 257.0 & 2.92 & 77.6 & $-$8.31 \\
     no gate, no resv. & 272.3 & 3.25 & 66.6 & $-$21.62 \\
     running gate$=$4  & 282.3 & 3.03 & 64.3 & $-$25.39 \\
     all throttles off & 415.0 & 2.58 & 46.1 & $-$47.10 \\
     \midrule
     \multicolumn{5}{l}{\emph{Independent adaptive controller (\S\ref{sec:results:aimd})}}\\
-    AIMD, paper params$^\ddagger$ & 364.3 & 1.91 & 81.4 & $-$11.16 \\
+    AIMD, paper params & 326.8 & 2.17 & 79.4 & $-$12.65 \\
     AIMD, retuned     & 264.6 & 3.87 & 52.8 & $-$34.28 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+
+\paragraph{Notes to Table~\ref{tab:runs}.} The published-parameter AIMD row is
+the third attempt, the first whose wall clock is usable. Twenty-three further runs
+on this trace are in no table of ours, and where we cite any of them we name
+them. Two
+\emph{rows of this table} stopped short of 999 (\texttt{rg4} 998 and the
+no-control baseline 997); our verdict script excludes runs below 999 steps, so
+these two are not judged against the front there, but their $\Delta$ here comes
+from the same full-precision coordinates as every other row. $^\ddagger$ marks a
+run measured while three or more other engine instances shared the host for at
+least an hour: a risk flag, not a measurement of damage. One row now carries it,
+\texttt{cap1}, and five more did in earlier versions; \texttt{cap1} shows no
+aggregate inflation (20.6\,ms), so we keep its number and say why.
+$^\ast$The no-control arm writes no admission log, so its
+\emph{Conc.} is estimated from the per-step log's session spans; on the five
+static caps of \S\ref{sec:model} the two estimators agree to two decimals. This
+table omits eight of the static caps we ran. \S\ref{sec:repro} gives the audit.
+
 \subsection{The controllers leave memory unused}
 \label{sec:results:idle-memory}
 
-Before the routes, one measurement that reframes all of them. Our controller
-keeps every session's permit for its lifetime, so its pool occupancy is a
-policy output, not a constraint. It runs at a median of 49.2\% of the pool on
-the base configuration, and the median number of sessions queueing for
-admission is 66. The configuration that finishes fastest---the repeat of that same static cap
-of four, at 209.1 minutes---runs at 71.9\%, and its first run at 70.2\%. Occupancy
-and running requests track each other reliably across the arms we have (the two
-columns in \texttt{occupancy.csv} rank the twenty-three arms we have almost
-identically, Spearman $\rho=0.95$), but
-running count does \emph{not} order wall clock. \texttt{cap5} and
-\texttt{cap4}+HC carry almost the same mean running count---1.62 against 1.60,
-the all-samples mean, the column \texttt{occupancy.csv} carries;
-\S\ref{sec:model} uses the busy-conditional one---and finish 48 minutes apart.
-(An earlier draft made this point with \texttt{horizon}=2 against the base
-arm; after that arm was re-measured clean it runs \emph{more} than the base
-and finishes \emph{faster}, so it no longer serves.) That gap is
-what the next subsection is about.
+Our controller admits fewer sessions rather than discarding one, so its pool
+occupancy is a policy output, not a constraint: the base configuration holds a
+median 49.2\% of the pool while 66 sessions queue for admission, and the
+configuration that finishes fastest is a poor fast end (\texttt{cap6}+HC, 28.9\%
+on SLO). Occupancy and running requests track each other (\texttt{occupancy.csv},
+Spearman $\rho=0.97$), but running count does \emph{not} order wall clock:
+\texttt{cap3}+HC and \texttt{horizon}$=$1, no hw carry the same mean running
+count to two decimals and finish 21 minutes apart.
 
-The controller believes it is nearly full. Its own decision log records the
-projection it admits against---the largest of measured occupancy and the summed
-contexts of live sessions, plus a reserve for their growth---at a median of
-89{,}073 tokens against a budget of 96{,}360, i.e.\ 7.6\% free. Its measured
-occupancy at the same instants is 49{,}875 tokens: 48.2\% of that budget, or
-50.8\% of the pool, is idle. The
-projection is 1.79$\times$ the occupancy the engine reports on this
-configuration, of which the growth reserve alone is 28\% of the budget. Across the
-nineteen controller runs that finished on this trace and logged projections
-the ratio runs from 1.32 to 1.96 with an upper median of 1.75, and from 1.32 to
-4.11 with a median of 1.78 once the second trace's controller arm is included
-(\texttt{projection.csv} records each set, its size and its median; the second
-trace is the 4.11). So 1.79 is this arm's value, not a constant of the design,
-and we name the set because the range depends on it---over every finished run in
-that file, including the flash-crowd and 25-session families, it is 1.01 to
-4.11 with a median of 1.58. (Runs still in flight are excluded from both
-figures: their controller logs are still growing, and one of them reads 1.95
-today.) Medians here are
-the upper of the two middle values, the convention \S\ref{sec:results:attribution}
-uses throughout. Two terms produce the gap: charging every
-live session its full context, when a parked session's KV is evictable and
-therefore absent from the engine's count, and the growth reserve, which alone
-is 26{,}762 tokens, 28\% of the budget.
-
-Two things follow, and we are careful about the second.
-
-The first is that the controllers under-use the pool, and that this is a
-property of their estimates rather than of the hardware: the base
-configuration holds nearly half the pool idle (48.2\% of its budget, 50.8\% of\
-the pool) with 66 sessions queued, because
-it believes it has 7.6\% free when it has 48.2\%. Any account of why it is slow
-that does not mention this is incomplete.
-
-We then asked what actually stops it, by instrumenting the admission decision.
-The path is a conjunction: a session is authorized only if the SLO valve is
-open, the round gate is not full, and its projected footprint fits what remains
-of the budget. Over the base run's 8{,}196 blocked cycles---cycles with a
-session waiting and none admitted---the valve accounts for 6.8\%, the round gate
-for none, and a projection already above budget for 38.4\%.
-
-The remaining 54.8\% are cycles where the controller selected no candidate at
-all, and here we are explicit about the limit of what we can resolve. The
-controller is single-flight by default: it authorizes at most one session per
-two-second cycle and waits for that session to begin a round before authorizing
-the next. Whether that gate held or whether a candidate was tried and did not
-fit is \emph{not distinguishable from our logs}---the controller does not record
-it---so we do not attribute the bucket to either. We bounded it by running that arm: the same configuration with single-flight
-disabled. Two things came out of it, and the second is the one that matters.
-
-The bound first. With the gate off, the residual bucket---which can then only
-be \emph{candidates that did not fit}, since the gate cannot be holding---falls
-from 54.8\% of blocked cycles to 39.7\%, against 44.0\% that are over budget
-outright. So the single-flight path accounts for roughly fifteen points, and
-the headroom estimate remains the largest single cause. (Both arms' numbers
-are rows of \texttt{gate\_attrib.csv}, which now includes the \texttt{sf=0}
-arm; an earlier revision quoted 39.9 and 43.5 for the second pair, values that
-appeared in no data file.)
-We report what did \emph{not} move, because it is the check we wrote down for
-this probe before running it. The two aggregate indicators barely did:
-admitting cycles go from 2.35\% to 2.44\% and blocked cycles from 93.3\% to
-93.2\%, so on those two the flag looks like it changed nothing. What moves is
-the composition \emph{within} the blocked cycles---which is the quantity the
-bound above rests on---and it moves well outside the replicate spread, the
-repeat of the base arm reading 58.3\% remainder against the original's 54.8\%.
-So the probe supports the decomposition and not the claim that disabling the
-gate makes the controller admit appreciably more, which is what we say above
-it buys 28 minutes for 3.5\,pp rather than a win.
-
-The second thing is that disabling it does not make the controller win.
-\texttt{sf=0} finishes in 263.3 minutes at 86.3\% SLO against the base run's
-291.3 and 89.8\%: it buys 28 minutes for 3.5\,pp, and its signed distance from
-the front moves from $-1.24$ to $-0.55$---onto the tie band from below it, not
-above it. Its admission rate is essentially unchanged (2.44\% of cycles admit, against
-2.35\%). So the gate was a real cost and removing it moves the arm along the
-front rather than past it, which is the same trade every other route in this
-section makes.
-
-Across the eight \sys{} variants that left controller logs with gate state---the
-set is named in \texttt{gate\_attrib.csv}, and it is eight rather than nine
-because the ninth, \texttt{sf=0}, is the probe we report separately just above,
-and because \texttt{foyfix} and the two AIMD arms run a different controller and
-log no gate state---the projection is over budget in a median 32.2\% of blocked
-cycles (19.5\% to 53.6\%) and the valve in a median 34.3\% (6.8\% to 67.9\%).
-Both medians move with the set, which is why we name it: over every completed
-run in that file---forty-four of them---they are 30.6\% and 5.4\%. One
-convention note, because it moves
-these numbers: we take the median as the upper of the two middle values when
-the count is even (\texttt{v[len(v)//2]}, which is what
-\texttt{gen\_gate\_attrib.py} computes and what the file's
-\texttt{eight\_median} line records), not the mean of the two; on eight arms
-that difference is 0.4\,pp on the projection and 7.5\,pp on the valve. The round gate is
-off by default and binds in only two of the three arms that turn it
-on---\texttt{rg2} at 29.3\% and \texttt{rg3} at 18.0\% of blocked cycles,
-while \texttt{rg4}, the loosest of the three, stays at 0.6\% like every arm
-that leaves it off---so the gate
-binds only where it is set tightly enough to.
-We also record what this accounting omits, because it changes the picture: the
-controller has a starvation guard that bypasses the budget entirely once the
-oldest waiter has waited 240\,s, cooling down for 300\,s. On the base run it
-accounts for 24.8\% of all admissions (51 of 206), and while the projection is
-over budget it is the \emph{only} way in---of 3{,}700 such cycles, nine admitted,
-and all nine were forced. It is therefore the guard, not the budget test, that
-sets the floor on how fast this controller can admit.
-
-The second is that under-use does \emph{not} order the outcomes, so it is not
-the whole explanation either. \texttt{horizon}=1 and \texttt{cap3}+HiCache sit
-at the same median occupancy (57.8\% of the pool) and the same mean running
-count (1.52 against 1.51 on the busy-time measure of \S\ref{sec:model}), and
-the cap is 19 minutes faster. Its re-measured
-\texttt{horizon}=0 arm runs at 58.1\%, below that cap, and is 28 minutes
-slower. Occupancy buys
-running requests reliably---\texttt{occupancy.csv}'s occupancy and
-running-count columns track
-each other across all twenty-three arms---but converting running requests into wall
-clock is not simply the per-step cost of \S\ref{sec:model}. Decomposing that
-19 minutes into its idle and busy components, 12.6 of them are idle time---%
-65\%---and only 6.8 are busy; the two runs' step costs differ by 1.2\,ms
-(29.2 against 28.0), about 4\%. A parked session is one the controller has
-authorized but not yet released, so the same policy that sets the running count
-also sets a large part of the idle time. Both
-effects are real; on this workload the unused-memory one is larger for the arms
-that finish worst, and the step-cost one is what separates the arms that finish
-close together.
+The controller believes it is nearly full. It admits against a projection
+(Eq.~\ref{eq:proj}) that runs at a median 7.6\% free of its budget, while
+its measured occupancy at the same instants leaves 48.2\% of that budget, or
+50.8\% of the pool, idle. The projection is 1.79$\times$ the occupancy the engine
+reports, and not a constant of the design: it ranges 1.32 to 1.96 across the
+twenty-seven controller runs that finished on this trace. Under-use is a property of the
+controller's estimates rather than of the hardware, but it does not order the
+outcomes, so it is not the whole explanation either; and removing the
+single-flight gate is the same trade every other route makes---it moves that arm
+along the front rather than past it.
 
 \subsection{What the two mechanisms explain, arm by arm}
 \label{sec:results:attribution}
 
-We have offered two mechanisms, and the honest thing is to say what each one
-covers. For every controller arm we took the static cap closest to it in wall
-clock and compared their occupancy and their step cost. An arm is attributed to
-the unused-memory mechanism if it runs fewer than 92\% of its comparison's
-requests, and to the step-cost mechanism if it runs a comparable number---%
-within 8\%---at a measurably higher cost (more than 8\% higher $\tau_1$).
-Everything else is a residual. The rule reads the running count and
-$\tau_1$ only; it does not consult occupancy, so the ``unused memory'' label
-is licensed by the running count alone---though the five arms it lands on also
-sit below their comparison's occupancy (52.4 to 62.1 against
-74.3\%), which is why we let the name stand. The comparability clause is load-bearing and we
-state it because an earlier version of this table did not enforce it, which
-classified every arm that ran \emph{more} requests than its comparison as
-step-cost purely because $\tau$ rises with the running count.
+Two mechanisms have been offered; we say what each one covers. For every
+controller arm we took the static cap closest to it in wall
+clock, out of every cap we ran, and compared occupancy and step cost: an arm is
+attributed to the unused-memory mechanism if it runs fewer than 92\% of its
+comparison's requests, and to the step-cost mechanism if it runs a comparable
+number---within 8\%---at a more than 8\% higher $\tau_1$; what is left is a residual,
+unless no comparable cap confirms the $\tau$ difference, in which case we record it as
+\emph{unattributable}. The comparability clause is load-bearing.
 
-\begin{center}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrl}
-  \toprule
-  Arm & Occ. & $\overline{R}$ & $\tau_1$ & Attribution \\
-  \midrule
-  single-flight off   &  54.5 & 1.455 & 28.9  & unused mem. \\
-  \texttt{horizon}=1  &  57.8 & 1.523 & 29.2  & residual \\
-  \sys{} base         &  49.2 & 1.353 & 28.7  & residual \\
-  \texttt{horizon}=2  &  52.4 & 1.390 & 28.4  & unused mem. \\
-  \texttt{horizon}=0  &  58.1 & 1.579 & 30.2  & unused mem. \\
-  \texttt{bres}       &  56.2 & 1.481 & 29.5  & unused mem. \\
-  \texttt{breshz1}    &  61.4 & 1.626 & 36.2  & $\tau$ high, not matched$^\ddagger$ \\
-  no gate, no resv.   &  62.1 & 1.677 & 31.5  & unused mem. \\
-  running gate$=$4    &  62.3 & 1.689 & 32.2  & $\tau$ high, not matched \\
-  all throttles off   &  39.2 & 1.675 & 34.8  & $\tau$ high, not matched \\
-  AIMD, retuned       &  66.6 & 1.706 & 34.3  & residual \\
-  AIMD, paper params  &  40.3 & 1.355 & 32.4  & step cost$^\ddagger$ \\
-  \bottomrule
-\end{tabular}
-\end{center}
+Of the thirteen arms, seven are attributed---six to unused memory and one to step
+cost (the published-parameter AIMD); two have a $\tau$
+no matched comparison can confirm (\texttt{rg4} and all-throttles-off); and four
+are residuals---%
+\texttt{horizon}$=1$, the base, \texttt{breshz1} and the retuned AIMD, whose
+occupancy and step cost both sit close to their comparison cap's, so their
+shortfall is real but we cannot say from these measurements which mechanism
+produced it. No row carries the co-tenancy flag, because the classification is
+made on $\tau_1$, exactly the column co-tenancy inflates, and the arms it would
+have flagged have all been re-measured alone. Two limits on what that buys. The
+comparison is a static cap matched on \emph{wall clock}, and the arms that finish
+near 260 minutes are matched against \texttt{cap5} of the full run table, whose SLO is 27.1\%---so the
+classification describes an arm relative to a wall-clock peer, not to the static
+\emph{front}. And the six unused-memory rows run fewer requests than their
+comparison, which is a description of what they did, not a demonstration that
+doing otherwise would have won. The per-arm readings are in
+\texttt{attribution.csv}.
 
-$^\ddagger$ marks runs measured while three or more other engine instances shared
-the host for at least an hour (\S\ref{sec:repro}). In this table the flag bites
-harder than in Table~\ref{tab:runs}, because the classification is made on
-$\tau_1$, which is exactly the column co-tenancy inflates. One of the three
-$\tau$-high rows carries it, and so does the one step-cost attribution the
-procedure makes---AIMD at its published parameters. That row is flagged by the
-window but not measurably damaged: its $\tau_2$, which does not touch the
-sampler, is 24.4\,ms, inside the clean family's range. We report it as flagged
-rather than calling it clean, because the window is what the audit establishes
-and the absence of damage is an inference from a different column. The two
-$\tau$-high rows that are not flagged (\texttt{running gate}=4 is a watch,
-all-throttles-off is clean) are the ones whose elevation no window explains.
-
-6 of the 12 rows are attributed: five to unused memory (\texttt{single-flight
-off}, the charge-free base, no-gate-no-reservation, and \texttt{horizon}=0
-and \texttt{horizon}=2 once re-measured---\S\ref{sec:repro}), one to step
-cost, three
-have a $\tau$ no
-matched comparison can confirm, and three are residuals---their occupancy and
-their step cost both sit close to their comparison cap's, and their shortfall
-is real but we cannot say from these measurements which mechanism produced it.
-Two limits on what that buys, both of which we want read before the number is
-quoted. First, the comparison is a static cap matched on \emph{wall clock},
-and the arms that finish near 260 minutes are matched against \texttt{cap5},
-whose SLO is 27.1\%---so the classification describes an arm relative to a
-wall-clock peer, not relative to the static \emph{front}, and it cannot say
-why the arm fails to beat the front. Second, the five unused-memory rows run
-fewer requests than their comparison, which is a description of what they did,
-not a demonstration that doing otherwise would have won; \S\ref{sec:results}
-is the section that establishes the loss, and this table only sorts it.
-We publish the table rather than a summary because a summary would claim more
-than we have---and because ``two mechanisms explain the negative result''
-would be the wrong summary. We also flag what changed here, since an earlier
-version of this table claimed four attributions from eleven rows and that was
-an artifact of two errors at once: the comparability clause above was not
-enforced in the code, and six arms had no $\tau_1$ because the run list behind
-this table was incomplete. The generator is now the only source for these rows
-(\texttt{attribution.csv}), it enforces the clause, and it carries the
-co-tenancy flag rather than having it written in by hand---which is how the
-earlier version came to mark two clean runs.
-
-\subsection{Route 1: the accounting base}
+\subsection{Why the knobs do not help}
+\label{sec:results:gate}
 
 Our controller's projection (Eq.~\ref{eq:proj}) charges a session for its full
 context even while it is parked in a tool wait, when its KV is evictable and
 therefore absent from the engine's reported occupancy. We argued this was a
-double charge and removed it, admitting on engine telemetry alone. The arm that
-tests this is \texttt{bres} in the data files and \emph{resident base} in
-Table~\ref{tab:runs}; we use both names below.
+double charge, removed it, and admitted on engine telemetry alone (\emph{resident
+base} in Table~\ref{tab:runs}). The charge is not double. Removing it does what
+the argument predicted on the engine side, with no eviction spiral, and finishes
+25.4 minutes earlier (265.9 against 291.3). It is nonetheless not a win: the SLO
+falls from 89.8\% to 85.9\%, and the static front itself falls 3.81\,pp over
+those same 25.4 minutes, so the arm keeps its place relative to the envelope to
+within 0.09\,pp while sliding 25 minutes along it, at the front's own slope. At
+265.9 minutes the front sits at 87.2\%, so the arm would have had to give up no
+more than 2.6\,pp of SLO instead of 3.9, and it did not. We rest nothing on the
+0.09\,pp: the base configuration's own four runs sit at $-1.24$, $-1.73$, $-1.49$
+and $+0.18$\,pp against this same front, a 1.9\,pp spread.
 
-The charge is not double, and removing it does what the argument predicted on
-the engine side: median occupancy rises from 49.2\% to 56.2\% of the pool and
-the busy-hour running count from 1.35 to 1.48, and the round-1+ prefix hit
-rate falls only from 80.6\% to 79.7\%, so no eviction spiral occurred. The run
-also finishes 25.4 minutes \emph{earlier} (265.9 against 291.3).
+The other two knobs the mechanism names behave the same way. Removing the growth
+reserve entirely costs 10.0\,pp of SLO, and the response is non-monotone in wall
+clock: one round is the fastest point, two rounds is 20 minutes \emph{faster} than
+three, and none of the four beats the base on the SLO axis. The best is
+\texttt{horizon}=2, whose two runs read $-0.30$ and $+0.22$\,pp; the one-round
+optimum, which this paper spends the most words on, does not reproduce, its two
+repeats landing $5.6$ and $3.2$\,pp below the line. Lowering the budget fraction
+slides the point \emph{below} the front rather than along it: budgets of 0.85 and
+0.90 finish at 333.9 and 315.9 minutes for 89.9\% and 87.7\% SLO, $-2.24$ and
+$-4.22$\,pp from the envelope at
+those wall clocks, against $-0.93$ and $-1.24$ for the two nearest arms at the
+0.95 the rest of the paper uses. None of the three adds a mechanism.
 
-It is nonetheless not a win. The SLO falls from 89.8\% to 85.9\%---3.90\,pp---
-and the static front itself falls 3.81\,pp over those same 25.4 minutes, so the
-arm keeps its place relative to the envelope to within 0.09\,pp while moving
-25 minutes along it: it slides, at the front's own slope, rather than
-crossing. What makes that a test rather than a coincidence is what it would
-have taken to cross: at 265.9 minutes the front sits at 87.2\%, so the arm
-would have had to give up no more than 2.6\,pp of SLO instead of 3.9, and it
-did not.
-
-We are careful not to rest anything on the 0.09\,pp. It is not a resolution
-claim, and the base configuration's own four runs show why: against this same
-front they sit at $-1.24$, $-1.73$, $-1.49$ and $+0.18$\,pp, a 1.9\,pp spread.
-That is the scale this statistic moves on, and it means the charge-free arm's
-distance from any \emph{one} of those runs is not resolvable---measured
-against the second of them it is 0.40\,pp \emph{better}, against the fourth
-1.5\,pp worse. The slope comparison is the part that survives, and it is the
-part the conclusion rests on.
-
-We want to be explicit that this is a revision. Our earlier measurement of this
-route had the arm 4.2 minutes \emph{slower} and 6.0\,pp worse, and we read the
-extra concurrency and the extra step cost---$\overline{R}$ up 1.35 to 1.48,
-$\tau_2$ up 23.8 to 31.3\,ms---as cancelling. That measurement was one of the
-co-tenancy-flagged runs (\S\ref{sec:repro}), and its $\tau_2$ was the inflated
-term: measured alone the same arm reads 24.8\,ms, so the second factor is
-$+$4.2\% rather than $+$31.5\%, and busy-time throughput
-($\overline{R}/\tau$) rises 5.1\% where the flagged measurement had it
-falling 17\%. Nothing cancels. The occupancy half of the argument
-(49.2\% to 56.2\%) is a volume measurement and was never in doubt. We keep the
-route in the negative column, now on the stronger ground that the highest-leverage
-knob the mechanism argues for moves the arm along the front rather than over it,
-and we record the correction here rather than in a footnote because it is the
-one place in this paper where a re-run changed a conclusion's reasoning rather
-than its precision.
-
-We note that this claim had already been falsified once by source inspection:
-SGLang's \texttt{token\_usage} subtracts evictable blocks, so a parked
-session's prefix is genuinely not counted, and charging for it reserves
-capacity that really will be needed back. The end-to-end measurement agrees
-with the source reading.
-
-\subsection{Route 2: the growth reserve}
-
-Sessions grow by a median of 2.7K new tokens per round (\texttt{input\_len}
-over rounds $\ge 1$ in the trace), so the controller reserves
-capacity for the next \texttt{horizon} rounds. We swept the horizon over
-$\{0,1,2,3\}$ and the reserve is not a free parameter to be minimised:
-Fig.~\ref{fig:horizon} shows the response is non-monotone. Removing the
-reserve entirely costs 10.0\,pp of SLO. The response is non-monotone in wall
-clock too---one round is the fastest point here, two rounds is 20 minutes
-\emph{faster} than three, and none of the four beats the base on the SLO
-axis---and the point that comes closest to the static front is
-\texttt{horizon}=2 at $0.30$\,pp below it, inside the tie band. The one round
-optimum is the point this paper spends the most words on, because it does not
-reproduce: the repeat of that configuration lands 5.6\,pp below the line
-(\S\ref{sec:results}). Read the sweep as a shape, not as a result at its
-minimum.
-
-\subsection{Route 3: the hard ceiling}
-
-Lowering the budget fraction is the crudest available knob, and on the two
-settings we swept it does not behave like the others: budgets of 0.85 and 0.90
-finish in 333.9 and 315.9 minutes at 89.9\% and 87.7\% SLO, which is $-2.24$
-and $-4.22$\,pp from the envelope at those wall clocks (\texttt{budget\_sweep.csv}),
-against $-0.93$ and $-1.24$ for the two nearest arms at the 0.95 the rest of
-the paper uses. Both of these arms carry the co-tenancy flag of
-\S\ref{sec:repro}; their $\tau_2$ (25.0 and 24.3\,ms) sits inside the clean
-range, so we keep their numbers and flag the window, as we do for
-\texttt{cap1}. So this knob slides the point \emph{below} the front rather
-than along it. We report it
-only for completeness, since it adds no mechanism.
+A fourth variant attacks the assumption the first three share---that what a
+controller sets is \emph{how many sessions are resident}. Because a live session
+spends most of its time parked, capping \emph{running requests} rather than
+resident sessions should keep the engine busy. We implemented it as a gate on
+\texttt{num\_running\_reqs} and swept it over $\{2,3,4\}$. A gate of four
+tightened both counts rather than pinning the one it aims at, and only that arm ran to 998
+of the trace's 999 steps, so this is a single comparison rather than a sweep. Both
+repairs fail: without a constraint on admission a paused session is re-admitted on
+the next cycle, and with one the policy is a session cap again. The obstacle is
+granularity---\texttt{paused} takes effect at round boundaries, while pinning an
+instantaneous count needs control the permit mechanism does not have.
 
 \subsection{An independent adaptive controller}
 \label{sec:results:aimd}
 
 Every controller above is ours, which invites the objection that the negative
-result is a statement about one design rather than about adaptive admission.
-We therefore implemented a second, mechanistically different controller: an
-AIMD window over an agent-level admission set, following the control law of
-the congestion-based system we compare against in \S\ref{sec:related}. The
-window grows additively while cache occupancy sits below a low watermark, is
-cut multiplicatively when occupancy exceeds a high watermark \emph{and} the
-prefix hit rate falls below a threshold, and holds otherwise. Cuts pause the
-youngest sessions at their next step boundary; growth resumes paused sessions
-first. Every input is a runtime gauge---occupancy and hit rate from the
-engine, nothing from the trace---and the window acts through the same named
-permits as \sys{}.
-
-It does not beat the static front either, at either parameter setting
-(Table~\ref{tab:runs}). At the values reported in that paper's evaluation it
-finishes in 364.3 minutes at 81.4\% SLO, $11.2$\,pp below the envelope; the
-same arm with its retuned watermarks finishes in 264.6 minutes at 52.8\%,
-$34.3$\,pp below (\texttt{table1.csv}). The retuned setting is also one of the most
-volatile runs we report: its segment-to-segment SD is 13.2\,pp of SLO, with
-segment values swinging between 37 and 72. Two runs are more volatile
-(\texttt{cap4} at 15.8 and the all-throttles-off arm at 14.4), and no other arm
-that keeps its throttles on is as bad---which is what a control loop oscillating
-around a capacity cliff looks like.
-
-We report two things honestly about this comparison. First, this is our
+result is a statement about one design rather than about adaptive admission. We
+therefore implemented a second, mechanistically different controller: an AIMD
+window over an agent-level admission set, following the control law of the
+congestion-based system we compare against in \S\ref{sec:related} \cite{concur,jacobson1988},
+acting on runtime gauges through the same named permits as \sys{}. It does not
+beat the static front either, at either parameter setting
+(Table~\ref{tab:runs}): at the values reported in that paper's evaluation it
+finishes in 326.8 minutes at 79.4\% SLO, $12.7$\,pp below the envelope, and with
+its retuned watermarks in 264.6 minutes at 52.8\%, $34.3$\,pp below. This is our
 reimplementation of a published control law, not the authors' system, and a
-reimplementation of any controller can underperform its paper. We built it to
-the published law, gave it the same permit interface and the same 2\,s cycle
-as \sys{}, and did not tune it beyond the two documented settings; but the
-caveat stands. Second, both controllers stall. At its paper parameters this one pinned its
-window at one session, admitted nothing, and left the engine idle for over an
-hour. Our own controller does the same thing more briefly: in 4 of the 11
-\sys{} runs a scan finds windows in which the engine was idle, 85 or more
-sessions were waiting, the SLO valve was open and the controller issued no
-permit at all. Three of those runs have a single such window each---170.5, 173.2
-and 195.0\,s, 0.9--1.2\% of the run's wall clock---and the arm that disables
-every throttle has nine of them, together 12\% of its wall clock (\texttt{stall.csv} states
-the criterion; an earlier draft quoted 150--175\,s and 0.9\% for all four,
-which no version of the criterion reproduces). The remaining runs, including
-the best one, show no such window. Nothing is logged
-as an error and the run recovers on its own.
-
-We traced one of those windows to a
-code path that explains it: single-flight admission considered only the head of
-the FIFO queue, and when the head was a session too large to fit the remaining
-budget it was never admitted, never left the queue, and blocked every smaller
-session behind it. That is the code every run in this paper executed. The fix
-in our repository---scan the queue, still admit at most one per cycle---is
-\emph{not} in the artifact that produced these results, so the numbers here
-predate it and we do not claim them for it. We are also explicit that this is
-\emph{a} path, not a proven cause:
-the audit is a log signature, and the same signature can be produced by other
-closed gates. What we can say is that the signature is present in a third of
-our \sys{} runs and absent from all of our static caps, which have no
-admission decision to get stuck in.
-
-That is the honest version of a finding we first reported too strongly. An
-intermediate draft of this paper called it a deadlock and said the
-configuration that produced our best result was the one that deadlocked on its
-repeat. Neither holds: the windows are minutes, not hours, and they clear on their
-own, and the configuration that produced our best result never showed one. Nor
-do they move any verdict we report---0.9--1.1\% of the wall clock in each of
-the three runs that has a single one, and in the all-throttles-off arm 12\% of
-a wall clock that is already the slowest in the table. We keep them because the mechanism is real and its size
-is the point: on a pool that holds four median sessions, a controller's failure
-mode is a silent stall, not graceful degradation, and it took a repeat run to
-see it.
-
-\subsection{Route 4: execution granularity}
-\label{sec:results:gate}
-
-The first three routes all assume that what a controller can set is \emph{how
-many sessions are resident}. A static cap sets the same quantity, so it is
-unsurprising that they land in the same place. The fourth route attacks the
-assumption instead: because a large fraction of live sessions are parked at
-any instant, a cap on \emph{resident} sessions leaves the engine idle whenever
-all residents happen to be parked. Capping the \emph{running-request} count
-instead should keep the engine busy while leaving the resident count high.
-
-The permit design supports this directly: a paused session finishes its
-current round and blocks before its next one, and resumes when the controller
-re-admits it. We implemented it as a gate on the engine's own
-\texttt{num\_running\_reqs} and swept the gate over $\{2,4\}$. Only the
-gate-of-four arm ran to 998 of the trace's 999 steps; the gate-of-two arm
-reached 770 and is not used, so what we report below is a single comparison
-against the no-gate arm rather than a sweep.
-
-It does not work, and the measurement says why. Against the no-gate arm, a
-gate of four moved mean running requests from 1.33 to 1.30 and mean live
-sessions from 3.25 to 3.03: it tightened both, by 2\% and 7\%, rather than
-pinning the one it aims at. That is what we
-observe, and we state it as the observation it is rather than deriving a bound
-we cannot support. A live session spends most of its time parked in a tool wait
-(the ratio of mean running requests to mean live sessions is 0.33 to 0.64
-across the twenty-three arms, \texttt{occupancy.csv}'s \texttt{running\_mean}
-over \texttt{runs.csv}'s \texttt{conc}), so pausing live sessions removes
-capacity that was not running in the first place---but that ratio is an average over a run, not a
-bound on any instant, and the running count can in principle reach the live
-count. Both repairs fail: without a
-constraint on admission, a paused session is re-admitted on the next cycle and
-blocks for at most one 2\,s cycle; with one, the policy is a session cap again.
-The obstacle is granularity---\texttt{paused} takes effect at round
-boundaries, while pinning an instantaneous count requires control the
-permit mechanism does not have.
-
-The measured outcome matches: the gate moved running concurrency from 1.33 to
-1.30 and live sessions from 3.25 to 3.03. It tightened rather than pinned, and
-a tightening is another cap.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig6_horizon.pdf}
-  \caption{The growth reserve is not a free parameter. Removing it costs
-  10.0\,pp of SLO, and the response is non-monotone in wall clock: one round
-  is fastest, and two rounds is 20 minutes \emph{faster} than three. The point
-  that comes closest to the static front is two rounds, 0.30\,pp below
-  it---while the one-round optimum, the fastest point here, is 0.9\,pp below
-  and is the one point that does not reproduce on a repeat (it lands
-  5.6\,pp below).
-  The other two settings were each run once (the base has a second run), so
-  the shape is better supported than any single point on it.}
-  \label{fig:horizon}
-\end{figure}
+reimplementation can underperform its paper; we did not tune it beyond the two
+documented settings, and its
+first two attempts stalled because the launch path that ran it had no supervisor
+loop. Our own controller shows a smaller version of the same shape: one of the
+seventeen runs of ours in \texttt{stall.csv} has a window in which it admits nobody
+for at least 150\,s while the engine has no running request and at least 85
+sessions wait, with neither the SLO valve nor the hard stop holding
+admission---166.6\,s, 0.93\% of the span it sampled; it cannot arise in our static
+caps, which have no admission decision to get stuck in.

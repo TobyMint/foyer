@@ -1,0 +1,69 @@
+% ============================================================================
+% 摘要 RTAS 改写草稿（独立文件，待合并进 paper/main.tex）
+%   基线：main.tex 现摘要 = 264 词（含 \begin/\end 两行；正文 256）。
+%   本稿 = 326 词正文（+70）。**这 +70 就是 codex 第 1--8 条的价格**，逐条有落点，
+%   没有一条是装饰。RTAS 页面未规定摘要上限，IEEE 会议惯例 <=250 —— 若要压，
+%   按文件末尾的「可删序」，但每删一条就等于放弃对应的那一条。
+%
+%   落实 codex 八条（编号同任务单）：
+%     1 问题定义：第一句起就写「每轮带一个 latency deadline，准入哪些轮」
+%     2 主结果口径：deadline satisfaction rate（满足 10 s deadline 的请求比例）
+%     3 时钟：engine clock per request；permit wait 不计（ready 时钟在 §VI）
+%     4 静态 Pareto 前沿：首次出现写成「同 trace、同 deadline、同资源预算下的
+%       静态准入基线」（static admission baseline for the same trace,
+%       deadline and resource budget）
+%     5 链条：准入 -> 并发 -> 每步服务时间 -> 完成/排队 -> miss；有/无 host tier
+%       两组读数（87.9--92.4% vs 92.5%->36.4%）说明同一动作代价不同
+%     6 ε 是【每步服务时间】对并发的弹性，不是每请求时延退化；桥显式写出：
+%       the step, not the request, whose completion time also carries its
+%       queueing and its step count
+%     7 不写「确定性时延界」：明说是实测 miss 率
+%     8 「-0.30pp 且在 ±1.0pp 带内」写成 no distinguishable improvement（非劣于）
+%
+%   数字：与 main.tex 现摘要逐个对拍，0 丢失、0 新增（脚本核对过）。
+%   ⚠ 与并行 agent 不冲突：本稿不含 25 档那条轴（已被删）。
+%     合并前请按当时的 main.tex 再复核一次数字。
+% ============================================================================
+\begin{abstract}
+An agentic LLM session is a long, multi-round job whose KV footprint grows every
+round, and each round carries a latency deadline; on a memory-constrained
+accelerator the pool binds, and admission control---which rounds to admit---looks
+like the obvious lever. Busy-time service rate is $\overline{R}/\tau$, so raising
+concurrency by $f$ buys $f^{1-\epsilon}$, $\epsilon$ the elasticity of per-step
+\emph{service time} to the running count---the step, not the request, whose
+completion time also carries its queueing and its step count. On a memory-bound
+agentic replay $\epsilon = 0.38$ to $0.61$ depending on the step cost, and it
+tracks the memory tier, not the controller---an association across five policies,
+consistent rather than demonstrated. With a host tier four static points hold
+87.9--92.4\% of the reuse bound over $\overline{R}_{\text{busy}}$ 1.25 to 1.75;
+without one, realization falls from 92.5\% to 36.4\%, as recomputation---the same
+added concurrency, a different step time and a different miss count. The verdict
+is negative: nine controller variants spanning accounting, growth reserve and
+execution granularity, two more on the budget ceiling, and an independent
+congestion-based controller reimplemented---none above the static admission
+baseline for the same trace, deadline and resource budget (the interpolated
+static envelope at the strict $10$\,s deadline; engine clock per request, permit
+wait uncharged)---the best twice-measured at $-0.30$ and $+0.22$\,pp of deadline
+satisfaction rate, both on the line, no distinguishable improvement. A tenth
+arm---the same controller revision, one expression changed---lands above it
+twice, by $1.3$ and $2.2$\,pp: the \emph{release} rule crosses the front there,
+the admission decision does not. Two more: on a second GPU, $9.7\times$ the pool,
+realized reuse stays above 92\% at twice the smaller card's crossing
+$\overline{R}$; our pre-registered test returns \emph{supported}, the controller
+ties the front; a second agent trace reproduces the direction but not the level:
+having no host tier, it tests the negative result, not the mechanism. Our
+criterion is a diagnostic: it neither returns the verdict nor explains the
+failure. Miss rates here are measured, not a latency bound.
+\end{abstract}
+% ---------------------------------------------------------------------------
+% 可删序（本稿 326 词 -> 250 词；括号内是删掉后【失去落点】的那一条）：
+%   1) "---the same added concurrency, a different step time and a different
+%       miss count."                                        （-13 词；第 5 条）
+%   2) "Miss rates here are measured, not a latency bound."   （-9  词；第 7 条）
+%   3) "(the interpolated static envelope at the strict $10$\,s deadline;
+%       engine clock per request, permit wait uncharged)"     （-17 词；第 3、4 条）
+%   4) "Our criterion is a diagnostic: it neither returns the verdict nor
+%       explains the failure."                                （-14 词；是定位句，
+%                                                             不在八条内，建议最后才动）
+%   以上四条全删 = 273 词。仍要更低就只剩 ⚠⚠ 的第 6 条那座桥（-17 词），不建议。
+% ---------------------------------------------------------------------------

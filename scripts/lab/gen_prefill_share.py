@@ -43,7 +43,16 @@ def main():
     for run in dec:
         p = None
         for c in cand:
-            for d in (os.path.join(c, run), os.path.join(c, "pois200_" + run)):
+            # ⚠⚠ 2026-09-27（r57 中立复核）：**顺序原来是反的** ——
+            # 先试裸名 `<run>`、再试 `pois200_<run>`，而本地镜像里
+            # `aimd2_paper` / `cap4` / `default` **三个短名目录与 `pois200_` 目录同时存在**
+            # ⇒ 裸名**遮蔽**了长名，读到的是**另一个 run** 的计数器
+            # （实测 `aimd2_paper` 那行从 28469904/705216 变成 3114662/78733，约 1/9）。
+            # `pois200_` **优先**：它是本工作负载的规范家族，也是 `decomp.csv` 的 run 列
+            # 唯一能对上的一族（39 条全部 1:1 映射到 `pois200_*`，反解 0 条落空）。
+            # ⚠ 同一个坑在 `scripts/lab/regen_all.sh` 的 `recover_runs()` 里也出现过一次 ——
+            # **凡「短名 vs 前缀名」并列可解析的地方，一律前缀优先。**
+            for d in (os.path.join(c, "pois200_" + run), os.path.join(c, run)):
                 if os.path.exists(os.path.join(d, "metrics.csv")):
                     p = os.path.join(d, "metrics.csv"); break
             if p: break

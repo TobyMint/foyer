@@ -1,0 +1,29 @@
+{
+ "lane": "pois_rep",
+ "policy": "budget3:hw=0;target=0.95",
+ "trace": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+ "trace_md5": "df4bdd37e5",
+ "gpu": 2,
+ "port": 30032,
+ "started": 1789885750.2759526,
+ "code": {
+  "run_matrix.py": "9c7545548a5f",
+  "controller_budget3.py": "2b573829083c",
+  "controller_aimd2.py": "c370cc4c7589",
+  "controller_aimd.py": "d2b8b7461ddf",
+  "session_runner": "34e5cea815f5",
+  "path_divergence": "none",
+  "git_sha": "unknown (BASE is not a git working copy)"
+ },
+ "build": {
+  "TURNSTILE_HICACHE_ARGS": "unset",
+  "TURNSTILE_EXPECT_POOL": "unset",
+  "TURNSTILE_MEMFRAC": "0.85",
+  "TURNSTILE_RUN_TIMEOUT_H": "12",
+  "TURNSTILE_TRACE": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+  "hicache_enabled": false
+ },
+ "pool_tokens": 101432,
+ "pool_attempts": 1,
+ "memfrac_used": null
+}

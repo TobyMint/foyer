@@ -1,0 +1,58 @@
+{
+ "lane": "pool50_g2",
+ "policy": "static=3",
+ "trace": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+ "trace_md5": "df4bdd37e5",
+ "gpu": 2,
+ "port": 30072,
+ "started": 1790326522.0869443,
+ "code": {
+  "run_matrix.py": "b866b92c6eed",
+  "controller_budget3.py": "f825bc768188",
+  "controller_foyer.py": "43462c276ec4",
+  "controller_aimd2.py": "51602440d103",
+  "controller_aimd.py": "d2b8b7461ddf",
+  "session_runner": "5d40964aad21",
+  "path_divergence": [
+   "controller_budget3.py",
+   "run_matrix.py"
+  ],
+  "git_sha": "unknown (BASE is not a git working copy)"
+ },
+ "build": {
+  "TURNSTILE_HICACHE_ARGS": "unset",
+  "TURNSTILE_EXPECT_POOL": "50716",
+  "TURNSTILE_MEMFRAC": "0.73",
+  "TURNSTILE_RUN_TIMEOUT_H": "14",
+  "TURNSTILE_TRACE": "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+  "hicache_enabled": false
+ },
+ "pool_tokens": 50716,
+ "pool_attempts": 1,
+ "memfrac_used": 0.733528,
+ "cap": 3,
+ "runner_argv": [
+  "/data/xbw/turnstile/TraceLab/replay/target/release/session_runner",
+  "--trace",
+  "/data/xbw/turnstile/data/replay_pois200_l04.csv",
+  "--text-file",
+  "/data/xbw/turnstile/data/enwik9",
+  "--tokenizer",
+  "/data/xbw/turnstile/models/qwen25-coder-7b-yarn96k/tokenizer.json",
+  "--model",
+  "qwen2.5-coder-7b",
+  "--base-url",
+  "http://127.0.0.1:30072/v1",
+  "--log-path",
+  "/data/xbw/turnstile/results/night/pois200_cap3_hp/steps.jsonl",
+  "--summary-path",
+  "/data/xbw/turnstile/results/night/pois200_cap3_hp/summary.json",
+  "--cap-file",
+  "/data/xbw/turnstile/cap_pool50_g2",
+  "--admission-log",
+  "/data/xbw/turnstile/results/night/pois200_cap3_hp/admissions.jsonl"
+ ],
+ "runner_rc": 0,
+ "wall_s": 12057.4,
+ "finished": 1790338753.199865
+}

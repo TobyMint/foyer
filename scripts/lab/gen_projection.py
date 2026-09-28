@@ -36,7 +36,25 @@ def main():
     root = sys.argv[1]
     out = sys.argv[2]
     rows = []
+    # ⚠ 2026-09-27（独立复核 + codex r48）：**按池子把别的机器排除掉**。
+    # 本地镜像里混进了 A100 的 run（`a100_foyer_hz2`，池子 983{,}728），而本表是给
+    # **3090 部署**用的：一个 9.7 倍大的池子上的投影比值跑进来，会把区间从
+    # 1.32--1.96 悄悄撑到 1.32--2.00，读者看不出来。
+    # 判据用项目自己的有效性规则（CLAUDE.md：KV pool 必须落在 101,432 ± 20，
+    # 否则该 run 作废）—— 池子不是 101,432 的，就不是 3090 的 run。
+    POOL_3090, POOL_TOL = 101432, 20
+
+    def _pool_ok(d):
+        try:
+            m = json.load(open(os.path.join(d, "metadata.json")))
+        except Exception:
+            return False
+        pt = m.get("pool_tokens")
+        return pt is not None and abs(pt - POOL_3090) <= POOL_TOL
+
     for p in sorted(glob.glob(os.path.join(root, "*", "controller.jsonl"))):
+        if not _pool_ok(os.path.dirname(p)):
+            continue
         run = os.path.basename(os.path.dirname(p))
         if run.startswith("_"):
             continue

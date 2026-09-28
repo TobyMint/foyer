@@ -1,0 +1,20 @@
+# AIMD 原参数那条臂的两次停摆 —— gen_aimd_stall.py 生成
+# 时间戳是 unix 秒。两次的停摆**形态不同**，所以给两个起点，各对应正文一处：
+#   queued_at_log_gap    控制日志最长中断的起点 -> 第 1 次 = 24（正文 §V 引的「24 sessions queued」）
+# admit_gap_min = 两次「发许可」之间最长的间隔（第 1 次 31.9 -> 正文的「32 minutes」）；
+#   它与 stall_gap_min（控制日志的中断，31.4）**不是同一个量**，别混用。
+# idle_in_gap_min = 那个最长许可间隔【之内】，引擎 num_running_reqs==0
+#   的时长（第 1 次 28.0 -> 正文 §V 的「the engine sat idle for 28 of them」；
+#   第 2 次 7.9）。这一列是 2026-09-26 补的：正文那个 28 此前在任何数据
+#   文件里都追不到，而本脚本的 docstring 却写着「这一节引的数都出自这里」
+#   （独立复核子 agent 第 39 轮指出）。
+#   queued_at_last_cycle 控制日志最后一行处     -> 第 2 次 = 2（正文引的「two sessions stayed queued」）
+# ⚠ stall_gap_min 只对第 1 次有意义（31.4 分钟，控制器被杀后重来）；
+#   第 2 次是「末条之后再没写过」，它的 0.5 分钟只是内部一次常规顿挫，
+#   **不代表停摆时长** —— 正文因此不引任何「停摆 N 分钟」。
+# queued_never_admitted = 整个 run 上从未被准入过的会话数（第 1 次是 0：干预后它们最终都放行了）。
+# ctrl_gap_min 两行量的不是同一件事，且可以是负的（第 1 次：干预后重启的控制器跑满默认 --max-minutes 300，
+#   比 runner 结束还晚；那个 run 的停摆发生在干预【之前】）。
+admit_gap_min,idle_in_gap_min,ctrl_cycles,ctrl_last,last_activity,steps,queued_never_admitted,queued_at_log_gap,queued_at_last_cycle,stall_gap_min,admit_first,admit_last,ctrl_gap_min,run,attempt
+31.9,28.0,1199,1789952282,1789936667,999,0,24,0,31.4,1789914812,1789935594,-260.3,pois200_aimd2_paper,1
+12.5,7.9,600,1790399737,1790400280,989,2,94,2,0.5,1790382114,1790399738,9.0,pois200_aimd2_paper_r2,2

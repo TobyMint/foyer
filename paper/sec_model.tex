@@ -3,266 +3,153 @@
 
 \subsection{Two components}
 
-We split the wall clock at every sampled instant according to whether the
-engine has any request in flight:
+We split the wall clock at every sampled instant by whether the engine has any
+request in flight:
 \begin{equation}
   W \;=\; W_{\text{busy}} \;+\; W_{\text{idle}} .
   \label{eq:split}
 \end{equation}
-Fig.~\ref{fig:decomp} shows the split for the twenty-eight runs of
-Table~\ref{tab:runs}'s families that we have per-step logs for. Two things are
-immediately visible and both matter later.
+Fig.~\ref{fig:decomp} shows the split for the seventeen of the thirty-nine runs
+of Table~\ref{tab:runs}'s families we have per-step logs for. Idle time is not
+noise: it spans 6.3\% to 41.9\% of the sampled span, and 6.4\% to 42.5\% against
+the request wall clock of Table~\ref{tab:runs}, and it is not spread evenly---over
+2{,}374 stretches the mean is 20.6\,s and 17.7\% of them exceed 20\,s, accounting
+for 69.5\% of all idle \emph{time}, the tail a scheduler feels. We report the mean
+and the share rather than the median, which is not robust to which runs enter the
+pool: it reads 10.0\,s without \texttt{cap1} and 5.0\,s with it. The mean
+(18.9--20.6\,s) and the over-20\,s share (66.1--69.5\%) move by little across the
+four variants in \texttt{idle\_pooled.csv}---two distinct pools---and the claim
+that the tail dominates does not depend on the choice.
 
-First, idle time is not noise. Across the runs it spans 7.3\% to 41.9\% of
-the sampled span---7.3\% for the fastest configuration, 36.3\% for the
-slowest, and 41.9\% for the one that idles most (all-throttles-off). The
-denominator here
-is the span the sampler observed, which runs about six minutes longer than the
-request wall clock of Table~\ref{tab:runs}, so the fractions against that
-wall clock are 7.6\% and 36.7\%---and it is not spread evenly.
-Over 1{,}848 stretches the mean is 20.8\,s and 17.6\% of them exceed
-20\,s, accounting for 70.2\% of all idle \emph{time}
-(Fig.~\ref{fig:idle}). The tail, not the middle, is what a scheduler feels,
-and it sits at the scale of the 15.8--16.9\,s mean tool wait (demanded and
-measured; \texttt{toolwait.csv}). We report the mean and the share rather
-than the median here because the median is not robust to which runs enter the
-pool: it is 10.0\,s without \texttt{cap1} and 5.0\,s with it, since
-that one run contributes 411 of the 1{,}848 stretches and is itself the
-longest. The mean (18.7--20.8\,s) and the over-20\,s share of idle time
-(65.8--70.2\%) move by little across the poolings we report in
-\texttt{idle\_pooled.csv}. That file carries four variants but only two
-distinct pools, and for different reasons: the ``minus damaged'' variant now
-excludes nothing, because the arms it names either never enter this analysis
-or have been re-measured clean; the ``minus flagged'' variant coincides with
-``minus \texttt{cap1}'' because \texttt{cap1} is the only flagged arm in this
-pool at all. We say that rather than count four pools where there are two. The
-claim that the tail dominates does not depend on the choice. The 90th percentile moves with the median
-(25.1--30.1\,s) and we give it as a range for the same reason.
-
-Second, the two components move independently and in opposite directions, so
-neither is a proxy for the wall clock. The no-control baseline
-(\S\ref{sec:results}) cuts idle time by 13.8 minutes against the base
-configuration---it admits everything, so nothing queues---and finishes only
-2.7 minutes sooner, because its busy time grows by 11.1 minutes; the trade
-costs it the SLO column outright, 89.8\% down to 3.0\%. The arm that disables
-every throttle moves the other way, and further: idle \emph{rises} by 129
-minutes while busy \emph{falls} by 5.4, so the 124 minutes it adds to the wall
-clock are almost entirely waiting, bought with 43.7\,pp of SLO. Any account
-that treats ``more concurrency'' as one thing will get this wrong in one
-direction or the other.
-
-Neither example is one of the damaged runs of \S\ref{sec:repro}; both are
-clean in the co-tenancy audit. Neither is a member of the controller family
-whose clean step-cost range that section quotes, either---the baseline is not
-a controller at all, and its 39.2\,ms comes with the highest running count
-among the runs whose step cost we report (1.91), while the throttle-free arm
-runs a different controller. (The \texttt{horizon}=1 repeat reads 2.10, but its
-$\tau$ columns are the ones we exclude above.) The
-charge-free base arm is a third case, whose split we give in
-\S\ref{sec:results} with the re-measured numbers.
+The two components move independently and in opposite directions, so neither is a
+proxy for the wall clock. The no-control baseline (\S\ref{sec:results}) cuts idle
+time by 13.8 minutes against the base configuration---it admits everything, so
+nothing queues---and finishes only 2.7 minutes sooner, since its busy time grows
+by 11.1 minutes; the trade costs it the SLO column outright, 89.8\% down to 3.0\%.
+The arm that disables every throttle moves the other way, and further: idle
+\emph{rises} by 129 minutes while busy \emph{falls} by 5.4, so the 124 minutes it
+adds are almost entirely waiting, bought with 43.6\,pp of SLO. Neither example is
+one of the damaged runs of \S\ref{sec:repro}---both are clean in the co-tenancy
+audit---and neither belongs to the controller family whose clean step-cost range
+that section quotes.
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig2_decomp.pdf}
-  \caption{Wall clock split into busy and idle for the twenty-eight runs of
-  \S\ref{sec:model} and \S\ref{sec:results}, ordered by total duration. Idle is 7.3\% for the fastest configuration and
-  36.3\% for the slowest. Note the no-control baseline: it sits sixth of
-  twenty-eight on idle share (11.4\%) and yet eighteenth on duration, because
-  its busy time grows with everything it admits. Three bars are hatched---the
-  same $^\ddagger$ flag as in Table~\ref{tab:runs}: one of the three has a
-  measurably inflated step cost and two are flagged windows that left no
-  measurable trace (\S\ref{sec:repro}).}
+  \caption{Busy and idle time for the seventeen runs the figure draws, ordered by total duration; the idle range (6.3\% to 41.9\%; 6.3\% for the fastest configuration, 36.3\% for the slowest) is computed over all thirty-nine
+  runs. One bar is hatched---the same $^\ddagger$ flag as in
+  Table~\ref{tab:runs}---measured while other engines shared the host, with no
+  measurable damage (\S\ref{sec:repro}).}
   \label{fig:decomp}
-\end{figure}
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig4_idle_segments.pdf}
-  \caption{Survival function of idle-stretch duration, pooled over all
-  completed runs (1{,}848 stretches). Most stretches are short---the median is
-  5--10\,s depending on which runs enter the pool, which is why we do not lead
-  with it---but the minutes are not: 70.2\% of all idle \emph{time} sits in
-  stretches longer than 20\,s (65.8--70.2\% across the poolings in
-  \texttt{idle\_pooled.csv}), and the mean stretch is 20.8\,s, the same order
-  as the 15.8--16.9\,s mean tool wait. The cliff is the 5\,s sampling floor.}
-  \label{fig:idle}
 \end{figure}
 
 \subsection{What determines busy time}
 
 During busy time the engine executes steps; each step produces one token per
-running request. Hence
+running request. Hence \cite{little1961}
 \begin{equation}
   W_{\text{busy}} \;\approx\; \frac{G}{\overline{R}}\,\tau ,
   \label{eq:busy}
 \end{equation}
-with $G$ the total generated tokens (fixed by the trace at 706{,}010) and
-$\tau$ the per-step cost. Across our runs $\tau$ is not a fit parameter we
-tuned; we obtain it two independent ways, and reporting both is what shows
-they are measuring different things rather than confirming each other.
+with $G$ the total generated tokens (fixed by the trace at 706{,}010) and $\tau$
+the per-step cost---not a fit parameter we tuned: we obtain it two independent
+ways.
 
-\paragraph{Method 1 (derived).} $\tau_1 = W_{\text{busy}} \cdot \overline{R} /
-G$. Two choices in that expression are easy to get wrong and both matter. The
-time term must be the \emph{busy} component, not the wall clock---using the
-wall clock charges idle time to the steps. And $\overline{R}$ must be the mean
-running count \emph{during busy time}, not the mean over the whole run: the
-whole-run mean includes the idle samples, where the count is zero, so it equals
-$\overline{R}_{\text{busy}} \times$ (busy fraction). Using it makes $\tau_1$
-too low by exactly the busy fraction---so the estimate is short by the
-\emph{idle} fraction, 36.3\% for \texttt{cap1}, whose busy share is 63.7\%. We report both columns in the data, and use the
-busy-conditional mean throughout; the whole-run mean is what an earlier
-revision of this paper used, and it made the two methods agree far better than
-they do.
+\paragraph{Method 1 (derived).} $\tau_1 = W_{\text{busy}} \cdot \overline{R} / G$,
+with $\overline{R}$ the mean running count \emph{during busy time}---the
+busy-conditional mean throughout, since the whole-run mean includes the zero-count
+idle samples and would make $\tau_1$ short by the \emph{idle} fraction, 36.3\% for
+\texttt{cap1}, whose busy share is 63.7\%.
 
-\paragraph{Method 2 (independent).} For each step record we compute the
-per-request decode interval,
-$(\text{total\_duration} - \text{first\_token}) / (\text{output\_len} - 1)$,
-and take the median over steps with $\text{output\_len} \ge 32$.
-
-The two do not agree exactly, and the disagreement is informative rather than
-embarrassing. $\tau_1$ exceeds $\tau_2$ on every run we accept, by 8.4--39.7\%
-(\texttt{decomp.csv}, column \texttt{excess\_pct}, over the 27 runs that remain
-once the repeat excluded below is dropped), which in absolute terms is
-2.9--8.8\,ms of a 20.6--39.2\,ms step. (The one run we exclude
-from the reuse accounting, the \texttt{horizon}=1 repeat, reads 66.3\% here
-against its original's 18.5\%. The anomaly sits in the engine's token counters
-and in everything derived from them, so that is the scope of the exclusion:
-this run's $\tau$ columns, its reuse and recomputation are unusable, while its
-wall clock and SLO---which come from the client---are ones we use, and it
-appears in Table~\ref{tab:runs} and in the repeat spread of
-\S\ref{sec:results} on those two columns alone.) The gap is
-\emph{consistent with} engine steps that are prefill and
-therefore emit no output token---we can bound it, not identify it, because
-subtracting a median from a mean does not isolate a component. All we can form
-from these two is their ratio: the excess $\tau_1/\tau_2 - 1$ runs
-17.7--39.7\% across the five device-only configurations. Two things follow, and
-we separate them. First, it is a ratio of \emph{times}, not of steps, and we
-have no measurement of the fraction of step \emph{counts} that are prefill---
-chunked prefill makes those two different numbers. Second, even as a time
-ratio it is the gap between two measurements, not a decomposition of one: it
-is consistent with prefill and non-decode work filling it, but we cannot rule
-out that some of the difference is the two estimators disagreeing for other
-reasons. So the two are not
-two estimates of one number; they are measurements of two different things,
-and we do not size a component with their difference. Fig.~\ref{fig:steptime} shows both, run by run. Method 2 remains the one that does not depend on the
-quantity it is used to explain, and it is the one we quote when the question
-is the cost of a decode step. The engine's own latency counters
-(\texttt{itl\_p50}, \texttt{e2e\_p50}, \texttt{ttft\_p50}) are exported as zero
-by SGLang v0.5.10 in our configuration, so no directly measured step time
-exists in our data; instrumenting this is future work.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\columnwidth]{figs/fig3_steptime.pdf}
-  \caption{Per-step cost by two independent measurements, one run per row:
-  circles are model-consistent (all engine steps), crosses are the per-request
-  decode interval. They do not agree---$\tau_1$ exceeds $\tau_2$ by 8--40\%---
-  and the gap is consistent with the prefill share, not measurement error;
-  \S\ref{sec:model} bounds that share rather than identifying it. The dotted line is
-  the cost of reading the weights once; every run sits above it. Three rows are
-  marked $^\ddagger$---measured while other jobs shared the host
-  (\S\ref{sec:repro})---and one of the three has a measurably inflated step
-  cost, which is why the marked rows cluster at the high end; the other two
-  carry the flag without measurable damage.}
-  \label{fig:steptime}
-\end{figure}
+\paragraph{Method 2 (independent).} The median per-request decode interval
+$(\text{total\_duration} - \text{first\_token}) / (\text{output\_len} - 1)$ over
+steps with $\text{output\_len} \ge 32$: an independent cross-check that does not
+depend on the quantity it explains, and the one we quote for the cost of a decode
+step. The two disagree---$\tau_1$ exceeds $\tau_2$ on every
+run we accept, by 8.4--39.7\% over the 38 left once the repeat excluded below is
+dropped. The gap
+is \emph{consistent with} engine steps that are prefill and therefore emit no
+output token---we can bound it, not identify it, because subtracting a median from
+a mean does not isolate a component: it is a ratio of \emph{times}, not of steps,
+and we have no measurement of the fraction of step \emph{counts} that are
+prefill, and even as a time ratio it is the gap between two measurements, not a
+decomposition of one---so we cannot rule out that some of the difference is the two
+estimators disagreeing for other reasons. They are therefore not two estimates of one number
+but measurements of two different things, and we do not size a component with their
+difference.
+(The \texttt{horizon}=1 repeat is excluded from the reuse accounting: its token
+counters are anomalous, so its $\tau$ columns, reuse and recomputation are
+unusable, while its wall clock and SLO---from the client---are ones we use.) The
+engine's own latency counters are exported as zero by SGLang v0.5.10.post1, so no
+directly measured step time exists in our data, and the step cost we quote is
+inferred rather than read \cite{fwagnostic}.
 
 \subsection{The per-step cost is not constant in concurrency}
 
-Equation~\ref{eq:busy} would be uninteresting if $\tau$ were a constant. It is
-not. Across the thirteen runs we fitted---the five device-only caps, the three
-host-tier caps that span the same range, and the five controller arms we report
-individually---$\tau_1$ ranges from 27.0 to 36.7\,ms and $\tau_2$
-from 20.6 to 31.2\,ms, and both rise with the running count: fitting
+Equation~\ref{eq:busy} would be uninteresting if $\tau$ were a constant. It is not:
+across the fourteen runs we fitted, $\tau_1$ ranges from 27.0 to 36.7\,ms and
+$\tau_2$ from 20.6 to 31.2\,ms, and both rise with the running count---fitting
 Eq.~\ref{eq:elasticity} to the five device-only configurations gives
-$\varepsilon = 0.38$ for $\tau_1$ and $0.61$ for $\tau_2$
-($R^2 = 0.89$ for the latter, Fig.~\ref{fig:cancel}).
+$\varepsilon = 0.38$ for $\tau_1$ and $0.61$ for $\tau_2$ (Fig.~\ref{fig:cancel}).
+The relation is a trend, not a law:
+\texttt{cap4\_hc} runs 1.73 requests at 29.8\,ms while \texttt{horizon}$=0$ runs
+1.58 at 30.2, so running count sets a floor and a trend, not a value, and on the
+host-tier family, as we show below, not the value at all.
 
-The relation is a trend, not a law. Two host-tier configurations with similar
-running counts behave differently: \texttt{cap4\_hc} runs 1.73 requests at
-29.8\,ms while \texttt{F:hz0} runs 1.58 at 30.2\,ms. Running count sets a
-floor and a trend, not a value---and on the host-tier family, as we show below,
-it does not set the value at all.
+This is the crux of the paper. Hold $\tau_1$ at its \texttt{cap1} value of
+28.8\,ms and busy time falls as $1/\overline{R}$: raising the running count from
+1.00 to 1.84 should have cut busy time by a factor of 1.84, from 340 minutes to
+184, but the measured curve flattens and lands at 234. The rise in $\tau$ takes
+back 50 of the 156 minutes the extra concurrency would otherwise have
+bought---\emph{a third} of the gain, not all of it and, as an earlier revision
+claimed, not more than half; the shortfall compounds with every controller that
+tries to exploit the difference.
 
-This is the crux of the paper, and we state it at the strength the arithmetic
-supports. Hold $\tau_1$ at its value for \texttt{cap1}, 28.8\,ms, and busy
-time falls as $1/\overline{R}$: raising the running count from 1.00 to 1.84
-should have cut busy time by a factor of 1.84, from 340 minutes to 184. The
-measured curve flattens and lands at 234. The rise in $\tau$ takes back 50 of
-the 156 minutes that the extra concurrency would otherwise have bought---\emph{a
-third} of the gain, not all of it and, as an earlier revision of this paper
-claimed, not more than half. The other two thirds are real: raising
-concurrency does make the engine faster. What it does not do is make it faster
-in proportion, and the shortfall compounds with every controller that tries to
-exploit the difference.
+\paragraph{What the engine is doing when it is not decoding.} Across the five
+static caps \emph{without} HiCache, tokens evicted from the radix cache
+\cite{h2o,scissorhands} and prompt
+tokens that had to be prefilled rather than reused track each other almost
+exactly---an evicted prefix is recomputed, close to one token for one, and that
+recomputation is chunked into decode steps---and recomputation rises with $\tau$
+across four of the five points, the exception being \texttt{cap1}. It is five
+points on
+five policies, not an intervention---we did not hold concurrency fixed and vary
+eviction---so we call it consistent, not demonstrated.
 
-\paragraph{What the engine is doing when it is not decoding.} SGLang exposes
-two counters that answer this directly: tokens evicted from the radix cache,
-and prompt tokens that had to be prefilled rather than reused. Across the five
-static caps \emph{without} HiCache the two track each other almost exactly.
-\texttt{cap1} evicts 9.2\,M tokens and prefills 8.6\,M uncached;
-\texttt{cap5} evicts 21.3\,M and prefills 20.7\,M; the gap is 0.6--0.7\,M on
-every one of the five. An evicted prefix is recomputed, close to one token for
-one, and that recomputation is chunked into decode steps. Those same five runs
-give recomputation rising with $\tau$ across four of the five points: 9.2\,M
-uncached tokens at 27.4\,ms, 11.5 at 29.7, 15.4 at 32.4, 20.7 at 36.7. The
-exception is the first point, \texttt{cap1}, which recomputes least (8.6\,M)
-and still costs 28.8\,ms---more than \texttt{cap2} does for more recomputation.
-We report the ordering we have rather than rounding it to a monotone one: it is
-a mechanism consistent with the $\tau$ trend on four of the five device-only
-configurations, and one point it does not order. It is five points on five
-different policies, not an
-intervention: we did not hold concurrency fixed and vary eviction, so we call
-it consistent rather than demonstrated.
+\paragraph{Where the mechanism stops.} With HiCache the correspondence breaks in a
+way that confirms the mechanism rather than undermining it: \texttt{cap4\_hc}
+misses 22.4\,M tokens on the device, more than the device-only \texttt{cap4}, but
+only 9.1\,M of that is recomputed and the other 13.3\,M is served from the host
+tier, which across the thirty host-tier runs serves 3.1--19.3\,M each.
+Recomputation is still what the device cannot absorb; the host tier is a second
+absorber in front of it \cite{gao2024cachedattention}.
 
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\columnwidth]{figs/fig7_elasticity.pdf}
-  \caption{Per-step cost against the running count during busy time. Solid
-  circles are $\tau_1$ and squares $\tau_2$ for the five device-only
-  configurations; $\tau_1$ is model-consistent (it averages over all engine
-  steps, including prefill that emits no output token), $\tau_2$ is the
-  per-request decode interval, and $\tau_1$ exceeds $\tau_2$ by 8--40\%. The
-  green triangles are $\tau_1$ for the three HiCache configurations---the ones
-  the controllers run---and they are drawn against the same axes to make
-  \S\ref{sec:criterion}'s point visible: over $\overline{R}_{\text{busy}}$ 1.25
-  to 1.73, which covers the whole controller operating range, the host-tier
-  curve rises 27.0 to 29.8\,ms while the device-only curve over a comparable
-  span rises 27.4 to 36.7. We plot $\tau_1$ only for the HiCache points to keep
-  the figure readable. The fitted exponent is the elasticity $\varepsilon$ of
-  Eq.~\ref{eq:elasticity}; it is fit to the device-only points alone.}
+  \caption{Per-step cost against the running count during busy time:
+  $\tau_1$ (circles) and $\tau_2$ (squares) for the five device-only
+  configurations, and $\tau_1$ (triangles) for the six HiCache configurations
+  the controllers run. Over $\overline{R}_{\text{busy}}$ 1.25 to 1.73 the
+  host-tier curve rises only 27.0 to 29.8\,ms while the device-only curve over a
+  comparable span rises 27.4 to 36.7, and $\tau_1$ exceeds $\tau_2$ by
+  17.7--39.7\%; beyond 1.73 it climbs to 34.4\,ms at 1.85, where realization
+  begins to fall too. The fitted exponent is the device-only elasticity of
+  Eq.~\ref{eq:elasticity}.}
   \label{fig:cancel}
 \end{figure}
 
-\paragraph{Where the mechanism stops.} With HiCache enabled the
-correspondence breaks---and it breaks in a way that confirms the mechanism
-rather than undermining it. The device cache misses as much as before:
-\texttt{cap4\_hc} misses 22.4\,M tokens on the device, more than the
-device-only \texttt{cap4} misses. But only 9.1\,M of that is recomputed; the
-other 13.3\,M is served from the host tier. Across the nineteen host-tier
-runs the host serves 9.5--19.3\,M tokens each, and across the five device-only
-runs it serves almost nothing---0.006\% to 0.25\% of the device miss, the rest
-of which is recomputed on all five. Recomputation is still what the device cannot
-absorb; the host tier is a second absorber in front of it.
-
 \subsection{What tracks reuse is the tier, not the policy}
 
-The device-miss column hides the quantity that matters. Define
-\emph{reuse} as the prompt tokens served from anywhere in the memory
-hierarchy---device radix cache plus host tier---so that
-$\text{reuse} + \text{recomputed} = \text{prompt}$, with the prompt fixed at
-28.5\,M by the trace.
-
-The bound on reuse has to be defined independently of what we observed,
-or the argument is circular. We take it from the trace: summing the planned
-reusable prefix (\texttt{prefix\_len}) over all 999 rounds of
-\texttt{replay\_pois200\_l04.csv} gives 21{,}540{,}371 tokens against a prompt
-total of 28{,}526{,}871, so no policy can reuse more than 75.5\% of the
-prompt. That is a property of the workload. It is also a bound rather than a
-description: \emph{no configuration we ran reaches it}, and the best realizes
-92.5\%, so the gap between ``planned'' and ``achieved'' exists even in the
-easiest case. What varies across configurations is how much of the bound is
-realized, and that is where the tier enters.
+The device-miss column hides the quantity that matters: \emph{reuse} is the prompt
+tokens served from anywhere in the memory hierarchy---device radix cache plus host
+tier---so $\text{reuse}+\text{recomputed}=\text{prompt}$, fixed at 28.5\,M by the
+trace. The bound on reuse has to be defined independently of what we observed, or
+the argument is circular: the planned reusable prefix over all 999 rounds of
+\texttt{replay\_pois200\_l04.csv} totals 21{,}540{,}371 tokens against a prompt of
+28{,}526{,}871, so no policy can reuse more than 75.5\%. It is a bound rather than
+a description---no configuration we ran reaches it, the best realizes
+92.5\%---and how much of the bound is realized is where the tier enters.
 
 \begin{center}
 % 这张表在 conference 模板下比单栏宽 56.9pt（Overfull 会一直挂在编译日志里）。
@@ -274,208 +161,82 @@ device-only & $\overline{R}_{\text{busy}}$ & 1.00 & 1.27 & 1.53 & 1.65 & 1.84 \\
             & realized (\% of bound) & 92.5 & 89.7 & 79.0 & 60.7 & 36.4 \\
             & recomputed (M)         &  8.6 &  9.2 & 11.5 & 15.4 & 20.7 \\
 \midrule
-host tier   & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & & \\
-            & realized (\% of bound) & 92.4 & 91.3 & 90.2 & & \\
-            & recomputed (M)         &  8.6 &  8.9 &  9.1 & & \\
+host tier   & $\overline{R}_{\text{busy}}$ & 1.25 & 1.51 & 1.73 & 1.75 \\
+            & realized (\% of bound) & 92.4 & 91.3 & 90.2 & 87.9 \\
+            & recomputed (M)         &  8.6 &  8.9 &  9.1 &  9.6 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Device-only, realization falls from 92.5\% to 36.4\% and the shortfall is
-recomputation: 8.6\,M to 20.7\,M tokens. With a host tier it holds at
-90.2--92.4\% on the static points that span the same range, and at
-72.8--92.5\% across the nineteen host-tier runs that completed this
-trace---the same trace, HiCache on, at least 995 of its 999 steps---including
-every controller arm; the lowest is the arm that disables every throttle and
-therefore evicts the most (21.1\,M tokens, the largest in the table). The
-\emph{device} meanwhile misses more than the device-only family's at every
-point (21.6--27.9\,M against 8.6--20.7\,M), because the host serves
-9.5--19.3\,M in front of the recomputation instead of letting the device keep
-it---so a reader watching only the device hit rate would conclude the host tier
-made things worse. The rule is mechanical, and we state the two exclusions that are not, because a
-reader applying it will meet them: one run whose engine
-prompt-token counter reads $1.41\times$ the trace plan with zero retractions
-and no client-side retries, which we could not reconcile, and one superseded
-measurement that we re-ran clean (\S\ref{sec:repro}). The step condition is
-doing work of its own: two further runs on this trace with a host tier stopped
-at 763 and 770 steps, realize 70.7\% and 67.1\%, and are excluded for not
-finishing rather than for their values. (Two denominators appear here and we name them: the 75.5\%
-is the trace's bound as a share of the prompt, and 92.5\% is the best observed
-reuse as a share of \emph{that bound}---\texttt{cap1}, the run that realizes
-it, reuses 69.9\% of its prompt. \texttt{reuse.csv} carries \texttt{reuse\_frac} and
-\texttt{realized\_frac} side by side so the two cannot be confused.)
+Device-only, realization falls from 92.5\% to 36.4\%, the shortfall being
+recomputation; with a host tier it holds at 87.9--92.4\% on the four static
+host-tier caps above and at 59.7--92.5\% across the thirty host-tier runs
+that completed this trace at a \emph{single} configuration (HiCache on, at least
+995 of its 999 steps; the one run that alternates its cap, \S\ref{sec:bg}, is not
+one of them), the lowest \texttt{cap8}+HC at 59.7\%. The \emph{device} misses more
+where we can pair them (\texttt{cap3}+HC 26.0\,M against \texttt{cap3}'s
+11.5\,M) while the host serves 3.1--19.3\,M in front of the recomputation, but the
+ordering is \emph{not} universal---at a cap of five the host-tier run's device
+misses 19.0\,M against the device-only run's 20.7\,M---and we report the reversal
+with no mechanism for it. Five runs meeting the predicate are left out for reasons
+that are not mechanical: one whose prompt-token counter reads $1.41\times$ the
+trace plan with neither client-side retries nor retractions to account for the
+excess, and four superseded measurements we re-ran clean (\S\ref{sec:repro}).
+(75.5\% is the trace's bound as a share of the prompt, and 92.5\% a share of
+\emph{that bound}; \texttt{reuse.csv} carries both.)
 
-This is the same collapse \S\ref{sec:related} reports under a different
-normalization. That section quotes the round-1-and-later prefix hit rate---%
-steps restricted to rounds $\ge 1$, unweighted mean over steps---which falls
-from 80.8\% to 32.8\% across the device-only caps and holds at 80.7\% to
-78.7\% with a host tier. The two conventions differ in two ways, not one:
-which steps are in the set (round $\ge 1$ against all rounds) and how steps
-are combined (unweighted mean against token-weighted sum). We use the
-token-weighted all-steps convention here because reuse and recomputation must
-add to the prompt, and we name the other whenever we quote it. Both are
-\emph{realized} quantities that vary with the policy; neither is the trace's
-planned rate, which is fixed at 75.5\% and appears in this section only as
-the bound.
+Device occupancy does not explain the split: \texttt{cap3\_fixed} and
+\texttt{cap3\_hc} run at nearly the same occupancy (55.8\% and 55.5\%) and running
+count (1.53 and 1.51) yet realize 79.0\% and 91.3\% of the bound---occupancy is
+instantaneous while reuse depends on history, a session's prefix having to survive
+from one round to the next, and we do not have the measurement that would separate
+those. The device-only side is one run there, but a repeat has since finished: the
+gap becomes 9.8 points rather than 12.2 and the side is no longer a single sample,
+its two runs differing by 2.4\,pp (2.4299 before rounding, as with every other gap
+here). A pre-registered back-to-back pairing of the two tiers on one card, its
+criterion written down in advance, has since finished: \emph{it lands at $10.1$
+points---a pass by $0.14$}, against a threshold fixed at $10$ points, its runs
+differing by 0.8\% in mean occupancy and 3.1\% in running count, both inside the
+10\% tolerance the criterion requires before it will read the comparison. The pair
+is not a paired experiment---same
+harness generation, about a day and two GPUs apart---and pairing the repeat with
+the host-tier run removes the card half of the confound, though those two remain
+three and a half days and a generation apart (\S\ref{sec:repro} states what we did
+to rule out co-tenancy).
 
-Device occupancy does not explain the split. \texttt{cap3\_fixed} and
-\texttt{cap3\_hc} run at nearly the same mean device occupancy (55.8\% and
-55.5\%) and nearly the same running count (1.53 and 1.51), and they realize
-79.0\% and 91.3\% of the bound respectively. The host-tier side of that
-comparison is not one run: \texttt{cap3}+HiCache has a repeat which sits at the
-same occupancy (57.4\%) and the same count (1.53) and realizes 91.1\%, so the
-12-point gap is not one lucky run on the host-tier side. The device-only side
-is one run, and we say so rather than implying a distribution. What differs is
-not how full the
-device pool is but what happens when it overflows: with no host tier an
-evicted prefix is gone and must be recomputed; with one it is demoted and read
-back. The pool is the binding resource; the tier sets the pool; and in these two
-runs, which differ in the tier and in nothing we can see on the engine side,
-the tier is what separates paying for added concurrency in recomputation from
-not paying for it. The
-caveat is that this pair is two runs on two different days and two different
-GPUs, not a paired experiment; \S\ref{sec:repro} states what we did to rule
-out co-tenancy. A capacity-controlled version---same card, same trace, only
-the pool size changed---is queued behind the re-runs and we report it in
-\S\ref{sec:results} when it lands; we do not use it here.
+A capacity-controlled version---same trace and policy, pool cut to half or three
+quarters---does not return a realization figure: a step whose prompt exceeds the
+pool is never executed, the engine answers with a single token, and the runner
+records that as a success, so the failure counter stays at zero and the loss is
+invisible in every counter we have. The rule is exact rather than statistical, in
+one direction without exception---every step reporting \emph{one prompt token}
+while planning tens of thousands has a prompt larger than the pool (six runs at
+four pool sizes, no counterexample), though not the same set as \emph{steps that
+generate one token}, which clean runs contain too. The full pool (101{,}432 tokens)
+holds the trace's longest prompt (89{,}436), so the control marks a boundary rather
+than a point on the curve, and the comparison is bounded by the trace, not by the
+system; it shows capacity matters, but capacity is not occupancy, so it does not
+separate the two accounts either. The claim this section supports is
+the narrow one: within a configuration the host tier preserves realization at a
+matched running count and a matched occupancy, and without it realization
+falls---a correlation we can name, on a pair confounded in the two ways above. We
+do not treat the arithmetic as a result: it assumes KV demand grows linearly in the
+running count, which heterogeneous sessions need not satisfy.
 
-\paragraph{The second trace agrees on direction and not on level.}
-We ran the same accounting on a second workload, reported in full in
-\S\ref{sec:xtrace}---117 real Claude agent sessions, 390 rounds, the same pool
-and the same engine---and it reproduces the direction: its realization of \emph{its own} bound falls from 74.8\% to 57.5\%
-as the running count rises from 1.08 to 1.50, and over that span the whole-range
-per-unit slope is $-40.9$ points, against the device-only family's $-66.8$ over
-$\overline{R}_{\text{busy}}$ 1.00--1.84 (\texttt{slope.csv}). What it does not reproduce is the level, and this is
-worth stating because it bounds what we can claim. The lightest cap on that
-trace (\texttt{realhr\_cap2}) runs at a \emph{lower} median device occupancy
-than the lightest on this one (15.8\% against 22.4\%, \texttt{cap1}) and
-realizes \emph{less} (74.8\% against 92.5\%), so realization is not a function
-of occupancy alone---and a
-statement of the form ``the pool collapses above $x$\% occupancy'' is wrong on
-our own data. Occupancy is instantaneous while reuse depends on history; a
-session's prefix must survive from one round to the next, and how much
-pressure that puts on the pool is not visible in what the pool holds at an
-instant. We do not have the measurement that would separate those, which is
-why the controlled experiment now queued for \S\ref{sec:results}---it varies
-the pool alone, on one card and one trace---is the one that will settle it, and
-why we do not lean on the cross-trace comparison here. The claim this section supports is the narrow one: within a
-configuration, the host tier preserves realization at a matched running count
-and a matched occupancy, and without it realization falls.
-
-That gives the criterion of \S\ref{sec:criterion} a mechanism rather than a
-correlation, and it suggests a prediction we are testing:
-if the tier acts by multiplying usable capacity (the host pool is twice the
-device pool, so three times in total), then shrinking the device pool alone
-should move the collapse point even with no host tier involved. We do not
-treat the arithmetic as a result---it assumes KV demand grows linearly in the
-running count, which heterogeneous sessions need not satisfy---and the
-queued experiment measures the collapse point directly rather than predicting
-it, and \S\ref{sec:results} reports it once it has run.
-
-\paragraph{What is left unexplained.} Less than an earlier draft of this
-paragraph claimed. Across the nineteen host-tier runs recomputation spans
-8.6--12.8\,M tokens and realization 72.8--92.5\%, and $\tau_1$ spans
-27.0--36.2\,ms. One of those runs
-(\texttt{F:breshz1} 36.2\,ms) was
-measured while three other engine instances shared the host, which inflates
-per-step cost by 24--41\% and leaves the volume columns untouched
-(\S\ref{sec:repro}); it is being re-measured and we do not use its
-timing. Three others (the resident base, \texttt{F:hz0} and \texttt{F:hz2})
-were re-measured clean and are in the set above with their new values. Across
-the remaining eighteen the $\tau_1$ spread does not look
-like a residual: it tracks their recomputation closely (a straight line
-through the eighteen leaves every run within $1.6$\,ms, $r = +0.91$). That is a
-cross-policy association like every other fit in this section, not an
-intervention, and we read it as
-the mechanism of this section holding inside the host tier. We report the association and not the line: the coefficients are
-fitted to one configuration family and we have no derivation for them. We note that the negative
-result does not rest on it either way: the cancellation is measured directly,
-not inferred from the mechanism.
-
-One caution about the strength of the account above, since the arithmetic
-invites overreading. $\text{reuse} + \text{recomputed} = \text{prompt}$ is a
-definition, not a finding, so ``the shortfall reappears as recomputation''
-follows from how we partitioned the prompt and cannot by itself establish the
-mechanism. What is independent of the partition is the pair of engine
-counters: evicted tokens and uncached prefill tokens are separate SGLang
-counters, and on the device-only runs they track within 0.6--0.7\,M on all
-five---which is the observation that licenses reading eviction as the cause
-of recomputation. With a host tier the two come apart by design, and the
-1.3--8.6\,M gap between them is an upper bound on what the host absorbed out
-of the evicted pool: those tokens were evicted and not recomputed, which is
-consistent with the host having served them and equally consistent with their
-never having been asked for again. We can bound it, not identify it
-(\texttt{eviction.csv}); the host serves 9.5--19.3\,M in total, and by the
-counter definitions those are tokens the \emph{device} did not have when the
-session came back---it had evicted them---and which were not recomputed.
-
-\paragraph{A refutation we had to withdraw.} An earlier revision withdrew this
-mechanism outright, on two checks that were both wrong. The first was that
-total prefilled tokens equalled the trace's planned prefill to a ratio of 1.00,
-so no token could have been computed twice. \texttt{prompt\_tokens\_total}
-counts the full submitted prompt \emph{including} its cached portion, so it
-equals the sum of prompt lengths by construction and cannot detect
-recomputation; the quantity that can is the uncached count used above, which
-varies by 2.4$\times$ across these runs. The second was that SGLang reported
-no retractions. Radix-cache eviction is not a retraction---retractions count
-running requests preempted mid-flight, a different event with its own counter.
-We record the episode because it is the same failure mode as the segment
-argument of \S\ref{sec:bg}: a check that looks like a measurement but is an
-identity.
+\paragraph{What is left unexplained.} Four of the arms above---the resident base,
+\texttt{horizon}$=0$, \texttt{horizon}$=2$ and the \texttt{horizon}$=1$ no-hw
+arm---were \emph{first} measured while three other engine instances shared the host,
+which inflates per-step cost by 12--41\% and leaves the volume columns untouched
+(\S\ref{sec:repro}); all four have since been re-measured alone, and the values
+above are the clean ones. (The flagged runs are superseded and not in the table;
+the labels name the arms.)
 
 \subsection{Why idle time exists, and why recovering it does not pay}
 
-The length of an individual idle stretch is a property of the workload, not of
-the controller. A session in a
-tool wait holds its permit and its KV but issues no request; with only about
-two live sessions, the probability that all of them are simultaneously waiting
-is substantial. The direct evidence is the duration of the stretches
-themselves: they are of the same order as the tool waits, and an order of
-magnitude longer than the 2\,s control cycle (Fig.~\ref{fig:idle}). No
-controller can shorten a gap that the tool set.
-
-How much idle a \emph{run} accumulates is a different matter, and there the
-controller is not off the hook. Idle accumulates when every live session
-happens to be parked at once, and how many sessions are live is precisely what
-an admission policy sets. Two configurations with the same mean running count
-make this visible: \texttt{horizon}=1 (1.52) and \texttt{cap3}+HiCache (1.51)
-idle 36.7 and 24.1 minutes respectively---a 52\% difference at matched
-concurrency---and 12.6 of the 19.4-minute wall-clock gap between them is that
-idle difference rather than step cost. So the gap durations are the workload's,
-and the number of gaps is partly the policy's.
-
-We note one claim we had to drop here. An earlier draft reported that idle
-fraction falls monotonically with mean concurrency. With the full data it does
-not: on the busy-conditional measure this section uses throughout,
-\texttt{no gate, no resv.} at $\overline{R}_{\text{busy}}$ 1.68 idles 20.7\%
-while \texttt{cap4} at 1.65 idles 10.4\%---more concurrency and \emph{more}
-idle, the reverse of the reported trend. (The arm we used for this example in
-an earlier draft, \texttt{horizon}=0, no longer serves: re-measured clean it
-reads 1.58 and 16.9\%, i.e.\ \emph{less} concurrency and more idle, which
-demonstrates nothing either way.) (The two arms read 1.33 and 1.48 on the
-all-samples mean, where the ordering happens to run the other way;
-\texttt{arm\_running.csv} carries both conventions side by side, and we name
-the one each claim uses.) The weaker statement that survives is the one we use---%
-the stretches are structural and long.
-
-The obvious remedy---keep more sessions live so that someone is always
-ready---is what \texttt{bres} does, and the clean measurement of it says the
-remedy works and does not pay. \texttt{bres} cuts idle time by 9.5 minutes
-against its own baseline, and its busy time falls as well, by 15.5---so the
-arm simply finishes 25.4 minutes earlier. What it does not do is improve the
-criterion: its SLO falls 3.9\,pp and its distance below the static front is
-unchanged (\S\ref{sec:results}). Recovering idle time is not the same act as
-buying a better operating point, and here the one does not produce the other.
-We are reporting a correction in this paragraph, not just a refinement: an
-earlier draft had idle falling while busy rose, leaving the run slower, and
-that shape came from a measurement we have since found was taken under host
-co-tenancy (\S\ref{sec:repro}). Idle is recoverable; it is recoverable at a
-price that does not move the verdict.
-The structural remedy would be to make the engine do work during a wait. For
-the session that is waiting there is none---its next round does not exist until
-its tool returns---but for the \emph{pool} there is: the admission queue holds a
-median of 66 sessions waiting to get in, and a policy could run one of those
-instead of holding a permit for a parked one. \S\ref{sec:results} measures
-what happens when it does: the charge-free base arm cuts total idle from 47.4
-to 37.9 minutes, and it does not move the verdict. Idle is recoverable in part;
-recovering it is not what pays.
+Some idle is structural: a session in a tool wait issues no request, and an
+admission policy sets how many sessions are live, so an individual stretch is the
+workload's and how much a \emph{run} accumulates is not.
+The obvious remedy---keep more sessions live so that someone is always ready---is
+what \texttt{bres} does, and the clean measurement of it says the remedy works and
+does not pay: what it does not do is improve the criterion (\S\ref{sec:results}).
+Idle is recoverable in part; recovering it is not what pays.

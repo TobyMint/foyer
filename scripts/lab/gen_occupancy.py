@@ -15,10 +15,11 @@ import csv, os, statistics, sys
 
 # sf0_r2 是全表最接近前沿的臂（Δ −0.57），论文反复引用它；它原来既不在
 # 这张表、也不在 decomp.csv，导致「九臂归因」那一节没有它（2026-09-24 审稿人指出）
-RUNS = ["cap1","cap2","cap3_fixed","cap4","cap5","pairB_cap2hc","cap3_hc","cap4_hc",
-        "cap4_hc_r2","cap3_hc_r2","foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz2_r2",
-        "foyer_hz0_r2","foyer_bres_r2","foyer_breshz1","foyer_nogate","foyer_rg4",
-        "foyfix_hc","aimd2","aimd2_paper","foyer_sf0_r2"]
+RUNS = ["cap1","cap2","cap3_fixed","cap3_pd","cap4","cap5","pairB_cap2hc","cap3_hc","cap3_ph","cap4_hc","cap5_hc","cap6_hc","cap8_hc",
+        "cap4_hc_r2","cap3_hc_r2","foyer_hc","foyer_hc_r2","foyer_hz1","foyer_hz1_r3","foyer_hz2_r2","foyer_hz2_r3",
+        "foyer_hz0_r2","foyer_bres_r2","foyer_breshz1_r2","foyer_nogate","foyer_rg4","foyer_scan",
+        "foyfix_hc","aimd2","aimd2_paper_r3","foyer_sf0_r2","foyer_scan_r2",
+        "foyer_scan_r3","foyer_hc_slru","foyer_sf0_r3"]
 
 
 def main():

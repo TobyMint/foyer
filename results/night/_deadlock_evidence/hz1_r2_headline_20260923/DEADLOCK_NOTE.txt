@@ -1,0 +1,6 @@
+死锁证据：pois200_foyer_hz1_r2（2026-09-23 14:45 终止）
+controller.jsonl 末尾反复出现 active_n=0 waiting_n=92 candidate=null need=0 base=73390
+admissions.jsonl 最后一次 admit 距终止 273 秒
+runner.out 停在 steps 543/999, active=0
+根因：single-flight 只取 waiting[:1]，队首会话装不下时永不入选、也不离队，
+后面的会话全被堵死。修法见 scripts/controller_budget3.py 的 head 处注释。

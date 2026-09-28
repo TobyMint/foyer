@@ -1,0 +1,9 @@
+{"ts":1789957746.080,"event":"admit","session_id":"codex:f14d9147-dfd6-9bde-422b-2c45e4170959","ordinal":198,"cap":3,"active":1,"waited_ms":0.1,"prompt_tokens":21001}
+{"ts":1789957757.821,"event":"admit","session_id":"claude:746e38bb-0a4c-a2de-ed4b-36814019fa4f","ordinal":66,"cap":3,"active":2,"waited_ms":0.0,"prompt_tokens":15665}
+{"ts":1789957801.989,"event":"release","session_id":"codex:f14d9147-dfd6-9bde-422b-2c45e4170959","ordinal":198,"cap":3,"active":1,"waited_ms":55909.4,"prompt_tokens":0}
+{"ts":1789957804.193,"event":"admit","session_id":"codex:5736968b-6959-9ace-dbc4-463e4a4b0f17","ordinal":162,"cap":3,"active":2,"waited_ms":0.0,"prompt_tokens":19636}
+{"ts":1789957809.685,"event":"release","session_id":"claude:746e38bb-0a4c-a2de-ed4b-36814019fa4f","ordinal":66,"cap":3,"active":1,"waited_ms":51863.8,"prompt_tokens":0}
+{"ts":1789957869.122,"event":"release","session_id":"codex:5736968b-6959-9ace-dbc4-463e4a4b0f17","ordinal":162,"cap":3,"active":0,"waited_ms":64928.5,"prompt_tokens":0}
+{"ts":1789957887.525,"event":"admit","session_id":"claude:654aa4c3-24fd-5e53-cf53-7ba104db9e9e","ordinal":56,"cap":3,"active":1,"waited_ms":0.0,"prompt_tokens":25463}
+{"ts":1789957889.933,"event":"admit","session_id":"codex:f81210b6-afd4-3392-2fcd-78ff9f2f9bb0","ordinal":199,"cap":3,"active":2,"waited_ms":0.0,"prompt_tokens":19552}
+{"ts":1789957903.547,"event":"admit","session_id":"claude:5e75ae6b-1e2c-18eb-b12a-ccaf70bf2a94","ordinal":45,"cap":3,"active":3,"waited_ms":0.0,"prompt_tokens":19738}

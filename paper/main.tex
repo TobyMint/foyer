@@ -9,7 +9,9 @@
 %   1. 每条主张只写到审计文件 paper/claims_audit.md 允许的强度。
 %      尤其：步时间是【两个导出量互相印证】，不是引擎直采（metrics.csv 的
 %      itl/e2e/ttft 列在 SGLang v0.5.10 下是空的）。
-%   2. 25 档的节流对照来自旧 harness，与 200 档不同代，正文必须标注。
+%   2. 25 档（§Load Dependence）那个实验轴已于 2026-09-27 按 codex 裁决整节删除，
+%      连带它的主张；不要再写回来。原文与「值现在在哪」见
+%      paper/supplement_material_discussion.md 的「块 7」。
 %   3. 不写"我们的模型预测了"，写"这个分解解释了"。
 %   4. 任何没有对照的数字不进正文。
 % ============================================================================
@@ -21,6 +23,17 @@
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
+% ⚠ `caption` 包是**有意**加载的：IEEEtran 的 table 浮体默认把整条 caption 排成
+% `\scshape`（小型大写），PDF 里读起来是「整条表注全大写」。RTAS 2026 的录用论文
+% 不是这样 —— ZeroSwap `TABLE I: CUDA Virtual Memory Management APIs`、
+% ETM2 `TABLE I: Characterization of the set of platforms used to test ETM2 .`、
+% PerBank `TABLE I: Evaluated hardware platforms.`、POPstar `TABLE I: Parameters of
+% processor models.` 全是 **`TABLE N:` 标签大写、正文正常大小写**。
+% 实测（/tmp/captest）：`\usepackage{caption}` 正是这个渲染 —— 标签 `TABLE I:`、
+% 正文正常。**不要**为了「恢复 IEEEtran 默认」把它删掉。
+% 侧证：本仓 reference_paper/rtas2026/source/arxiv-2603.16490 用 `subcaption`
+% （内部加载 caption），arxiv-2603.26054 的渲染同款。
+\usepackage{caption}
 
 \newcommand{\sys}{Foyer}
 
@@ -29,101 +42,41 @@
 \title{When Does Admission Control Pay?\\
 The Memory Tier Sets the Cost of Concurrency in Agentic LLM Serving}
 
+% ⚠ 作者栏：**RTAS 2027 是双盲（double-anonymous）**，见
+% https://2027.rtas.org/submission/ —— 原文「RTAS 2027 uses a double-anonymous
+% review process」，且补充材料「must not give away author identities or
+% affiliations」，违反「may be desk rejected」。
+% ⇒ 投稿版**必须**保持匿名。作者要求的占位署名放在下面注释里，按需启用：
+%   取消注释 \author{\IEEEauthorblockN{Bowen Xu}} 那一行即可（camera-ready 用）。
 \author{\IEEEauthorblockN{Anonymous Submission}}
+% \author{\IEEEauthorblockN{Bowen Xu}}   % ← 占位署名（仅非双盲场合启用）
 
 \maketitle
 
 \begin{abstract}
-An agentic LLM session is a long, multi-round job whose KV footprint grows
-every round, and on a memory-constrained accelerator the pool is the binding
-resource. Admission control therefore looks like the obvious lever: a
-controller that reads engine telemetry and admits on measured capacity should
-beat a static cap. We give a measurement that says how much room there is, and
-show what happens when you build against it. Busy-time throughput is
-$\overline{R}/\tau$---running requests over per-step cost---so raising
-concurrency by a factor $f$ buys $f^{1-\epsilon}$, where
-$\epsilon = \mathrm{d}\ln\tau / \mathrm{d}\ln\overline{R}$: near zero it keeps
-converting, near one it does not. It is a property of the workload \emph{and}
-the engine configuration, not of the controller, and in our data what it tracks
-is the memory tier. The trace bounds reuse at 75.5\% of its prompt tokens, and no
-configuration we ran reaches that bound---the best realizes 92.5\% of it.
-Where the tier enters is how much of the bound survives added concurrency:
-device-only, realization falls from 92.5\% to 36.4\% as the running count
-rises from 1.00 to 1.84 and the shortfall appears as recomputation (8.6\,M to
-20.7\,M tokens); with a host tier the static points hold at 90.2--92.4\%
-between 1.25 and 1.73, and across the nineteen host-tier runs that completed
-this trace realization never falls below 72.8\%, while the \emph{device} cache
-misses more. Two configurations at the same running count and the same pool
-occupancy realize 79.0\% and 91.3\%---so it is not how full the pool is but
-what happens when it overflows. That pair is two runs on two days, and a
-capacity control that changes the pool size alone on one card is queued; we
-report it when it lands. Our controllers run on the host-tier configuration,
-where $\epsilon$ stays below one across their whole operating range, so the
-device-only ceiling is not what stopped them---it bounds what added concurrency
-is worth, not what a whole run achieves, since idle time and the SLO axis are
-separate. On a memory-bound agentic replay (200 sessions, one 24\,GB GPU, a
-pool that holds four median sessions) we measure $\epsilon$ at $0.38$ to
-$0.61$ depending on which step cost a system can observe: every 10\% of added
-concurrency buys 4--6\% of throughput.
-A second, real agent trace (117 Claude sessions, same engine and pool)
-reproduces both measurements in direction, neither in level: realization falls
-there too, and the elasticity there turns positive at a different running
-count---reaching 1.0 where the main trace reaches 1.15---by an amount our own
-perturbation study cannot pin down.
-
-The verdict on the controllers is negative, and we report it at that
-strength. (The criterion of \S\ref{sec:criterion} is a diagnostic; that
-section is explicit that it neither returns this verdict nor explains the
-failure.) Nine controller variants spanning four routes, plus a
-reimplementation of an independent congestion-based controller, none is
-above the \emph{interpolated envelope} of the static points at the latency
-threshold interactive serving cares about---of the eight whose measurements are
-clean; the other one was
-measured while other jobs shared the host and is being re-measured. The
-reading matters and we give both: the best of the eight misses the envelope by
-0.30\,pp, and against the discrete static points it is \emph{not dominated} by
-any we measured (5.8\,pp above the nearest static point that is \emph{faster}
-than it). We use the envelope because it is
-the stricter reading (\S\ref{sec:bg}). The closest arm we repeated misses it
-by 0.9, its repeat by 5.6;
-a plain cap on resident sessions
-remains the fastest policy we measured. That is not an argument for admitting everything: with no control at
-all the median request waits 1{,}774 seconds for its first token, the prefix
-cache's realized hit rate collapses from the trace's planned 75.5\% to
-1.6\% (the runner's end-of-run figures; \texttt{nocontrol.csv} carries four
-further conventions), and SLO falls to 3\%.
-The question is which selective rule, not whether to be selective. Two
-measurable effects, rather than one we can tune away, account for part of why
-our variants fail---the arm-by-arm attribution of
-\S\ref{sec:results:attribution} attributes six of the twelve controller
-arms we tested, leaves three with a step cost that no matched comparison can
-confirm, and leaves three as residuals we can measure and cannot yet
-explain. The single step-cost attribution it does make is on a run flagged
-for host co-tenancy but not measurably damaged by it, and we say which is
-which rather than counting it. Three of the flagged variants have been re-measured,
-moving 6.5, 6.4 and 4.5 points closer to the front without crossing it (the
-first of them from 7.8 points below to 1.3). They hold nearly half the pool idle while sessions queue---their headroom
-estimate on the base configuration is 1.79$\times$ the occupancy the engine
-reports (1.32--1.96$\times$ over the nineteen controller runs that finished on
-this trace), of which the growth reserve alone is 28\% of the
-budget---and the per-step elasticity on the configuration they actually run
-stays below one across their whole operating range, so the device-only ceiling
-is not what stopped them: they lost where added concurrency was still cheap.
-That rules an explanation out; it does not show they could have taken the room
-(\S\ref{sec:results}). The wall clock splits into busy and idle time;
-admission policy moves only the running count, and $\tau$ rises with it. The idle component (7.3--41.9\% of the sampled span) comes from gaps the tool
-waits set---an agent session issues no request while a tool runs, and that wait
-averages 16.85\,s over the controller's run against the 15.82\,s the trace
-demands. The harness is exact on the run with no controller, so we attribute
-the extra 1.03\,s to admission delay rather than to the sub-second figure the
-trace's median suggests; how many such gaps a run collects is partly the
-policy's, since a policy sets how many sessions stay live. On device-only configurations we can account for the rise token for
-token; on host-tier ones part of it is co-tenancy we found late and part we
-still cannot attribute, and we say which is which. We also report the six of
-our own claims we retracted along the way, and the boundary of the verdict: at
-a loose latency threshold one variant appears above the front in a single
-measurement, and that variant's own repeat lands 2.3 points \emph{below} it,
-so the crossing does not reproduce.
+An agentic LLM session is a long, multi-round job whose KV footprint grows every
+round, each carrying a first-token deadline; on a memory-constrained
+accelerator the pool binds, and admission control---which rounds to admit---looks
+like the lever. Busy-time service rate is $\overline{R}/\tau$, so raising
+concurrency by $f$ buys $f^{1-\epsilon}$, $\epsilon$ the elasticity of per-step
+\emph{service time} to the running count---the step, not the request, whose
+completion time carries queueing and step count. On a memory-bound
+agentic replay $\epsilon = 0.38$ to $0.61$, and it tracks the memory tier, not the
+controller---an association across five policies, not a
+demonstration. With a host tier four static points hold 87.9--92.4\% of the reuse
+bound over $\overline{R}_{\text{busy}}$ 1.25 to 1.75; without one, realization
+falls from 92.5\% to 36.4\%, as recomputation. The verdict is negative: nine
+controller variants spanning accounting, growth reserve and execution
+granularity, two more on the budget ceiling, and an independent congestion-based
+controller reimplemented---none above the static admission baseline for the same
+trace, deadline and resource budget, the best twice-measured at $-0.30$ and
+$+0.22$\,pp of deadline satisfaction rate, both on the line: no
+improvement beyond the $\pm1.0$\,pp band fixed in advance. A tenth arm---the same
+controller revision, one expression
+changed---lands above it twice in three runs, by $1.3$ and $2.2$\,pp, the third on
+the line: both readings are the \emph{release} rule's, not the admission decision's. A second GPU and a second trace reproduce the direction, not the level. Our criterion is a
+diagnostic: it neither returns the verdict nor explains the failure. Miss rates
+are measured, not a latency bound.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -137,6 +90,13 @@ characterization, negative results
 \input{sec_criterion}
 \input{sec_results}
 \input{sec_xtrace}
+% ⚠ `sec_a100.tex` 现在是**有意保留的存根**（8 行注释，无正文）：2026-09-26 两节合并，
+% A100 的全部内容移进 `sec_xtrace.tex`，`\label{sec:a100}` / `\label{sec:a100:limits}` /
+% 表 II 也随之迁移，所以这个 `\input` 什么也不产生、`\ref` 的目标也不在这里。
+% 它保留是为了让「第二张卡」这一节的来历留在仓储里（见该文件头部注释与
+% `docs/codex_review_prompt_cut.md` 的合并裁决）。**不要**当成压缩事故的残留而删掉文件名，
+% 也不要把内容写回来 —— 那会重新变成两节。
+\input{sec_a100}
 \input{sec_discussion}
 
 \bibliographystyle{IEEEtran}

@@ -3,7 +3,13 @@
 law must grow the window every cycle, admit FIFO, and write valid permit states."""
 import json, os, signal, subprocess, sys, time, urllib.request
 
-BASE = "/data/xbw/turnstile"
+# ⚠ 2026-09-28：同上 —— 原来写死 `/data/xbw/turnstile`，改成从 `__file__` 推。
+# ⚠ 带回退：实验机上这三份住在**树根**（`/data/xbw/turnstile/smoke_*.py`）⇒
+# 「上溯两层」会得到 `/data`（那会写 `/data/results/…`）。
+# 判据：推导出来的树里**有 results/** 才用它，否则回退到原来的绝对路径。
+_R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE = (_R if os.path.isdir(os.path.join(_R, "results"))
+        else "/data/xbw/turnstile")
 MODEL = f"{BASE}/models/qwen25-coder-7b-yarn96k"
 PORT = 30002
 OUT = f"{BASE}/results/smoke_aimd2"

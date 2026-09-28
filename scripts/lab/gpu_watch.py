@@ -26,6 +26,9 @@
     ...
     kill %1
 
+⚠ **`kill %1` 常常被忘掉**（2026-09-26 抓到两个跑了两天的孤儿）。所以本脚本现在
+**自己会在 `<rundir>/summary.json` 出现时退出**（`--no-stop` 关掉）。
+
 汇总用 gpu_watch_summary.py。
 """
 import argparse, json, os, subprocess, time
@@ -71,9 +74,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--interval", type=float, default=15.0)
     ap.add_argument("--me", default=None, help="本 run 的属主（默认取当前用户）")
+    ap.add_argument("--stop-when-done", action="store_true", default=True,
+                    help="run 写出 summary.json 之后自行退出（默认开）")
+    ap.add_argument("--no-stop", dest="stop_when_done", action="store_false")
     a = ap.parse_args()
     me = a.me or sh("id -un")
-    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    rundir = os.path.dirname(a.out)
+    os.makedirs(rundir, exist_ok=True)
     with open(a.out, "a", buffering=1) as f:
         f.write(json.dumps(dict(ts=round(time.time(), 3), event="start",
                                 gpu=a.gpu, owner=me, interval=a.interval)) + "\n")
@@ -82,6 +89,16 @@ def main():
                 f.write(json.dumps(sample(a.gpu, me)) + "\n")
             except Exception as e:
                 f.write(json.dumps(dict(ts=round(time.time(), 3), error=str(e))) + "\n")
+            # ⚠ **run 跑完就自己退**。2026-09-26 实测：两个 Sep 24 的孤儿 watcher
+            # 一直往【已结束】的 run 的 gpu_watch.jsonl 追加了两天 ——
+            # `foyer_hc_r2` 的窗口是 07:08–12:01，而文件里多出 9,661 条窗外采样，
+            # 其中 695 条含外人。没有窗口过滤的判据会把一条本来干净的 run 判成 DIRTY。
+            # 判据用 `summary.json`（项目里「跑完」的统一判据，见 CLAUDE.md）。
+            # 没有 summary 的（崩溃/中止的 run）由启动方 kill —— 它们本来就该有人收尾。
+            if a.stop_when_done and os.path.exists(os.path.join(rundir, "summary.json")):
+                f.write(json.dumps(dict(ts=round(time.time(), 3), event="stop",
+                                        reason="summary.json 出现，run 已结束")) + "\n")
+                return
             time.sleep(a.interval)
 
 

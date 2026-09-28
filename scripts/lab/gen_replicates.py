@@ -14,8 +14,29 @@ GROUPS = {
     "cap4+HiCache (frontier anchor)": ["cap4_hc", "cap4_hc_r2"],
     "cap2+HiCache (frontier anchor)": ["pairA_cap2hc", "pairB_cap2hc"],
     "Foyer base (hw=0,t=0.95,h=3)": ["pairA_foyerhc", "pairB_foyerhc", "foyer_hc", "foyer_hc_r2"],
-    "horizon=1 (the best arm)": ["foyer_hz1", "foyer_hz1_r2"],
-    "cap3+HiCache (frontier anchor)": ["cap3_hc", "cap3_hc_r2"],
+    # ⚠ 2026-09-27：原组名是「horizon=1 (the best arm)」—— 最佳臂已经不是它了
+    # （`hz2_r2` 干净重跑后 −0.30 取代 −0.93）。组名只是标签，但标签会漂。
+    "horizon=1": ["foyer_hz1", "foyer_hz1_r2", "foyer_hz1_r3"],
+    "cap3+HiCache (frontier anchor)": ["cap3_hc", "cap3_hc_r2", "cap3_ph"],
+    # 2026-09-26 新增：同卡背靠背的层级配对的**设备侧**。这两条同配置（static=3、
+    # 全池、主 trace），所以它们是一对重复 —— 也正是 tier-pair 实验的设备侧那一半。
+    "cap3 device-only (paired)": ["cap3_fixed", "cap3_pd"],
+    # 2026-09-27 新增：`horizon=2` 的重复。**它此前只有一条 run**，而正文靠它
+    # 在 20s 阈值下越过（+1.02）—— 那条越线**没有重复可以反驳**，是全篇最弱的
+    # 一处。第二条落地后这一组才算数得出散布。
+    # ⚠ 组名原来写「horizon=1 (the best arm)」是**过时的**：`hz2_r2` 干净重跑
+    # 落地后最佳臂已经换成 horizon=2（−0.30 vs −0.93）。名字改了，见下。
+    "horizon=2 (the closest arm)": ["foyer_hz2_r2", "foyer_hz2_r3"],
+    # 2026-09-27 预先登记：`foyer_scan` 是**全篇唯一越过 ±1.0pp 判据**的臂
+    # （Δ=+1.3044，且只有一次读数）。它的重复落地后，正文那句「the $0.5$ to
+    # $4.6$\,pp that separates repeats of a single configuration」的范围与
+    # 「the tightest of **the three groups**」的计数**都要按新数据重算** ——
+    # 这一组进来就是**第四组**，而它极可能把上界推得比 4.6 更高。
+    # ⚠ `foyer_scan_r2` 还没落地时，本组只有 1 条有效 run ⇒ 自动跳过（不报错）。
+    "scans the queue": ["foyer_scan", "foyer_scan_r2", "foyer_scan_r3"],
+    # 2026-09-27 预先登记：`single-flight off`（Δ=−0.55，第二近）也只有一次读数，
+    # 而 §V 用它反驳「扫队列就赢」那条解释。它的重复落地后同样是第四/五组之一。
+    "single-flight off": ["foyer_sf0_r2", "foyer_sf0_r3"],
 }
 
 
