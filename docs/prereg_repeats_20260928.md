@@ -148,3 +148,23 @@ monitor.py ×2                  还在写 metrics.csv
 `monitor.py` 跑了 **4 天 15 小时**（`var_switch2b`）与 **5 天 6 小时**（`foyer_hz1_r2`），
 一直在往那两条**早已跑完的** run 的 `metrics.csv` 追加。
 ⚠ 那两份 CSV 的时间戳尾巴是脏的，将来引用前要先按 run 窗口裁。
+
+---
+
+## 附记：A100 的 `a100_default_r5` 曾短暂起跑并被**主动停止**（2026-09-28 19:44–19:48）
+
+**留档，免得日后问「A100 到底跑没跑过」时说不清。**
+
+```
+19:44   waiter（lane_a100_default_r5.sh，已挂 1 天 20 小时）等到 GPU 0 的独占窗口，开火
+        GPU 0 上只有我们的进程，73,634 MiB 已加载，util 0%（预热中）
+19:48   作者要求「先不要跑实验」，run + waiter 一并停止（按 PID，整个进程族）
+        GPU 0 回到 0% / 81 MiB
+```
+
+**产出：无**（只跑了约 3 分钟，目录 `results/night/a100_default_r5/` 里只有
+`metadata.json` / `metrics.csv` / `gpu_watch.jsonl` 的开头，**没有 `steps.jsonl`、没有 `summary.json`**）。
+
+⚠ **一条与文档不符的观察**：CLAUDE.md 记着 `lane_a100_default_r5.sh` 的
+「开火代码在 `while true` 之外、是死代码，永远不启动」。**但它这次确实启动了。**
+⇒ 那条记录要么已被修复过、要么描述的是更早的版本。**下次要用这个脚本前，先重读一遍它。**
