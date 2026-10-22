@@ -20,6 +20,11 @@ GAUGES = [
 COUNTERS = [
     "sglang:generation_tokens_total",
     "sglang:cached_tokens_total",
+    # ★ 按来源拆开的命中量。device 命中是免费的，host 命中要把 KV 从主机内存
+    #   搬进显存（docs §18.3 实测约 286 MB/s）。只有这两列能区分它们 ——
+    #   合起来的 cached_tokens_total 会把"90% 命中却更慢"这种事掩盖掉。
+    'sglang:cached_tokens_total{cache_source="device"}',
+    'sglang:cached_tokens_total{cache_source="host"}',
     "sglang:evicted_tokens_total",
     "sglang:prompt_tokens_total",
     # Added 2026-09-21 after finding them exposed but uncollected. All three are
@@ -70,7 +75,18 @@ def fetch(url):
         except ValueError:
             continue
         labels = dict(lab.findall(labelpart))
-        out[name] = v
+        # ★ cache_source 必须带进 key，否则 device / host 两条序列会互相覆盖。
+        #   实测代价：2026-10-17~18 的四个臂（hc2/hc8）里，metrics.csv 的
+        #   `sglang:cached_tokens_total` 只剩一个数，而 SGLang 明明按来源分开计：
+        #       sglang:cached_tokens_total{cache_source="device"} …
+        #       sglang:cached_tokens_total{cache_source="host"}   …
+        #   （见 sglang/srt/observability/metrics_collector.py:1332-1342，
+        #     文档串就是 "Number of cached prompt tokens by source"）。
+        #   这个分解正是 docs §18.4「按命中的层次给准入定价」缺的那一块数据。
+        if "cache_source" in labels:
+            out[f'{name}{{cache_source="{labels["cache_source"]}"}}'] = v
+        else:
+            out[name] = v
         if "quantile" in labels:
             hists.setdefault(name, {})[labels["quantile"]] = v
     for base, qs in hists.items():

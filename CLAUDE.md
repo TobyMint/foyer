@@ -1,3 +1,96 @@
+# ★★★ 现在的事实（2026-10-12 起）—— 读下面的历史之前先读这一节 ★★★
+
+## 唯一事实来源（2026-10-12 修，此前有三个源、且互相同步的方向每个文件都不同）
+
+```
+本地   /root/paper/foyer/scripts/            ← 只在这里改代码
+实验机 /data/xbw/turnstile/scripts/          ← 部署目标，不要直接编辑
+实验机 /data/xbw/turnstile/TraceLab/replay/scripts/
+        其中 6 个 .py 是【符号链接】指向 scripts/：
+        controller_budget3.py  controller_foyer.py  controller_aimd2.py
+        monitor.py             run_matrix.py        smoke_aimd2_hsignal.py
+部署   bash scripts/deploy.sh            （本地 → 实验机，单向）
+核对   bash scripts/deploy.sh --check
+```
+
+**踩过的坑**：2026-10-12 分析 data31 头条时，读的是 `scripts/controller_budget3.py`
+（09-23 14:46 修好的版本），而 run 实际用的是 `TraceLab/replay/scripts/` 那份
+（09-23 01:13 的旧版）—— **白查一小时，还把 bug 分析反了**。
+`run_matrix.py` 早就在记 `metadata.json` 的 `path_divergence` 字段，**没人看**。
+
+**实验机上的完整说明：`lab-3090:/data/xbw/turnstile/CURRENT.md`（先读它）**
+
+## 现在在跑的是什么
+
+```
+policy      budget3:hw=0;target=0.95;base=resident
+控制器      scripts/controller_budget3.py     md5 a21bd2b6
+启动器      scripts/run_matrix.py             md5 cfd46f9b
+数据集      data/replay_long19.csv   19 会话 / 602 步 / 理论倍 12.7  ← 【当前】
+                                       范围：语料中全部轮数 ≥20 的会话；md5 mod 80 抽样
+                                       建法：python3 scripts/build_replay_trace.py --long --mod 80
+            data/replay_main31.csv   31 会话 / 440 步 / 理论倍  9.8  ← 无筛选，作对照
+            data/replay_mid17.csv    17 会话 / 287 步            ← 中间档
+跑法        bash scripts/lab/drive_one.sh <run> <policy> <trace> <port> hc
+            ⚠ 2026-10-12 用户定规：**不许再建服务器队列**（queue_*/chain_*/watchdog/cron）。
+              一个任务一条命令、挂在我身上、跑完通知 —— 不许有「脱离的、自己会跑的」东西。
+              实证：两个孤儿 watcher 跑了 39 小时，往一个 2.15 小时的 run 里灌了 94% 的垃圾。
+            drive_one.sh 与旧的 drive2.sh 的区别：GPU 不硬编码（默认按 2 3 1 0 找空卡）、
+              空卡门连查三次。旧脚本一律不再启动。
+预注册      docs/prereg_atonce_20261010.md 的「2026-10-12」一节（预测跑前写死）
+```
+
+⚠ **long19 那一对是修好控制器【之后】的第一对** —— 此前所有 run 都带着队首阻塞
+（`head = waiting[:1]`，实测 1387 分钟门口等待）。**它同时也在测那个修复，
+不能直接与旧 run 比倍数。**
+
+**2026-10-12 修掉的两个 bug**（此前所有 run 都带着，包括旧 trace 的 2.19×）：
+```
+head = waiting[:1]  →  head = waiting        队首阻塞：队首那个太大就永远不放行，
+                                             后面所有人被堵死（实测门口等待 1387 分钟）
+base = s["ctx"]...  →  cand_base = s["ctx"]  变量覆盖：日志的 base 字段是最后一个候选的
+                                             上下文，不是投影地板（曾据此误判"投影虚高 28%"）
+```
+
+## 当前这条线的状态（2026-10-12）
+
+```
+data31 头条（共同完成集 407 步）:  makespan 1.43×  工作量比 4.75×  吞吐比 0.32×
+                                  端到端中位 1.00×（平手）—— 赢的全在尾巴
+旧 trace（≥20 轮）:               2.19×
+```
+
+**下一步方向已定**（用户 2026-10-12）：换回「≥20 轮」的长会话数据集（哈希抽样、不截断、
+§V 里明写范围），并修门口等待。**不是造假** —— PBKV 明文做过同样的事
+（"Below 60 workflows, evictions are too rare to differentiate any policy"）。
+
+## 作废的控制器（存在，供旧结果复现，但不要用来解释新结果）
+
+```
+controller_foyer.py / controller_aimd.py / controller_budget.py / controller_budget2.py
+controller_budget3_scan.py   （消融：f825bc768188 + 只改队首那一行）
+```
+
+## 已清掉的东西
+
+```
+2026-10-12  删实验机 results/night/{_failed_*,_stale_*,_aborted_*,_leftover_*,_invalid}
+2026-10-12  删 crontab 的 watchdog.sh / migrate_gpu3.sh / status_snapshot.sh
+            （它们会在 GPU 2/3 上拉起九月的旧队列，和 horizon 的作业撞车）
+            备份：lab:/data/xbw/turnstile/crontab.backup.20261012.txt
+2026-10-12  备份：lab:/data/xbw/turnstile/_backup_20261012/
+```
+
+## 不属于我们的东西（不要碰）
+
+```
+GPU 2/3   horizon 的 PD 分离部署（Qwen3-1.7B，pd_guardian，docker）
+GPU 0/1   gray 的训练任务
+```
+
+---
+---
+
 # Foyer — 项目约定
 
 内存受限 GPU 上 agentic LLM serving 的准入控制研究。论文在 `paper/`（IEEEtran + LaTeX），
@@ -3196,3 +3289,41 @@ monitor.py ×2                  还在写 metrics.csv
 但**触发条件不同**：那一条是 watcher 自己没退出，这一条是**我杀出来的**孤儿。
 本轮顺带清掉两个跑了 **4 天 15 小时** 与 **5 天 6 小时** 的 `monitor.py`
 （`var_switch2b` / `foyer_hz1_r2`），那两份 `metrics.csv` 的尾部是脏的。
+
+## 2026-10-10 新增：**会话端到端必须从【到达】算，不能从【被提交】算** —— 我报过一个 72 倍的假读数
+
+给用户报「我们的方案 vs 无控制」的端到端倍数时，我用 `submit_timestamp`（会话被提交给
+引擎的时刻）当起点，算出 **157.6 分钟 → 2.2 分钟 = 72 倍**。
+
+**这个数是假的。** 因为**控制器的作用恰恰是让会话在门外等** —— 没被准入的会话
+根本没有 `submit_timestamp`，所以那 83 分钟的门外等待**整个不在分母里**。
+改成从 `arrival_time_ms` 算：**157.6 → 85.5 分钟 = 1.8 倍**。
+
+**判据（三条）**：
+1. 任何「用户感知的等待」类指标，起点必须是**到达**。`steps.jsonl` 里：
+   run 起点 `t0 = min(submit_timestamp − arrival_time_ms/1000)`，
+   会话到达 = `t0 + arrival_time_ms/1000`。**不许用提交时刻。**
+2. **两个口径都要打** —— 「到达→跑完」与「提交→跑完」的差就是**门外等待**，
+   它本身是有信息的量（它说明控制器把队排在了哪里）。
+3. ⚠ 这个错**方向对自己有利**（72 倍 vs 1.8 倍），所以按本项目纪律
+   「偏差方向对自己有利时更要写出来」—— 而这次是**用户自己起疑**才被翻出来的
+   （他问「72 倍是啥 72 倍」）。**自查的时候不该等用户问。**
+
+**已落到脚本**：`scripts/lab/atonce_report.py`（三个口径一起打：makespan /
+会话端到端（从到达）/ 工作量），头注释里钉住了这条陷阱。
+
+## 2026-10-10 新增：**「倍数 = 工作量比 × 吞吐比」，只看一个因子会得出反的结论**
+
+量「我们的方案 vs 无控制」的端到端倍数时，有两个因子，**必须一起看**：
+
+    端到端倍数 = (无控制工作量 / 我们工作量) × (我们吞吐 / 无控制吞吐)
+
+实测 `pois200`：**2.84 × 0.36 = 1.03** —— 完全抵消。
+
+- **只看工作量** ⇒ 「我们少做 2.84 倍的活」⇒ 以为该赢 ≈3 倍；
+- **只看吞吐** ⇒ 「我们慢 2.76 倍」⇒ 以为该输；
+- **都不对。** 并发买到的吞吐，正好被并发造成的重算吃掉。
+
+**判据**：任何「A 比 B 快 N 倍」的主张，先写下来**分子分母各是什么**，
+再问「有没有第二个因子在反向抵消」。这与「同一个 gain 两个归一化」是同一族，
+但这次的第二个因子是**跨 run 的**，不在同一个句子里。

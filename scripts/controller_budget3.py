@@ -101,6 +101,11 @@ def main():
                     help="sessions with <3 observations blend their EMA with the global prior")
     ap.add_argument("--hard-stop-usage", type=float, default=0.85)
     ap.add_argument("--highwater-decay", type=float, default=0.995)
+    ap.add_argument("--evictable-after", type=float, default=0.0,
+                    help="配 --base-mode hot 用：停摆超过这么多秒的会话，其 KV 视为"
+                         "【可被引擎驱逐】，不计入投影预算。0 = 关闭。"
+                         "理论值由 §9 的剩余寿命解出（long19 实测 t* = 2.6 秒）——"
+                         "那里它是【该不该踢人】的门槛，这里它是【算不算它占地方】的门槛。")
     ap.add_argument("--charge-mode", choices=["full", "delta"], default="full",
                     help="returning sessions: how much capacity to charge for admitting "
                          "them. full = the session's whole known context (v3 behaviour, "
@@ -122,7 +127,7 @@ def main():
                          "and take over the instant one parks, so the engine stays busy while TTFT "
                          "stays bounded by the gate. A static cap cannot express this -- it has no "
                          "way to separate 'holds a slot' from 'is running'.")
-    ap.add_argument("--base-mode", choices=["max", "resident"], default="max",
+    ap.add_argument("--base-mode", choices=["max", "resident", "hot"], default="max",
                     help="what the projection is built on. max = the larger of the "
                          "engine's measured floor and the session-side ctx ledger "
                          "(v3 behaviour, and the default). resident = engine telemetry "
@@ -135,6 +140,16 @@ def main():
                          "proxy for 'what these sessions will need back', and the engine's "
                          "token_usage excludes evictable blocks, so the two disagree in "
                          "both directions. This flag measures which one is right.")
+    ap.add_argument("--valve-needs-pressure", action="store_true",
+                    help="SLO 阀门只在【池子确实被占着】时才可能为真。"
+                         "理由（实测 long19_foyer）：TTFT 是【服务时间】的函数，"
+                         "不是【排队延迟】的函数 —— 一个 60K 的 prefill 本来就要 86 秒，"
+                         "跟几个并发无关。于是阀门在长上下文负载下恒真：引擎空闲且门外"
+                         "有人的 589 个周期里 575 个（98%）阀门是关的，期间只放进来 23 个"
+                         "会话 ⇒ 19.2 分钟（占全部空转 58%）白等。"
+                         "池子空着的时候，高 TTFT 是这个请求自己的固有时间，不是过载证据。")
+    ap.add_argument("--valve-pressure-usage", type=float, default=0.5,
+                    help="配 --valve-needs-pressure 用：池占用低于这个比例时，阀门强制打开。")
     ap.add_argument("--slo-ms", type=float, default=10000.0)
     ap.add_argument("--slo-window", type=int, default=20)
     ap.add_argument("--starve-seconds", type=float, default=240.0)
@@ -150,6 +165,12 @@ def main():
     ap.add_argument("--ttft-freshness-s", type=float, default=600.0,
                     help="TTFT samples older than this are discarded — the SLO valve "
                          "must not latch on stale observations (liveness)")
+    ap.add_argument("--revoke-after", type=float, default=0.0,
+                    help="让位判据：会话停摆超过这么多秒才允许被 shed。"
+                         "0 = 旧行为（阀门一响就按到达顺序踢人）。"
+                         "理论值由剩余寿命解出：m(t)=P(C) ⇒ t*（long19 实测 2.6 秒）。")
+    ap.add_argument("--revoke-needs-waiter", action="store_true",
+                    help="只在【真的有人在门外等】时才让位。没人等的时候占着池子是免费的。")
     ap.add_argument("--disable-shedding", action="store_true",
                     help="never revoke active permits on valve (v0.5 behavior — r3 collapse)")
     ap.add_argument("--predictor", choices=["ema", "zero", "global", "oracle"], default="ema",
@@ -247,6 +268,7 @@ def main():
                 s = sess.setdefault(sid, dict(sid=sid, arrived_ts=None, prompt0=0,
                                               active=False, finished=False, ctx=0,
                                               last_round=-1, ema=None, n_obs=0,
+                                              last_end=0.0,
                                               uncached=None))
                 etype = ev.get("event")
                 if etype == "queued":
@@ -293,6 +315,12 @@ def main():
                     s["uncached"] = float(unc)
                 if ri is not None:
                     s["last_round"] = max(s["last_round"], ri)
+                # ★ 停摆起点的可观测代理：它最后一轮什么时候跑完的。
+                #   注意【绝对不能】用 steps 里的 tool_wait_after_ms ——
+                #   那是 trace 里的真值，控制器偷看它就是作弊。
+                ce = rec.get("complete_timestamp")
+                if ce:
+                    s["last_end"] = max(s.get("last_end", 0.0), float(ce))
                 ft = rec.get("first_token_ms")
                 if ft is not None and rec.get("status") == "SUCCESS":
                     ttfts.append((rec.get("complete_timestamp") or now, ft))
@@ -321,8 +349,31 @@ def main():
             # 4. projection: engine-truth floor vs observed ctx, plus forecast growth
             resident = floor * args.pool_tokens
             ctx_sum = sum(sess[sid]["ctx"] or sess[sid]["prompt0"] for sid in active)
-            growth_sum = sum(forecast(sess[sid]) for sid in active)
-            base = resident if args.base_mode == "resident" else max(resident, ctx_sum)
+
+            def _hot(s):
+                """这个会话的 KV 是不是【不可动的】。
+
+                实测（docs §11）：我们的臂有 56.7 分钟（34%）引擎空转，而门外
+                有 15~18 个会话在等。原因是投影把【正在等工具的】那个会话的
+                60K KV 也算了进去，于是外面的人一律装不下。
+                但引擎是 LRU —— 一个停摆中的会话，它的 KV 是可以被踢掉的。
+                ⇒ 只有「正在跑的 / 刚跑完的 / 刚准入还没跑完第一轮的」才算数。
+                """
+                le = s.get("last_end", 0.0)
+                if le <= 0.0:
+                    return True              # 还没跑完一轮 ⇒ 它正在算，KV 不可动
+                return (now - le) <= args.evictable_after
+
+            if args.base_mode == "hot":
+                hot = [sid for sid in active if _hot(sess[sid])]
+                hot_sum = sum(sess[sid]["ctx"] or sess[sid]["prompt0"] for sid in hot)
+                base = hot_sum
+                growth_sum = sum(forecast(sess[sid]) for sid in hot)
+                n_hot = len(hot)
+            else:
+                base = resident if args.base_mode == "resident" else max(resident, ctx_sum)
+                growth_sum = sum(forecast(sess[sid]) for sid in active)
+                n_hot = None
             projection = base + growth_sum
 
             # 5. admission decision (single-flight by default: one named permit per cycle)
@@ -330,6 +381,10 @@ def main():
             fresh_vals = sorted(v for _, v in ttfts)
             if not args.disable_slo_valve and len(fresh_vals) >= max(5, args.slo_window // 2):
                 valve = valve or fresh_vals[len(fresh_vals) // 2] > args.slo_ms
+            # ★ 压力门：池子空着的时候，高 TTFT 是请求自己的服务时间，不是过载证据。
+            #   没有这一条，阀门会被【上一次大 prefill 的 TTFT】锁死，而引擎正闲着。
+            if args.valve_needs_pressure and usage < args.valve_pressure_usage:
+                valve = False
             # The engine's own running count. Read here, before both the shedding block
             # and the admission block, because the round gate has to constrain BOTH:
             # pausing alone is useless if the admission path immediately re-admits the
@@ -351,6 +406,22 @@ def main():
                         keep.append(sid)
                         acc += c
                 shed = [sid for sid in active if sid not in set(keep)]
+                # ★ 判据：m(t) > P(C) ⇒ 才让位。等价的可观测形式是
+                #   「已经停摆超过 t* 秒」。t* 由实测的工具等待分布解出（long19: 2.6s）。
+                if args.revoke_after > 0:
+                    # ⚠ last_end == 0.0 表示【这个会话一轮都还没跑完】—— 对它没有
+                    #   任何"已经等了多久"的观测。绝不能把它当成"停摆很久了"：
+                    #   now - 0.0 是个天文数字，判据必然为真，于是【刚准入、正在跑
+                    #   第一轮的会话会被第一个踢掉】。
+                    #   实测代价（long19_foyer_rv vs long19_foyer）：Σshed 3175→7992，
+                    #   冷启动 112→129，多算 31% 的 token。这不是判据，是 bug。
+                    #   m(t) 的定义域是"已经等了 t"；没跑完过就没有 t，不参与判据。
+                    shed = [sid for sid in shed
+                            if sess[sid].get("last_end", 0.0) > 0.0
+                            and now - sess[sid]["last_end"] > args.revoke_after]
+                # 没人等的时候，占着池子是免费的 —— 不该踢
+                if args.revoke_needs_waiter and not waiting:
+                    shed = []
                 if shed:
                     for sid in shed:
                         sess[sid]["active"] = False
@@ -443,6 +514,7 @@ def main():
                 "usage": round(usage, 3), "highwater": round(highwater, 3),
                 "resident": round(resident), "ctx_sum": round(ctx_sum),
                 "base_mode": args.base_mode, "base": round(base),
+                "n_hot": n_hot, "evictable_after": args.evictable_after,
                 "round_gate": args.round_gate, "running_n": running_n, "gate_full": gate_full,
                 "growth_sum": round(growth_sum), "budget": round(budget),
                 "candidate": (candidates[0] if candidates else None),

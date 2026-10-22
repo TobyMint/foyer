@@ -44,7 +44,16 @@ POOL_TOLERANCE = int(os.environ.get("TURNSTILE_POOL_TOL", "20"))
 # GB of headroom on a 24 GB card, so the solve can compensate for a neighbour's
 # residue without the server being at risk of an allocation failure.
 MAX_MEMFRAC = float(os.environ.get("TURNSTILE_MAX_MEMFRAC", "0.90"))
-MAX_POOL_ATTEMPTS = 4
+# Six, not four. On 2026-09-21 gpu3 burned all four probes without converging (a
+# neighbour's footprint was moving between attempts) and aborted a lane that a
+# couple more probes would likely have placed. Each probe costs ~100 s, so buying
+# two more is cheap next to losing a 5-hour slot, and the pool guard still refuses
+# to record anything that is not on target.
+MAX_POOL_ATTEMPTS = 6
+# Ceiling on a single solve step, as a fraction of the whole die. See solve_memfrac:
+# with a slope measured against a drifting neighbour, an unclamped secant step can
+# jump somewhere the line was never valid, and every wasted probe is a server start.
+MAX_MEMFRAC_STEP = float(os.environ.get("TURNSTILE_MAX_MEMFRAC_STEP", "0.03"))
 # Learned by the first solve in a lane and reused: the free-VRAM state that pushed
 # the pool off target is a property of the card, not of the arm being run.
 MEMFRAC_HINT = None
@@ -109,6 +118,7 @@ def code_version():
     # paths the dispatch chain below actually passes to Popen.
     files = [os.path.abspath(__file__),
              f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+             f"{BASE}/TraceLab/replay/scripts/controller_budget3_scan.py",
              f"{BASE}/TraceLab/replay/scripts/controller_foyer.py",
              f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
              f"{BASE}/TraceLab/replay/scripts/controller_aimd.py",
@@ -153,8 +163,8 @@ def build_config():
 # starts an ungated runner. tests/test_run_matrix_routing.py asserts this set
 # against route_mode()'s reachable outputs, so adding a route without a branch
 # fails the test rather than wasting a multi-hour GPU run.
-HANDLED_ROUTES = {"static", "budget2_ablation", "budget3", "foyer", "aimd2",
-                  "aimd_legacy"}
+HANDLED_ROUTES = {"static", "budget2_ablation", "budget3", "budget3scan", "foyer",
+                  "aimd2", "aimd_legacy"}
 
 
 def route_mode(mode):
@@ -162,6 +172,10 @@ def route_mode(mode):
     function (not a copy of its logic) — GPT/Codex audit-2 requirement."""
     if mode == "budget3" or mode.startswith("budget3:"):
         return "budget3"
+    if mode == "budget3scan" or mode.startswith("budget3scan:"):
+        # 2026-09-26：「更窄的那个实验」——工作副本 f825bc768188 上只改队首那一行
+        # （head = waiting，即仓库版的修复），其余逐字一致。
+        return "budget3scan"
     if mode == "foyer" or mode.startswith("foyer:"):
         return "foyer"
     if mode == "aimd2" or mode.startswith("aimd2:"):
@@ -199,6 +213,8 @@ def foyer_param_args(mode):
                 extra.append("--disable-slo-valve")
             elif k == "sg" and v == "0":
                 extra.append("--disable-starve-guard")
+            elif k == "rnw" and v == "1":
+                extra.append("--revoke-needs-waiter")
             elif k == "hw" and v == "0":
                 extra.append("--disable-highwater")
             else:
@@ -213,10 +229,15 @@ def budget3_param_args(mode):
     if ":" in mode:
         flagmap = {"target": "--target-util", "margin": "--margin",
                    "horizon": "--horizon-rounds", "hw": "--highwater-decay",
-                   "predictor": "--predictor"}
+                   "predictor": "--predictor", "charge": "--charge-mode",
+                   "base": "--base-mode", "rgate": "--round-gate",
+                   "revoke": "--revoke-after", "evict": "--evictable-after",
+                   "vth": "--valve-pressure-usage"}
         for kv in mode.split(":", 1)[1].split(";"):
             k, v = kv.split("=", 1)
-            if k == "sf" and v == "0":
+            if k == "vnp" and v == "1":
+                extra.append("--valve-needs-pressure")
+            elif k == "sf" and v == "0":
                 extra.append("--disable-single-flight")
             elif k == "shed" and v == "0":
                 extra.append("--disable-shedding")
@@ -224,6 +245,8 @@ def budget3_param_args(mode):
                 extra.append("--disable-slo-valve")
             elif k == "sg" and v == "0":
                 extra.append("--disable-starve-guard")
+            elif k == "rnw" and v == "1":
+                extra.append("--revoke-needs-waiter")
             else:
                 extra += [flagmap[k], v]
     return extra
@@ -243,21 +266,50 @@ def aimd2_param_args(mode):
 
 
 def solve_memfrac(probe, target):
-    """Pick the next mem_fraction_static to try, given {memfrac: pool} so far.
+    """Pick the next mem_fraction_static to try, given [(memfrac, pool)] IN TIME ORDER.
 
-    The pool is linear in mem_fraction_static (measured: 431 tokens per 0.001 on a
-    3090 / 7B / 96K setup, which is exactly 0.001 * 24,576 MiB / 57,344 B per token,
-    so there is no coarse quantisation to fight). Two probes therefore determine the
-    line and we can solve for the target directly.
+    The pool is nominally linear in mem_fraction_static: 0.001 * 24,576 MiB /
+    57,344 B per token is 431 tokens per 0.001, and 0.85 -> 0.86 measured 4223 over
+    0.01, i.e. 422 per 0.001. Close enough to a line at low memfrac.
+
+    But it is NOT a stable line, and on 2026-09-21 that broke the recovery outright.
+    The sequence on gpu3, all against a neighbour holding VRAM:
+
+        0.85      ->  90248
+        0.86      ->  94471     (+4223 over 0.01)
+        0.876484  -> 112964     (+18493 over 0.0165)   <- line is gone
+        0.863039  -> 107110
+
+    The first pair implies a slope; the second contradicts it. Two causes, and the
+    fix has to handle both: (a) the neighbour's footprint MOVES between probes, so
+    the pool at a given memfrac changes under us, and (b) the relation may genuinely
+    curve at high memfrac. Either way, solving from the two EXTREME probes — which is
+    what this function used to do — anchors the fit on the stalest observation
+    available. A secant step on the two MOST RECENT probes is the standard answer to
+    a drifting target: it re-estimates the slope every attempt from the freshest data.
+
+    The step is also clamped. With a bad slope an unclamped solve can jump far
+    outside the range where the line was ever valid, and each wasted probe costs a
+    full server start. Clamping trades a little convergence speed for never taking a
+    wild step; MAX_POOL_ATTEMPTS is raised to match.
+
+    Safety does not depend on any of this. The caller re-probes after every server
+    start and refuses to record a run whose pool is off target, so a bad guess costs
+    an attempt, never a bad measurement.
     """
-    pts = sorted(probe.items())
+    pts = [(m, p) for m, p in probe if m is not None]
     if len(pts) >= 2:
-        (m0, p0), (m1, p1) = pts[0], pts[-1]
+        (m0, p0), (m1, p1) = pts[-2], pts[-1]      # freshest pair, NOT the extremes
         if m1 != m0 and p1 != p0:
-            cur_m, cur_p = pts[-1]
-            return round(cur_m + (target - cur_p) * (m1 - m0) / (p1 - p0), 6)
-    # one point is not enough to know the slope: step up by the measured 0.01 and
-    # let the next call solve properly
+            step = (target - p1) * (m1 - m0) / (p1 - p0)
+            lim = MAX_MEMFRAC_STEP
+            step = max(-lim, min(lim, step))
+            return round(m1 + step, 6)
+    if not pts:
+        # Nothing usable probed: step up from the module default, which is where
+        # start_server actually put the dial.
+        return round(float(MEMFRAC) + 0.01, 6)
+    # one point is not enough to know the slope: step up and let the next call solve
     return round(pts[-1][0] + 0.01, 6)
 
 
@@ -419,7 +471,7 @@ def main():
         # faked a quality regression; 84,528 on another). Restart until the pool is
         # right; abort the lane rather than record a run we cannot compare.
         attempt, pool_tokens = 1, None
-        probe = {}
+        probe = []          # [(memfrac, pool)] in TIME order — see solve_memfrac
         lane_memfrac = MEMFRAC_HINT
         while True:
             server = start_server(args.gpu, args.port, name, lane_memfrac)
@@ -439,33 +491,23 @@ def main():
                 f"(±{POOL_TOLERANCE}) at memfrac={lane_memfrac} (attempt {attempt})")
             wait_port_dead(server, args.port)
             if attempt >= MAX_POOL_ATTEMPTS:
-                # State what was measured, not what it is assumed to mean.
-                # On 2026-09-21 this said "another job is holding VRAM on gpu 3"
-                # while nvidia-smi showed 1,453 of 24,576 MiB in use. The cause was
-                # never checked and the sentence asserted it anyway. The pool
-                # shortfall is the fact; who caused it is a hypothesis, and a
-                # message that ships a hypothesis reads as a diagnosis.
-                used = "gpu state unknown"
-                try:
-                    q = subprocess.run(
-                        ["nvidia-smi", "--query-gpu=index,memory.used,memory.total",
-                         "--format=csv,noheader,nounits"],
-                        capture_output=True, text=True, timeout=15)
-                    for ln in q.stdout.strip().splitlines():
-                        f = [x.strip() for x in ln.split(",")]
-                        if len(f) >= 3 and f[0] == str(args.gpu):
-                            used = "gpu %s holds %s of %s MiB" % (f[0], f[1], f[2])
-                except Exception:
-                    pass
                 raise SystemExit(
                     f"pool size {pool_tokens} != expected {EXPECT_POOL} after "
-                    f"{attempt} attempts; {used} — aborting lane instead of "
-                    f"recording a bad run")
+                    f"{attempt} attempts (another job is holding VRAM on gpu "
+                    f"{args.gpu}) — aborting lane instead of recording a bad run")
             # A neighbour's residue shrinks the pool; raise memfrac to compensate
             # instead of aborting. The pool stays the invariant, memfrac is only the
             # dial that reaches it, so the experiment is unchanged.
-            probe[lane_memfrac] = pool_tokens
-            lane_memfrac = min(solve_memfrac(probe, EXPECT_POOL), MAX_MEMFRAC)
+            # Record the dial the server ACTUALLY ran at, appended in TIME order (the
+            # solver fits the freshest pair). On the first probe lane_memfrac is
+            # still MEMFRAC_HINT (None) and start_server falls back to MEMFRAC, so
+            # recording the None would both lose the slope and hand solve_memfrac a
+            # None to do arithmetic on. float() is load-bearing: MEMFRAC comes from
+            # os.environ and is a STRING.
+            probe.append((lane_memfrac if lane_memfrac is not None else float(MEMFRAC),
+                          pool_tokens))
+            lane_memfrac = max(float(MEMFRAC), min(solve_memfrac(probe, EXPECT_POOL),
+                                                   MAX_MEMFRAC))
             log(f"  -> retrying at memfrac={lane_memfrac}")
             attempt += 1
             time.sleep(30)
@@ -485,16 +527,13 @@ def main():
         monitor = subprocess.Popen(
             [PY, f"{BASE}/TraceLab/replay/scripts/monitor.py",
              "--url", f"http://127.0.0.1:{args.port}/metrics",
-             "--out", f"{run_dir}/metrics.csv", "--interval", "5",
-             # The normal path terminates this monitor at the end of the run, but
-             # nothing covers the abnormal one. A process-reaper kill or any
-             # SIGKILL leaves the child orphaned, and a monitor that has written
-             # its header keeps appending all-empty rows forever after -- sixteen
-             # were found alive on 2026-09-21, thirteen of them 8-13 days old. Any
-             # duration taken as last-row-minus-first-row then reads an arbitrary
-             # number: a run that started 10:22 and died at 10:31 measured 227
-             # minutes. getppid is the check that survives SIGKILL.
-             "--exit-with-parent"])
+             "--out", f"{run_dir}/metrics.csv", "--interval", "5"])
+
+        # 记录跑的过程中【有没有别人的进程挤进这张卡】。池子守卫只管起点，
+        # 中途被挤会静默污染这一段的所有指标（用户 2026-09-24 提出）。
+        gpu_watch = subprocess.Popen(
+            [PY, f"{BASE}/scripts/gpu_watch.py", "--gpu", str(args.gpu),
+             "--out", f"{run_dir}/gpu_watch.jsonl", "--interval", "15"])
 
         cap_args = []
         controller = None
@@ -553,17 +592,24 @@ def main():
                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             cap_args = ["--cap-file", capfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             meta["controller_params"] = {"ablation": mode}
-        elif route_mode(mode) == "budget3":
+        elif route_mode(mode) in ("budget3", "budget3scan"):
+            ctrl_script = ("controller_budget3_scan.py"
+                           if route_mode(mode) == "budget3scan"
+                           else "controller_budget3.py")
             # Online-predictor Foyer: named-permit admission, no trace future.
             # Routing via route_mode() — GPT-audit-2: `== "budget3"` left param
             # variants ungated.
-            permitfile = f"{BASE}/permit_{args.lane}.json"
+            # ★ permit 是【这一条 run 自己的状态】—— 它自己的 runner 和 controller
+            #   共享，绝不跨 run 共用。原来按 lane 命名，而 drive_one.sh 永远传
+            #   --lane atonce ⇒ 2026-10-19 两条 run 并行时写同一个文件、准入名单
+            #   互相覆盖，两条数据全废。按 run 名命名才是它本来的语义。
+            permitfile = f"{BASE}/permit_{name}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
             # Supervised: log-driven state → a dead controller is relaunched in
             # 20 s and resumes seamlessly, until the run's summary exists.
             ctrl_cmd = " ".join([
-                PY, f"{BASE}/TraceLab/replay/scripts/controller_budget3.py",
+                PY, f"{BASE}/TraceLab/replay/scripts/{ctrl_script}",
                 *budget3_param_args(mode),
                 "--trace", TRACE,
                 "--permit-file", permitfile,
@@ -590,7 +636,11 @@ def main():
             # of the accounting is the engine's measured token_usage, so prefix
             # sharing counts in our favour instead of being discarded by a
             # max(measured, logical_sum); --target-util is the red line.
-            permitfile = f"{BASE}/permit_{args.lane}.json"
+            # ★ permit 是【这一条 run 自己的状态】—— 它自己的 runner 和 controller
+            #   共享，绝不跨 run 共用。原来按 lane 命名，而 drive_one.sh 永远传
+            #   --lane atonce ⇒ 2026-10-19 两条 run 并行时写同一个文件、准入名单
+            #   互相覆盖，两条数据全废。按 run 名命名才是它本来的语义。
+            permitfile = f"{BASE}/permit_{name}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
             ctrl_cmd = " ".join([
@@ -619,16 +669,35 @@ def main():
                 "tuned": (mode.split(":", 1)[1] if ":" in mode else "default")}
         elif route_mode(mode) == "aimd2":
             # Faithful Concur: grow only below u_low, permit-based pause/resume.
-            permitfile = f"{BASE}/permit_{args.lane}.json"
+            # ★ permit 是【这一条 run 自己的状态】—— 它自己的 runner 和 controller
+            #   共享，绝不跨 run 共用。原来按 lane 命名，而 drive_one.sh 永远传
+            #   --lane atonce ⇒ 2026-10-19 两条 run 并行时写同一个文件、准入名单
+            #   互相覆盖，两条数据全废。按 run 名命名才是它本来的语义。
+            permitfile = f"{BASE}/permit_{name}.json"
             with open(permitfile, "w") as f:
                 json.dump({"admit": [], "paused": []}, f)
-            controller = subprocess.Popen(
-                [PY, f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
-                 "--permit-file", permitfile,
-                 "--admission-log", f"{run_dir}/admissions.jsonl",
-                 "--metrics-url", f"http://127.0.0.1:{args.port}/metrics",
-                 "--decision-log", f"{run_dir}/controller.jsonl"] + aimd2_param_args(mode),
-                 stdout=open(f"{run_dir}/ctrl.out", "w"), stderr=subprocess.STDOUT)
+            # 2026-09-26：**加上监督循环**。这个分支原来直接 Popen 控制器，
+            # 控制器一死就没有任何东西把它拉起来，而 run_matrix 自己阻塞在
+            # `runner.wait()` 上 —— 于是一条 run 会**永远**停在队列非空、引擎空转
+            # 的状态（`pois200_aimd2_paper` 与 `pois200_aimd2_paper_r2` 各中过一次，
+            # 见那两个 run 目录里的 INTERVENTION.md）。budget3/foyer 那个分支
+            # 一直有同样的循环，只有这里漏了。
+            # 第二次起重启用 `--resume`：让它**采纳**已有的 admissions.jsonl 而不是
+            # 重建一个空账本（重建会把已在排队的会话永久锁死），并把决策日志改成追加。
+            _ctrl = " ".join([PY, f"{BASE}/TraceLab/replay/scripts/controller_aimd2.py",
+                              "--permit-file", permitfile,
+                              "--admission-log", f"{run_dir}/admissions.jsonl",
+                              "--metrics-url", f"http://127.0.0.1:{args.port}/metrics",
+                              "--decision-log", f"{run_dir}/controller.jsonl"]
+                             + aimd2_param_args(mode))
+            supervisor = (
+                f"i=0; while [ ! -f {run_dir}/summary.json ]; do "
+                f"R=; [ $i -gt 0 ] && R=--resume; "
+                f"{_ctrl} $R >> {run_dir}/ctrl.out 2>&1; "
+                f"echo \"$(date +%H:%M:%S) controller exited, relaunching\" >> {run_dir}/ctrl.out; "
+                f"i=$((i+1)); sleep 20; done")
+            controller = subprocess.Popen(["bash", "-c", supervisor],
+                                          start_new_session=True)
             cap_args = ["--permit-file", permitfile, "--admission-log", f"{run_dir}/admissions.jsonl"]
             # Record the params the controller ACTUALLY ran with: the defaults are
             # Concur-retuned-for-3090, but "aimd2:u_low=..." overrides them, and a
@@ -675,6 +744,7 @@ def main():
             except (ProcessLookupError, PermissionError):
                 controller.terminate()
         monitor.terminate()
+        gpu_watch.terminate()
         wait_port_dead(server, args.port)
         meta["finished"] = time.time()
         dump_meta(run_dir, meta)
