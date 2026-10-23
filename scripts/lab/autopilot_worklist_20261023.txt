@@ -1,26 +1,31 @@
-# autopilot worklist（2026-10-23）
-# 格式: card|run|policy|trace|port|hc|hcr
-#   card = 2 或 3（只用这两张）；hc = hc|nohc；hcr = HiCache ratio（默认 2）
-# 逐卡串行：同一张卡上一条跑完（summary.json 出现）才起下一条。
-# 顺序设计：卡 2 跑主线 long19 三类对照（n=2 的重复在同一张卡上背靠背，条件最可比）；
-#           卡 3 跑消融/边界/第二条 trace。
+# autopilot worklist v2（2026-10-23 15:2x）
+# 用户 2026-10-23 更新规则：不再限定卡 2/3 —— **任何空卡都能用**（1/2/3/0），
+# **最多同时占 2 张卡**。卡空且凉（无 compute app、显存 <200MiB、温度 <68°C）就起下一条。
+#
+# 格式: run|policy|trace|port|hc|hcr
+# 顺序即优先级；全局串行分配，最多 2 条并发（2 个 slot，每个 slot 占一张卡，
+# 跑完释放，再取下一条）。主线 long19 三类对照排在最前。
 
-# ---- 卡 2：主线 ----
-2|l19_foyer_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30160|hc|2
-2|l19_default_r2|default|replay_long19.csv|30161|hc|2
-2|l19_aimd2_tuned|aimd2|replay_long19.csv|30162|hc|2
-2|l19_foyer_r3|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30163|hc|2
-2|l19_default_r3|default|replay_long19.csv|30164|hc|2
-2|l19_aimd2_paper|aimd2:u_low=0.2;u_high=0.5;h_thresh=0.2|replay_long19.csv|30165|hc|2
-2|l19_foyer_hc8_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30166|hc|8
+# ---- 主线：long19 三类对照（n=2）----
+l19_foyer_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30160|hc|2
+l19_default_r2|default|replay_long19.csv|30161|hc|2
+l19_aimd2_tuned|aimd2|replay_long19.csv|30162|hc|2
+l19_foyer_r3|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30163|hc|2
+l19_default_r3|default|replay_long19.csv|30164|hc|2
+l19_aimd2_paper|aimd2:u_low=0.2;u_high=0.5;h_thresh=0.2|replay_long19.csv|30165|hc|2
 
-# ---- 卡 3：消融 / 边界 / 第二条 trace ----
-3|l19_default_nohc|default|replay_long19.csv|30170|nohc|2
-3|l19_foyer_nohc_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30171|nohc|2
-3|l19_default_hc8_r2|default|replay_long19.csv|30172|hc|8
-3|ato_foyer_r3|budget3:hw=0;target=0.95;base=resident|replay_atonce25r.csv|30173|hc|2
-3|ato_default_r2|default|replay_atonce25r.csv|30174|hc|2
-3|ato_aimd2_tuned|aimd2|replay_atonce25r.csv|30175|hc|2
-3|mid_foyer|budget3:hw=0;target=0.95;base=resident|replay_mid17.csv|30176|hc|2
-3|mid_default|default|replay_mid17.csv|30177|hc|2
-3|mid_aimd2_tuned|aimd2|replay_mid17.csv|30178|hc|2
+# ---- 消融 / 边界 ----
+l19_foyer_hc8_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30166|hc|8
+l19_default_hc8_r2|default|replay_long19.csv|30167|hc|8
+l19_default_nohc|default|replay_long19.csv|30168|nohc|2
+l19_foyer_nohc_r2|budget3:hw=0;target=0.95;base=resident|replay_long19.csv|30169|nohc|2
+
+# ---- Concur 式批量场景（atonce25）----
+ato_foyer_r3|budget3:hw=0;target=0.95;base=resident|replay_atonce25r.csv|30170|hc|2
+ato_default_r2|default|replay_atonce25r.csv|30171|hc|2
+ato_aimd2_tuned|aimd2|replay_atonce25r.csv|30172|hc|2
+
+# ---- 第二条 trace（mid17）----
+mid_foyer|budget3:hw=0;target=0.95;base=resident|replay_mid17.csv|30173|hc|2
+mid_default|default|replay_mid17.csv|30174|hc|2
+mid_aimd2_tuned|aimd2|replay_mid17.csv|30175|hc|2

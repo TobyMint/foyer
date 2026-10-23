@@ -1,4 +1,5 @@
 #!/bin/bash
+# ⚠ 2026-10-23 已被 autopilot_v2.sh 取代：本版只认卡 2/3，且显存单位解析有 bug（"xx MiB"）。
 # autopilot_g23.sh — 等 lab-3090 的 GPU2/3 空且凉，按 worklist 逐卡串行启动 drive_one.sh
 #
 # 用户 2026-10-23 定规：卡 2/3 空了就直接起实验。本脚本是那条指令的执行器：
