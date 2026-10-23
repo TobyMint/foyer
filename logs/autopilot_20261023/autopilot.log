@@ -1,0 +1,3 @@
+2026-10-23 11:50:47 autopilot start: card2=7 runs card3=9 runs poll=90s temp_max=68 dry=1
+2026-10-23 11:50:48 poll gpu2 temp=50 mem=2465 MiB apps=2 | gpu3 temp=45 mem=2289 MiB apps=2 | cur2=none cur3=none
+2026-10-23 11:50:48 dry-run: 退出
