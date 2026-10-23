@@ -1,4 +1,4 @@
-updated 2026-10-23 15:32:16
+updated 2026-10-23 15:43:24
 slot0: run=l19_foyer_r2 card=1
-slot1: run=none card=?
-next: 2/16 pending=1
+slot1: run=l19_default_r2 card=2
+next: 2/16 pending=0

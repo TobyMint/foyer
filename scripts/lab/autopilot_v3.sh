@@ -19,6 +19,7 @@ DRY=0; [ "${2:-}" = "--dry-run" ] && DRY=1
 HOST=${HOST:-lab-3090}
 LAB=/data/xbw/turnstile
 TEMP_MAX=${TEMP_MAX:-68}
+EXPECT_POOL=${EXPECT_POOL:-101502}
 POLL=${POLL:-90}
 CANDIDATES=${CANDIDATES:-"1 2 3 0"}
 LOGDIR=/root/paper/foyer/logs/autopilot_20261023
@@ -58,7 +59,7 @@ REMOTE
 launch_item() {  # $1=item line  $2=card ; echoes ok/fail
   local item=$1 card=$2 run policy trace port hc hcr cmd res
   IFS='|' read -r run policy trace port hc hcr <<< "$item"
-  cmd="cd $LAB && HCR=$hcr TEMP_MAX=$TEMP_MAX setsid nohup bash $LAB/scripts/drive_one.sh '$run' '$policy' $trace $port $hc '$card' >> $LAB/scripts/autopilot_launch.log 2>&1 < /dev/null & echo pid=\$!"
+  cmd="cd $LAB && TURNSTILE_EXPECT_POOL=$EXPECT_POOL HCR=$hcr TEMP_MAX=$TEMP_MAX setsid nohup bash $LAB/scripts/drive_one.sh '$run' '$policy' $trace $port $hc '$card' >> $LAB/scripts/autopilot_launch.log 2>&1 < /dev/null & echo pid=\$!"
   if [ "$DRY" = 1 ]; then log "DRY launch card$card: $run ($policy, $trace, port=$port, $hc, hcr=$hcr)"; echo ok; return; fi
   res=$(timeout 45 ssh -o ConnectTimeout=8 -o BatchMode=yes "$HOST" "$cmd" 2>&1)
   log "launch card$card: $run -> ${res:-<no output>}"

@@ -73,7 +73,7 @@ fi
 # ---- 3) 环境（与既有 run 逐字同口径） ----
 export TURNSTILE_RUN_TIMEOUT_H=8
 export TURNSTILE_MEMFRAC=0.85
-export TURNSTILE_EXPECT_POOL=101432
+export TURNSTILE_EXPECT_POOL=${TURNSTILE_EXPECT_POOL:-101432}
 # HCR 环境变量可以覆盖 host 层倍率（默认 2）。用来做缓存容量的敏感性分析：
 # 实测 host 层 0.2M token 在两条臂上都是 100% 满的，而工作集是 19x60K = 1.14M。
 HCR=${HCR:-2}
