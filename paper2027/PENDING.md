@@ -8,7 +8,8 @@
 | 占位 | 位置 | 等什么 |
 |---|---|---|
 | `ms-A/B/C`、`e2e-*`、`r50-*`、`r90-*`、`miss-*`、`gp-*`、`work-*`、`hit-*` | `sec_eval.tex` 表 II | 三条 run 跑完 → `scripts/lab/slo_goodput.py --csv` + `atonce_report.py` |
-| `busy-*`、`idle-*`、`pr-*`、`ca-*`、`unc-*`、`dec-*`、`hit2-*`、`rr-*` | `sec_eval.tex` 表 III | 三条 run → `scripts/lab/gen_work_decomp.py --csv`（**已写好**） |
+| `busy-*`、`idle-*`、`pr-*`、`unc-*`、`dec-*`、`dh-*`、`hh-*`、`ev-*`、`rr-*` | `sec_eval.tex` 表 III | 三条 run → `scripts/lab/gen_work_decomp.py --csv`（**已写好**，device/host 拆分可用） |
+| `at-n1..at-x3` | `sec_eval.tex` 表 IV | `scripts/lab/gen_miss_attrib.py --csv`（**已写好**） |
 | `one-sentence result ...`（Intro / Conclusion / Abstract） | `sec_intro.tex`、`sec_conclusion.tex`、`main.tex` | 上面两张表齐了之后写 |
 | `headline number`（Abstract） | `main.tex` | 同上 |
 | 分解段落、时间线段落、反事实段落、负结果段落 | `sec_eval.tex` 四个 `\pend` 段 | 表齐 + `fig_timeline` + 反事实脚本 |
@@ -42,10 +43,9 @@
 | `fig_timeline` | ❌ 待写 | 会话 admit/suspend/resume 时间线 |
 | 敏感性（ρ、h） | ❌ 待写 | 日志上的离线扫描 |
 
-⚠ **引擎的 device/host 命中分解拿不到**：SGLang v0.5.10 的
-`sglang:cached_tokens_total{cache_source=...}` 在 metrics.csv 里是**空列**（与 itl/e2e/ttft 同病）。
-表 III 因此只报聚合命中率 + 重读税；正文里不要写"device 命中 X%、host 命中 Y%"。
-若一定要这个拆分，得去 SGLang 的 server 日志里捞（未验证有没有）。
+✅ **device/host 拆分能拿到**（2026-10-23 晚修正）：`sglang:cached_tokens_total{cache_source="device"|"host"}`
+是有数的，之前取不到是因为 metrics.csv 的**表头带 CSV 转义引号**（`""device""`），
+`gen_work_decomp.py` 已修。C 的 442 步上：device 37.3%、host 23.0%、evicted 12.7M token。
 
 ## D. 引用
 

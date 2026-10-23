@@ -111,8 +111,8 @@
 \citation{mooncake}
 \@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens.}}{8}{table.caption.3}\protected@file@percent }
 \newlabel{tab:main}{{II}{8}{Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens}{table.caption.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window; prompt, cached and uncached tokens are summed from the per-step records. The engine does not expose a device/host split of the hits in this version, so we report the aggregate hit rate and the re-read tax.}}{8}{table.caption.4}\protected@file@percent }
-\newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window; prompt, cached and uncached tokens are summed from the per-step records. The engine does not expose a device/host split of the hits in this version, so we report the aggregate hit rate and the re-read tax}{table.caption.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room.}}{8}{table.caption.4}\protected@file@percent }
+\newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room}{table.caption.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Attribution of the re-read tax. Rounds are classified by what happened between the previous round and this one. \emph  {rounds} and \emph  {share} are percentages, \emph  {uncached} is in millions of tokens, and \emph  {excess} is uncached prefill divided by the tokens the round actually appended.}}{8}{table.caption.5}\protected@file@percent }
 \newlabel{tab:attrib}{{IV}{8}{Attribution of the re-read tax. Rounds are classified by what happened between the previous round and this one. \emph {rounds} and \emph {share} are percentages, \emph {uncached} is in millions of tokens, and \emph {excess} is uncached prefill divided by the tokens the round actually appended}{table.caption.5}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0b}Scheduling for agentic and multi-turn workloads}{8}{paragraph.8.0.0.2}\protected@file@percent }
@@ -126,7 +126,6 @@
 \bibcite{concur}{4}
 \bibcite{mooncake}{5}
 \bibcite{distserve}{6}
-\bibcite{yu2025pensieve}{7}
 \@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The regime the design targets, and where it does not apply.}}{9}{table.caption.7}\protected@file@percent }
 \newlabel{tab:scope}{{V}{9}{The regime the design targets, and where it does not apply}{table.caption.7}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{9}{section.9}\protected@file@percent }
@@ -138,6 +137,7 @@
 \@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion}{9}{section.10}\protected@file@percent }
 \newlabel{sec:conclusion}{{X}{9}{Conclusion}{section.10}{}}
 \@writefile{toc}{\contentsline {section}{References}{9}{section*.8}\protected@file@percent }
+\bibcite{yu2025pensieve}{7}
 \bibcite{continuum}{8}
 \bibcite{kvflow}{9}
 \bibcite{thunderagent}{10}

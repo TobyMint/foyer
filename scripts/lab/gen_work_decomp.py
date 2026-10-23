@@ -30,7 +30,10 @@ import sys
 def read_metrics(path):
     rows = []
     with open(path) as f:
-        head = f.readline().strip().split(",")
+        # 表头里的引号是 CSV 转义：""sglang:...{cache_source=""device""}"" →
+        # 去掉外层引号后还要把成对的 "" 还原成 "，否则查不到这两列（踩过一次）。
+        head = [h.strip().strip('"').replace('""', '"')
+                for h in f.readline().strip().split(",")]
         for line in f:
             parts = line.rstrip("\n").split(",")
             if len(parts) != len(head):
@@ -86,12 +89,14 @@ def main(argv):
 
         prompt_m = delta("sglang:prompt_tokens_total")
         evict = delta("sglang:evicted_tokens_total")
-        # ⚠ SGLang v0.5.10 的 metrics 里 cache_source 分解是**空的**（与 itl/e2e/ttft 同病），
-        #   所以 device/host 拆分只能从 steps.jsonl 的逐请求字段拿，而且拿不到 tier。
-        dev = host = 0.0
+        # cache_source 分解：**列名带引号**，解析时要去掉引号，否则永远取不到（踩过）。
+        # 老 run（2026-09/10 那批）没有这两列，那时只能报聚合命中率。
+        dev = delta('sglang:cached_tokens_total{cache_source="device"}')
+        host = delta('sglang:cached_tokens_total{cache_source="host"}')
 
         app = dec = 0.0
         cached = 0.0
+        unc_step = 0.0
         nsteps = 0
         if os.path.exists(sp):
             for line in open(sp):
@@ -105,10 +110,16 @@ def main(argv):
                 app += r.get("input_len") or 0
                 dec += r.get("server_completion_tokens") or 0
                 cached += r.get("server_cached_prompt_tokens") or 0
+                unc_step += r.get("server_uncached_prompt_tokens") or 0
 
-        prompt = prompt_m if prompt_m > 0 else cached + sum(
-            0 for _ in [])  # prompt_m 来自引擎累计计数；两者本应一致
-        unc = max(prompt - cached, 0.0)
+        prompt = prompt_m if prompt_m > 0 else cached
+        # 引擎累计计数器与逐步求和必须对得上（同源断言）：差超过 1% 直接报出来，
+        # 不要静默挑一个用。
+        if prompt_m > 0 and cached > 0 and abs(prompt_m - (cached + unc_step)) / prompt_m > 0.01:
+            print("⚠ %s: 引擎 prompt 累计 %.3fM 与逐步 cached+uncached %.3fM 差 >1%%"
+                  % (os.path.basename(d.rstrip("/")), prompt_m / 1e6,
+                     (cached + unc_step) / 1e6))
+        unc = max(prompt - (dev + host if (dev + host) > 0 else cached), 0.0)
         o = {
             "run": os.path.basename(d.rstrip("/")),
             "wall_min": round(wall / 60.0, 1),
@@ -120,7 +131,9 @@ def main(argv):
             "uncached_Mtok": round(unc / 1e6, 2),
             "append_Mtok": round(app / 1e6, 2),
             "decode_Mtok": round(dec / 1e6, 2),
-            "hit_pct": round(100 * cached / prompt, 1) if prompt else float("nan"),
+            "hit_pct": round(100 * (dev + host if (dev + host) > 0 else cached) / prompt, 1) if prompt else float("nan"),
+            "dev_hit_pct": round(100 * dev / prompt, 1) if (prompt and dev) else float("nan"),
+            "host_hit_pct": round(100 * host / prompt, 1) if (prompt and host) else float("nan"),
             "evict_Mtok": round(evict / 1e6, 2),
             "reread_x": round(unc / app, 2) if app else float("nan"),
         }
@@ -128,7 +141,8 @@ def main(argv):
 
     head = ["run", "wall_min", "busy_pct", "idle_min", "n_steps", "prompt_Mtok",
             "cached_Mtok", "uncached_Mtok", "evict_Mtok",
-            "append_Mtok", "decode_Mtok", "hit_pct", "reread_x"]
+            "append_Mtok", "decode_Mtok", "hit_pct", "dev_hit_pct", "host_hit_pct",
+            "reread_x"]
     print("%-16s %8s %7s %8s %9s %9s %9s %8s %7s" % (
         "run", "wall", "busy%", "idle", "prompt", "cached", "uncached", "append", "reread"))
     for o in out:

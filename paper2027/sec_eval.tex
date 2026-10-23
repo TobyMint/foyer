@@ -73,9 +73,10 @@ session's prefix is retained and grows when state is lost.
 
 \begin{table*}[t]
 \caption{Decomposition. Busy and idle time are sampled from the engine's running-request
-count over each run's window; prompt, cached and uncached tokens are summed from the
-per-step records. The engine does not expose a device/host split of the hits in this
-version, so we report the aggregate hit rate and the re-read tax.}
+count over each run's window. Prompt, device-hit and host-hit tokens are the engine's
+cumulative counters over the same window; uncached prefill, completion and the re-read tax
+are summed from the per-step records. Evicted tokens are what the engine had to throw away
+to make room.}
 \label{tab:decomp}
 \centering
 \small
@@ -86,10 +87,11 @@ version, so we report the aggregate hit rate and the re-read tax.}
 busy time (min) & \pend{busy-A} & \pend{busy-B} & \pend{busy-C} \\
 idle time (min) & \pend{idle-A} & \pend{idle-B} & \pend{idle-C} \\
 prompt tokens (Mtok) & \pend{pr-A} & \pend{pr-B} & \pend{pr-C} \\
-cached tokens (Mtok) & \pend{ca-A} & \pend{ca-B} & \pend{ca-C} \\
 uncached prefill (Mtok) & \pend{unc-A} & \pend{unc-B} & \pend{unc-C} \\
 completion (Mtok) & \pend{dec-A} & \pend{dec-B} & \pend{dec-C} \\
-cache hit (\%) & \pend{hit2-A} & \pend{hit2-B} & \pend{hit2-C} \\
+device hits (\%) & \pend{dh-A} & \pend{dh-B} & \pend{dh-C} \\
+host hits (\%) & \pend{hh-A} & \pend{hh-B} & \pend{hh-C} \\
+evicted tokens (Mtok) & \pend{ev-A} & \pend{ev-B} & \pend{ev-C} \\
 re-read tax ($\times$ append) & \pend{rr-A} & \pend{rr-B} & \pend{rr-C} \\
 \bottomrule
 \end{tabular}
