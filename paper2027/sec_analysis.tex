@@ -8,23 +8,26 @@ the ledger, which is the formal reason the design can afford a crude estimate.
 
 \subsection{Prop.~1: the feasible set is small, and a threshold cannot track it}
 
-Let $\bar\Phi(t)$ be the mean projected footprint of the live sessions and $\rho C_d$ the
-committed device budget. Any resident set satisfying \eqref{eq:feasible} obeys
+Let the live sessions' footprints be $\Phi_{(1)}\le\cdots\le\Phi_{(m)}$ in ascending order
+and let $\rho C_d$ be the committed device budget. A resident set is feasible exactly when
+its members are the smallest footprints that fit:
 \begin{equation}
-|\mathcal{F}(t)|\;\le\;\frac{\rho\,C_d}{\bar\Phi(t)} .
+|\mathcal{F}(t)|=\max\Bigl\{\,k:\sum_{i\le k}\Phi_{(i)}\le\rho C_d\,\Bigr\},
 \label{eq:prop1}
 \end{equation}
-At $\rho=0.95$ our budget is 96.4K tokens against a mean session footprint of 69.0K, so
-the bound is $1.40$: \emph{at most one session is resident}, and a second fits only if it
-is smaller than the mean. The bound follows from the working-set ratio alone: when the
-working set is $m$ times the pool, at most $|\mathcal{S}|/m$ sessions are resident, here
-$19/12.9=1.47$.
+which is a statement about the multiset of footprints, not a mean-field quantity. On our
+trace the count has median $1$ and mean $1.77$ over the 81 rounds with live sessions; at
+63\% of rounds at most one session fits, and three or more fit at only 16\%. The scalar
+estimate $\rho C_d/\bar\Phi=1.40$, with $\bar\Phi=69.0$K the mean session footprint, lands
+in the same range but hides the skew: early rounds fit up to eight small sessions and late
+rounds fit one. In the mean-field sense---working set $m$ times the pool---the resident
+count is $|\mathcal{S}|/m=19/12.9=1.47$, which is the number an operator would size for.
 
 Three consequences contradict a habit of the literature.
-(i) A concurrency threshold $k$ is infeasible for some $t$ unless $k\le1$: with two
-median sessions, $2\times48.5$K$=97.0$K exceeds the 96.4K budget, so $k=2$ sits exactly on
-the edge and $k=3$ is always over-committed. The threshold is not a tuning knob but a
-constant that the workload invalidates.
+(i) A concurrency threshold cannot track this. A window of $k=2$ is infeasible at 63\% of
+the rounds and $k=3$ at 84\%, while at the start of the trace a window of eight would have
+been feasible; any fixed $k$ is either over-committed for most of the run or leaves most of
+the card idle at the start.
 (ii) Queueing reasoning about arrival rates is the wrong instrument: there is no stable
 operating point with many sessions in flight, so latency is set not by utilisation but by
 \emph{which} session holds the card.

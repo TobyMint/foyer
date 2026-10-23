@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.9.23)  24 OCT 2026 05:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.9.23)  24 OCT 2026 06:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -548,7 +548,7 @@ Underfull \hbox (badness 1509) in paragraph at lines 77--80
 Underfull \vbox (badness 2809) has occurred while \output is active []
 
  [6]
-<figs/fig_timeline.pdf, id=327, 263.92603pt x 144.13593pt>
+<figs/fig_timeline.pdf, id=325, 263.92603pt x 144.13593pt>
 File: figs/fig_timeline.pdf Graphic file (type pdf)
 <use figs/fig_timeline.pdf>
 Package pdftex.def Info: figs/fig_timeline.pdf  used on input line 159.
@@ -615,10 +615,10 @@ f-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times
 /utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></
 usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (10 pages, 314966 bytes).
+Output written on main.pdf (10 pages, 317503 bytes).
 PDF statistics:
- 537 PDF objects out of 1000 (max. 8388607)
- 417 compressed objects within 5 object streams
+ 536 PDF objects out of 1000 (max. 8388607)
+ 416 compressed objects within 5 object streams
  110 named destinations out of 1000 (max. 500000)
  299 words of extra memory for PDF output out of 10000 (max. 10000000)
 
