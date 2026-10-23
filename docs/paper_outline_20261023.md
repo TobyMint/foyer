@@ -1,4 +1,7 @@
 # 论文骨架与"故事"清单（2026-10-23 起草）
+> ⚠ **2026-10-23 晚：本文件已被 `docs/story_synthesis_20261023.md` 合并/取代**
+> （四路 ~50 篇调研之后，主叙事改为 “Admission is a feasibility test, not a threshold /
+> don't predict, account; suspend, don't discard”）。本文件保留作演化记录。
 
 > 目标：把论文从「实验报告」改成「一个机制 + 一套论证 + 实验验证」。
 > 本文件只列结构与主张；每个 claim 必须能对应到一个实验或一个推导。
