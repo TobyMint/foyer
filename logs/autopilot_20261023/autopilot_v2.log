@@ -7,3 +7,7 @@
 2026-10-23 15:25:17 poll  gpu0=45C/9983MiB/2app gpu1=27C/14MiB/0app gpu2=39C/1875MiB/1app gpu3=43C/18021MiB/2app | slot0=none@? slot1=none@? next=0/16
 2026-10-23 15:26:03 launch card1: l19_foyer_r2 -> pid=630275
 2026-10-23 15:26:03 slot1 待启动 l19_default_r2：暂无空卡（排除已被另一 slot 占的卡）
+2026-10-23 15:27:36 poll  gpu0=47C/9983MiB/2app gpu1=29C/14MiB/0app gpu2=38C/1875MiB/1app gpu3=46C/18021MiB/2app | slot0=l19_foyer_r2@1 slot1=none@? next=1/16
+2026-10-23 15:27:36 slot1 待启动 l19_default_r2：暂无空卡（排除已被另一 slot 占的卡）
+2026-10-23 15:29:09 poll  gpu0=49C/9983MiB/2app gpu1=30C/14MiB/0app gpu2=39C/1875MiB/1app gpu3=47C/18021MiB/2app | slot0=l19_foyer_r2@1 slot1=none@? next=1/16
+2026-10-23 15:29:09 slot1 待启动 l19_default_r2：暂无空卡（排除已被另一 slot 占的卡）

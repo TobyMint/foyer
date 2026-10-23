@@ -1,0 +1,14 @@
+2026-10-23 15:32:00 v3 start: items=16 slots=2 candidates='1 2 3 0' temp_max=68 poll=90s dry=1
+2026-10-23 15:32:01 poll  gpu0=47C/8473MiB/1app gpu1=29C/11MiB/0app gpu2=37C/11MiB/0app gpu3=45C/16337MiB/1app | s0=none@? s1=none@? next=0/16 pending=0
+2026-10-23 15:32:01 DRY launch card1: l19_foyer_r2 (budget3:hw=0;target=0.95;base=resident, replay_long19.csv, port=30160, hc, hcr=2)
+2026-10-23 15:32:01 launch 失败，排队重试：l19_foyer_r2
+2026-10-23 15:32:01 DRY launch card1: l19_foyer_r2 (budget3:hw=0;target=0.95;base=resident, replay_long19.csv, port=30160, hc, hcr=2)
+2026-10-23 15:32:01 launch 失败且已重试过，跳过：l19_foyer_r2
+2026-10-23 15:32:01 dry-run: 退出
+2026-10-23 15:32:15 v3 start: items=16 slots=2 candidates='1 2 3 0' temp_max=68 poll=90s dry=1
+2026-10-23 15:32:16 poll  gpu0=47C/8473MiB/1app gpu1=29C/14MiB/0app gpu2=39C/1809MiB/1app gpu3=45C/16337MiB/1app | s0=none@? s1=none@? next=0/16 pending=0
+2026-10-23 15:32:16 DRY launch card1: l19_foyer_r2 (budget3:hw=0;target=0.95;base=resident, replay_long19.csv, port=30160, hc, hcr=2)
+2026-10-23 15:32:16 slot1 待启动 l19_default_r2：暂无空卡
+2026-10-23 15:32:16 dry-run: 退出
+2026-10-23 15:32:35 v3 start: items=16 slots=2 candidates='1 2 3 0' temp_max=68 poll=90s dry=0
+2026-10-23 15:32:36 poll  gpu0=46C/8473MiB/1app gpu1=29C/14MiB/0app gpu2=41C/1875MiB/1app gpu3=45C/16337MiB/1app | s0=none@? s1=none@? next=0/16 pending=0

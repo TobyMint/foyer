@@ -18,6 +18,14 @@ set -u
 #   忽略 HUP 之后 bash 和它派生的 run_matrix / server 都不再随链路消失。
 trap '' HUP
 RUN=$1; POLICY=$2; TRACE=$3; PORT=$4; HC=${5:-hc}; GPUS=${6:-"2 3 1 0"}
+# 2026-10-23：trace 允许相对路径（自动补成 $BASE/data/）。
+# 起因：autopilot 传了 "replay_long19.csv"，run_matrix 直接 open() 相对路径 →
+# FileNotFoundError，drive_one 在创建 run 目录之前就死了（卡白白空着）。
+BASE=/data/xbw/turnstile
+case "$TRACE" in
+  /*) ;;
+  *) TRACE="$BASE/data/$TRACE" ;;
+esac
 R=/data/xbw/turnstile/results/night
 LOG=/data/xbw/turnstile/scripts/drive_atonce.log
 say() { echo "$(date '+%m-%d %H:%M')  $*" >> $LOG; }
