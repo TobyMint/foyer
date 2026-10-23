@@ -20,7 +20,9 @@ differ in what is being decided: AIMD adjusts a window and reacts after congesti
 whereas the ledger tests feasibility before admitting and prices what happens when it
 cannot. Continuum \cite{continuum} attaches a time-to-live to a session's KV and uses cache
 miss cost to schedule, which is a prediction of the reuse window; our reserve is a
-measurement of growth, not of a horizon. KVFlow \cite{kvflow} predicts
+measurement of growth, not of a horizon. KVFlow
+% TODO(cite): KVFlow arXiv:2507.07400 — 作者/标题未核（本机无外网），核过后加进 refs.bib
+predicts
 steps-to-execution to schedule workflows, and ThunderAgent \cite{thunderagent} decomposes
 program cost in space and time; both model the future of a program, and both would benefit
 from a feasibility layer underneath. Talaria \cite{talaria} targets session continuity in

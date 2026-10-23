@@ -71,11 +71,6 @@ H.~Li, R.~He, Q.~Mang, Q.~Zhang, H.~Mao, X.~Chen, H.~Zhou, H.~Zhang, A.~Cheung,
   {LLM} agent scheduling with {KV} cache time-to-live,'' 2025, preprint, no
   venue.
 
-\bibitem{kvflow}
-Z.~Pan, A.~Patel \emph{et~al.}, ``{KVFlow}: Efficient prefix caching for
-  accelerating {LLM}-based multi-agent workflows,'' 2025, preprint; author list
-  and title need verification before submission.
-
 \bibitem{thunderagent}
 H.~Kang, Z.~Li, W.~Xu, X.~Yang, Y.~Chen, J.~Wang, B.~Chen, T.~Krishna, C.~Xu,
   and S.~Arora, ``{ThunderAgent}: A simple, fast and program-aware agentic
