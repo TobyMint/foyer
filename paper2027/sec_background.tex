@@ -19,27 +19,27 @@ and the case an offline batch server is actually configured for.
 Table~\ref{tab:workload} collects the characterisation; every entry is regenerated from
 the trace by \texttt{gen\_trace\_facts.py}. Four of them drive everything that follows.
 
-\paragraph{The working set is an order of magnitude larger than the pool.}
+\paragraph{The working set is an order of magnitude larger than the pool}
 The terminal footprint of all 19 sessions is 1.31M tokens. The engine's KV pool on a
 24\,GB card with a 96K context and a 7B model is 101.5K tokens. The ratio is
 $12.9\times$, and a mean session (69K tokens) already needs two thirds of the pool: the
 pool holds 1.47 sessions. There is no scheduling policy that makes 19 sessions resident;
 the question is only which subset is resident at each instant.
 
-\paragraph{Almost all of the work is re-reading.}
+\paragraph{Almost all of the work is re-reading}
 A round appends a median of 990 tokens to a median 44.9K-token prefix. Aggregated over the
 trace, the prefix is $13.0\times$ the appended content, and the prefill work of a system
 with no reuse would be $14.0\times$ that of a system that never re-reads a prefix. This
 gap is the prize: the engine spends its time on prefill of content it has already seen.
 
-\paragraph{Reuse is worth a lot, and it is perishable.}
+\paragraph{Reuse is worth a lot, and it is perishable}
 Because a session's context only grows, the prefix of round $i$ is a prefix of round
 $i+1$: a single retained copy serves every later round. But retention competes with
 admission---every token held for a parked session is a token an active session cannot
 use---so reuse and capacity are two views of the same decision, not two separate
 optimisations.
 
-\paragraph{Idle time is bimodal, so ``park'' is not one thing.}
+\paragraph{Idle time is bimodal, so ``park'' is not one thing}
 The median gap between rounds is 181\,ms; the mean is 15.9\,s; the 90th percentile is
 28.1\,s and the maximum is the trace's 300\,s timeout. The 13.1\% of gaps above ten
 seconds carry 93.4\% of all parked time: across the trace the sessions sit idle for 2.65

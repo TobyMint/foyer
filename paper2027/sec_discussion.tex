@@ -1,7 +1,7 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{What the argument is, and is not.} The claim is not that this card, this model,
+\paragraph{What the argument is, and is not} The claim is not that this card, this model,
 or this trace is representative. It is that once sessions can be suspended, admission stops
 being a forecast and becomes a feasibility test with a price, and that this reframing is
 what turns an unmanaged pool into a usable server under working-set overcommitment. The
@@ -30,7 +30,7 @@ one-shot requests, where there is no state to preserve \\
 \end{tabular}
 \end{table}
 
-\paragraph{Why the negative cases matter.} A design of this kind is easy to oversell,
+\paragraph{Why the negative cases matter} A design of this kind is easy to oversell,
 because every mechanism in it can be made to look good on the workload it was tuned for.
 The three losing regimes in \S\ref{sec:eval-neg} are therefore part of the result: they
 delineate the ratio of working set to capacity at which accounting stops being the
@@ -38,14 +38,14 @@ interesting question, and they explain why threshold controllers are not simply 
 in a regime where the working set is small, a window is a perfectly good answer, and the
 ledger has nothing to add.
 
-\paragraph{Implications for systems that already have a hierarchy.} The mechanism does not
+\paragraph{Implications for systems that already have a hierarchy} The mechanism does not
 require a new engine. It requires that the engine expose enough for a controller to keep
 books---token usage, running counts, per-request cache accounting---and that the scheduler
 allow a request to be held at a session boundary rather than only admitted or dropped.
 Both are interface changes, not algorithmic ones, and both are absent from current engines
 mainly because the request, not the session, is their unit of work.
 
-\paragraph{Threats beyond the evaluation.} Our replay arrives all at once, which makes
+\paragraph{Threats beyond the evaluation} Our replay arrives all at once, which makes
 admission hardest and makes a batch controller look good; a Poisson arrival process would
 give the request-level arm more slack and shrink the measured gap, though it would not
 change which decisions are feasible. The trace's tool waits are simulated from the

@@ -30,7 +30,7 @@ one: half of the time the agent is back before an eviction decision could pay fo
 and the other half it is gone for tens of seconds. A policy that suspends on every gap
 recomputes constantly; a policy that never suspends holds sessions it cannot afford.
 
-\paragraph{Prior fixes treat this as placement, and placement forces prediction.}
+\paragraph{Prior fixes treat this as placement, and placement forces prediction}
 Paged attention, prefix caching, and tiered KV stores decide \emph{where} a block lives;
 their admission counterpart is a replacement decision that presupposes a guess about the
 future---which prefix will be reused, when a session will return, how long its next round
@@ -42,7 +42,7 @@ predicted quantity. None of them states which set of sessions is \emph{feasible}
 the capacity it actually has, and none prices what it costs to bring a suspended session
 back.
 
-\paragraph{Our position: make the session suspendable, then stop predicting.}
+\paragraph{Our position: make the session suspendable, then stop predicting}
 If a session can be paused at a round boundary and resumed by \emph{copying} its KV back
 from a host tier, then the question ``should this session be admitted?'' stops being a
 forecast and becomes an accounting check against a ledger of bytes:
@@ -59,7 +59,7 @@ quantity, how much a session will grow before it returns, can be bounded by cove
 rather than guessed by a point estimate, which turns the safety margin into a property
 one can state.
 
-\paragraph{Contributions.}
+\paragraph{Contributions}
 \begin{enumerate}
 \item \textbf{Formulation} (\S\ref{sec:model}): we cast admission for suspendable agent
 sessions as a feasibility problem over a two-tier capacity ledger, with an explicit
@@ -79,12 +79,12 @@ feedback controller, and our design on the same trace, engine, and memory budget
 report the regimes in which suspension does not pay.
 \end{enumerate}
 
-\paragraph{Results in one line.}
+\paragraph{Results in one line}
 \pend{one-sentence headline with the three arms, e.g.\ ``on the 602-round replay our
 design finishes the batch in X minutes against Y (request-level) and Z (agent-level),
 while meeting the per-round deadline on W\% of rounds against V\% and U\%''}.
 
-\paragraph{Scope.}
+\paragraph{Scope}
 Our testbed is a single 24\,GB GPU running a 7B model with a 96K context. We choose this
 point because it makes the regime sharp, not because the mechanism is specific to the
 card: the binding variable is the ratio of the live working set to KV capacity, and when

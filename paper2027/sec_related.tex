@@ -1,7 +1,7 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{KV memory in serving engines.} PagedAttention \cite{kwon2023pagedattention}
+\paragraph{KV memory in serving engines} PagedAttention \cite{kwon2023pagedattention}
 made the KV cache a paged allocator, and SGLang \cite{zheng2024sglang} made prefix sharing a
 first-class citizen through a radix tree; both are the substrate we stand on and neither has
 a notion of a session. Hierarchical and disaggregated stores extend the hierarchy---host
@@ -12,7 +12,7 @@ back. Pensieve \cite{yu2025pensieve} argued that statelessness is the structural
 current serving designs; we make the same argument quantitatively and add the admission
 decision that statelessness leaves open.
 
-\paragraph{Scheduling for agentic and multi-turn workloads.} CONCUR \cite{concur} controls
+\paragraph{Scheduling for agentic and multi-turn workloads} CONCUR \cite{concur} controls
 concurrency at agent granularity with an AIMD law driven by a congestion signal, and it is
 the closest system to ours in scope; our agent-level arm is deliberately a faithful
 reimplementation of that control law, so that the comparison isolates the decision rule. We
@@ -34,7 +34,7 @@ of novelty on granularity, tiers, or working-set admission as such. The claim he
 the decision can be stated as a feasibility test with a measured ledger and a priced
 recovery, without a predictor of future demand.
 
-\paragraph{Measurement of agentic workloads.} A recent characterisation of production
+\paragraph{Measurement of agentic workloads} A recent characterisation of production
 agentic traffic reports
 % TODO(cite): KV Residency arXiv:2610.22863 — 标题/作者核过后加进 refs.bib session lifetimes and per-session KV footprints
 at a scale where the aggregate working set would need hundreds of terabytes to hold; the
@@ -45,7 +45,7 @@ coding-agent transcripts \cite{zhu2026tracelab}, so it inherits their structure 
 observing a deployment; we state that as a threat to validity rather than as evidence of
 production behaviour.
 
-\paragraph{Admission and overload control.} Classical admission control reacts to
+\paragraph{Admission and overload control} Classical admission control reacts to
 utilisation with multiplicative decrease \cite{jacobson1988}; the working-set model
 \cite{denning1978} and Little's law \cite{little1961} describe when a set of jobs fits in
 memory and what concurrency a throughput target implies. We use the same vocabulary but a

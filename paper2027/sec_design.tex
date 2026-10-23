@@ -78,7 +78,7 @@ actually turns on.
 The ledger says what fits; it does not say what is worth doing. Two decisions remain, and
 both are priced in the same currency---time.
 
-\paragraph{Who gives way, and when.} When the pool is over-committed (the engine's own
+\paragraph{Who gives way, and when} When the pool is over-committed (the engine's own
 utilisation crosses the budget, or the observed first-token latency crosses the
 deadline), the controller suspends sessions until the remainder fits. Two rules order the
 victims. First, it suspends the \emph{youngest} sessions first: they have the least
@@ -90,12 +90,12 @@ nothing and risks a recompute. We calibrate $t^\ast$ from the measured tool-wait
 distribution---the time to serve one round of another session, \pend{t-star}---rather
 than tuning it.
 
-\paragraph{Resuming.} A suspended session re-enters the ordinary admission path and is
+\paragraph{Resuming} A suspended session re-enters the ordinary admission path and is
 admitted when the ledger's projection fits. Because its prefix is usually still in the
 host tier, resumption is a copy; when the host tier has lost the prefix the same round is
 served as a cold prefill, and the accounting charges it as such.
 
-\paragraph{The round gate.} The controller also caps how many sessions may be
+\paragraph{The round gate} The controller also caps how many sessions may be
 \emph{running} (as opposed to live) in the engine. The distinction matters: in our trace a
 cap on live sessions leaves the engine idle whenever all of the admitted sessions happen
 to be parked, whereas a cap on the running count keeps the engine's concurrent work at the
