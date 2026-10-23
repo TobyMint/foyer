@@ -98,6 +98,41 @@ re-read tax ($\times$ append) & \pend{rr-A} & \pend{rr-B} & \pend{rr-C} \\
 \pend{paragraph interpreting the decomposition, including the cases where the design wins on
 work but not on busy time, or vice versa.}
 
+\subsection{Where the recompute comes from}
+\label{sec:eval-attrib}
+
+Table~\ref{tab:decomp} says how much work was redone; it does not say who caused it. We
+classify every round of an arm by what happened between the previous round's completion and
+this round's submission: the round is the session's \emph{first} (nothing to reuse), it
+followed a \emph{suspension} by the controller, or it was \emph{continuous} (admitted
+throughout, so a miss is the engine's own eviction). The classification is mechanical---it
+reads the admission event log and the step log, and needs no new run.
+
+\begin{table}[t]
+\caption{Attribution of the re-read tax. Rounds are classified by what happened between the
+previous round and this one. \emph{rounds} and \emph{share} are percentages, \emph{uncached}
+is in millions of tokens, and \emph{excess} is uncached prefill divided by the tokens the
+round actually appended.}
+\label{tab:attrib}
+\centering
+\footnotesize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ & first & susp. & cont. \\
+\midrule
+rounds & \pend{at-n1} & \pend{at-n2} & \pend{at-n3} \\
+uncached (M) & \pend{at-u1} & \pend{at-u2} & \pend{at-u3} \\
+share & \pend{at-p1} & \pend{at-p2} & \pend{at-p3} \\
+excess & \pend{at-x1} & \pend{at-x2} & \pend{at-x3} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\pend{paragraph: the reading. In the regime we study the host tier holds only a few
+sessions, so a suspension often cannot keep the state it suspends; the table quantifies
+that, and it is the empirical form of the claim that the slot, not the copy, is the scarce
+resource. State plainly what fraction of the recompute is the design's own doing.}
+
 \subsection{Mechanism, in one session}
 \label{sec:eval-timeline}
 

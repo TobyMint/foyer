@@ -51,7 +51,8 @@ single GPU the live working set can exceed the KV pool by an order of magnitude.
 Existing systems frame this as placement, and placement forces prediction: which prefix
 will be reused, when a session will come back, how long the next round will be. We argue
 the prediction is unnecessary. A session can be \emph{suspended} at a round boundary and
-\emph{revived} by copying its KV back instead of recomputing it; admission then becomes a
+\emph{revived} by copying its KV back---when the host tier still holds it---instead of
+recomputing it; admission then becomes a
 feasibility test over a capacity ledger---does this session's projected footprint fit,
 now, on which tier, and at what revival cost. We give a feasible-set bound, a
 session-level revival-versus-recompute break-even, and a coverage-bounded growth estimate

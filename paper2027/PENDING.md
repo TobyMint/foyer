@@ -56,6 +56,9 @@
 
 ## E. 排版/纪律
 
+- ⚠ 表 IV（重算归因）现在有一个 15pt 的 Overfull：**是 `\pend` 的占位文字比数字宽**造成的，
+  填上真数字后应该消失。填完必须重新编译确认 0 Overfull。
+
 - 编译后检查：页数、0 Overfull、0 undefined、无控制字符（沿用旧稿的 `check_paper_numbers.py` 思路）。
 - 双盲：作者栏保持 `Anonymous Submission`；致谢里不能出现基金号/姓名。
 - GenAI 披露：RTAS 2027 要求，提交时按 CFP 填。
