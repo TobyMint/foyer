@@ -122,6 +122,8 @@ def facts(rows, pool):
         ("append_p50_tok", q(app_s, .5), "tokens", "逐轮 append 的中位"),
         ("prefix_append_p50_x", round(q(pre_s, .5) / max(q(app_s, .5), 1), 1), "x",
          "单轮 prefix/append 中位之比"),
+        ("output_p50_tok", q(sorted(r["output"] for r in rows), .5), "tokens",
+         "每轮生成的 token 中位（正文里'about 150 tokens out'）"),
         ("recompute_sum_tok", bound, "tokens", "Σ ctx：完全不复用时的 prefill 工作量"),
         ("recompute_bound_x", round(bound / app, 2), "x", "recompute_sum / append_sum"),
         ("toolwait_med_ms", round(q(tw, .5), 0), "ms", ""),

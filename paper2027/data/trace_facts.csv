@@ -20,6 +20,7 @@ reread_x,13.03,x,prefix_sum / append_sum = 重读税,data/replay_long19.csv
 prefix_p50_tok,44908,tokens,逐轮 prefix 的中位,data/replay_long19.csv
 append_p50_tok,990,tokens,逐轮 append 的中位,data/replay_long19.csv
 prefix_append_p50_x,45.4,x,单轮 prefix/append 中位之比,data/replay_long19.csv
+output_p50_tok,161,tokens,每轮生成的 token 中位（正文里'about 150 tokens out'）,data/replay_long19.csv
 recompute_sum_tok,28991161,tokens,Σ ctx：完全不复用时的 prefill 工作量,data/replay_long19.csv
 recompute_bound_x,14.03,x,recompute_sum / append_sum,data/replay_long19.csv
 toolwait_med_ms,181.0,ms,,data/replay_long19.csv

@@ -82,6 +82,62 @@ def classify(d):
     return out
 
 
+
+def suspension_stats(d):
+    """挂起区间：次数、总时长、以及挂起期间引擎在跑别的请求的采样占比。
+
+    为什么单列：论文用它支撑"挂起换来的槽位真的被用了"（72.1%）。这个数只能从
+    admissions.jsonl（pause/resume）+ metrics.csv（num_running_reqs）联合算，
+    不属于任何一步，所以不能放进 classify()。
+    """
+    ev = load_events(d)
+    steps = load_steps(d)
+    if not steps:
+        return None
+    t_end = max(r["complete_timestamp"] for r in steps.values().__iter__().__next__()) \
+        if False else max(r["complete_timestamp"] for v in steps.values() for r in v)
+    spans, opened = [], {}
+    for sid, evs in ev.items():
+        for e in evs:
+            if e.get("event") == "pause":
+                opened[sid] = e["ts"]
+            elif e.get("event") == "resume" and sid in opened:
+                spans.append((opened.pop(sid), e["ts"]))
+    for sid, ts in opened.items():
+        spans.append((ts, t_end))
+
+    # metrics 采样
+    mt, mr = [], []
+    mp = os.path.join(d, "metrics.csv")
+    if os.path.exists(mp):
+        with open(mp) as f:
+            head = [h.strip().strip('"').replace('""', '"')
+                    for h in f.readline().strip().split(",")]
+            if "ts" in head and "sglang:num_running_reqs" in head:
+                it, ir = head.index("ts"), head.index("sglang:num_running_reqs")
+                for line in f:
+                    p = line.rstrip("\n").split(",")
+                    if len(p) <= max(it, ir) or p[ir] == "":
+                        continue
+                    try:
+                        mt.append(float(p[it]))
+                        mr.append(float(p[ir]))
+                    except ValueError:
+                        pass
+
+    tot = busy = 0
+    for a, b in spans:
+        for t, n in zip(mt, mr):
+            if a <= t <= b:
+                tot += 1
+                busy += 1 if n > 0 else 0
+    return {
+        "n_spans": len(spans),
+        "span_hours": sum(b - a for a, b in spans) / 3600.0,
+        "engine_busy_pct": (100.0 * busy / tot) if tot else float("nan"),
+        "samples": tot,
+    }
+
 def main(argv):
     dirs, csv_out = [], None
     i = 0
@@ -116,16 +172,25 @@ def main(argv):
                 "append_Mtok": round(o["append"] / 1e6, 2),
                 "excess_x": round(o["uncached"] / o["append"], 2) if o["append"] else float("nan"),
             })
+        st = suspension_stats(d)
+        if st:
+            print("suspension: spans=%d  hours=%.2f  engine_busy=%.1f%%  (samples=%d)" % (
+                st["n_spans"], st["span_hours"], st["engine_busy_pct"], st["samples"]))
+            for k, v in st.items():
+                rows.append({"run": run, "class": "suspension", "steps": "",
+                             "steps_pct": "", "uncached_Mtok": "", "uncached_pct": "",
+                             "append_Mtok": "", "excess_x": "",
+                             "stat": k, "value": round(v, 2) if isinstance(v, float) else v})
         print()
 
     if csv_out:
         os.makedirs(os.path.dirname(os.path.abspath(csv_out)), exist_ok=True)
         head = ["run", "class", "steps", "steps_pct", "uncached_Mtok", "uncached_pct",
-                "append_Mtok", "excess_x"]
+                "append_Mtok", "excess_x", "stat", "value"]
         with open(csv_out, "w") as f:
             f.write(",".join(head) + "\n")
             for r in rows:
-                f.write(",".join(str(r[k]) for k in head) + "\n")
+                f.write(",".join(str(r.get(k, "")) for k in head) + "\n")
         print("写 %s（%d 行）" % (csv_out, len(rows)))
 
 

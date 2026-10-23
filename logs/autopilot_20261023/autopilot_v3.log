@@ -899,3 +899,79 @@
 2026-10-24 03:32:10 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
 2026-10-24 03:33:45 poll  gpu0=56C/1391MiB/1app gpu1=46C/2429MiB/1app gpu2=67C/6045MiB/2app gpu3=49C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
 2026-10-24 03:33:45 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:35:20 poll  gpu0=57C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=66C/6045MiB/2app gpu3=50C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:35:20 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:36:54 poll  gpu0=56C/1391MiB/1app gpu1=48C/2429MiB/1app gpu2=62C/6045MiB/2app gpu3=49C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:36:54 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:38:29 poll  gpu0=55C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=63C/6045MiB/2app gpu3=47C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:38:29 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:40:04 poll  gpu0=55C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=63C/6045MiB/2app gpu3=45C/6554MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:40:04 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:41:39 poll  gpu0=55C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=67C/6045MiB/2app gpu3=48C/17348MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:41:39 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:43:14 poll  gpu0=59C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=69C/6045MiB/2app gpu3=52C/17670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:43:14 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:44:48 poll  gpu0=59C/1391MiB/1app gpu1=48C/2429MiB/1app gpu2=59C/1387MiB/1app gpu3=51C/17670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:44:48 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:46:23 poll  gpu0=60C/1391MiB/1app gpu1=46C/2429MiB/1app gpu2=62C/6045MiB/2app gpu3=53C/17674MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:46:23 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:47:58 poll  gpu0=54C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=66C/6045MiB/2app gpu3=46C/17674MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:47:58 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:49:33 poll  gpu0=54C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=66C/6045MiB/2app gpu3=46C/17674MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:49:33 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:51:08 poll  gpu0=56C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=67C/6045MiB/2app gpu3=47C/18092MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:51:08 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:52:42 poll  gpu0=56C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=69C/6045MiB/2app gpu3=49C/18092MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:52:42 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:54:17 poll  gpu0=59C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=71C/6045MiB/2app gpu3=51C/18092MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:54:17 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:55:52 poll  gpu0=58C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=70C/6045MiB/2app gpu3=51C/18092MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:55:52 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:57:26 poll  gpu0=55C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=57C/1387MiB/1app gpu3=52C/17082MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:57:26 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 03:59:01 poll  gpu0=54C/1391MiB/1app gpu1=44C/2429MiB/1app gpu2=59C/5387MiB/2app gpu3=46C/17436MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 03:59:01 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:00:35 poll  gpu0=55C/1391MiB/1app gpu1=44C/2429MiB/1app gpu2=64C/5387MiB/2app gpu3=46C/17758MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:00:35 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:02:10 poll  gpu0=56C/1391MiB/1app gpu1=46C/2429MiB/1app gpu2=65C/5387MiB/2app gpu3=48C/17758MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:02:10 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:03:45 poll  gpu0=57C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=66C/5387MiB/2app gpu3=50C/17758MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:03:45 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:05:20 poll  gpu0=58C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=67C/5387MiB/2app gpu3=49C/17762MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:05:20 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:06:55 poll  gpu0=55C/1391MiB/1app gpu1=46C/2429MiB/1app gpu2=65C/5387MiB/2app gpu3=49C/17762MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:06:55 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:08:29 poll  gpu0=55C/1391MiB/1app gpu1=45C/2429MiB/1app gpu2=62C/5387MiB/2app gpu3=47C/17762MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:08:29 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:10:04 poll  gpu0=55C/1391MiB/1app gpu1=44C/2429MiB/1app gpu2=62C/5387MiB/2app gpu3=48C/17762MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:10:04 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:11:39 poll  gpu0=55C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=65C/5387MiB/2app gpu3=48C/17762MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:11:39 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:13:14 poll  gpu0=57C/1391MiB/1app gpu1=47C/2429MiB/1app gpu2=69C/5387MiB/2app gpu3=51C/17316MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:13:14 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:14:49 poll  gpu0=42C/1391MiB/1app gpu1=48C/2429MiB/1app gpu2=60C/5387MiB/2app gpu3=50C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:14:49 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:16:23 poll  gpu0=43C/2429MiB/1app gpu1=46C/2429MiB/1app gpu2=66C/5387MiB/2app gpu3=47C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:16:23 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:17:58 poll  gpu0=51C/2429MiB/1app gpu1=46C/2429MiB/1app gpu2=63C/5387MiB/2app gpu3=47C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:17:58 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:19:33 poll  gpu0=52C/2429MiB/1app gpu1=44C/2429MiB/1app gpu2=64C/5387MiB/2app gpu3=47C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:19:33 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:21:08 poll  gpu0=53C/2429MiB/1app gpu1=46C/2429MiB/1app gpu2=66C/5387MiB/2app gpu3=53C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:21:08 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:22:43 poll  gpu0=55C/2429MiB/1app gpu1=47C/2429MiB/1app gpu2=61C/5387MiB/2app gpu3=49C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:22:43 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:24:17 poll  gpu0=56C/2429MiB/1app gpu1=48C/2429MiB/1app gpu2=63C/5387MiB/2app gpu3=52C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:24:17 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:25:52 poll  gpu0=55C/2429MiB/1app gpu1=46C/2429MiB/1app gpu2=63C/5387MiB/2app gpu3=48C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:25:52 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:27:27 poll  gpu0=52C/2429MiB/1app gpu1=45C/2429MiB/1app gpu2=66C/5387MiB/2app gpu3=46C/17780MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:27:27 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:29:02 poll  gpu0=53C/2429MiB/1app gpu1=44C/2429MiB/1app gpu2=63C/5387MiB/2app gpu3=45C/17348MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:29:02 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:30:38 poll  gpu0=52C/2429MiB/1app gpu1=45C/2429MiB/1app gpu2=58C/5387MiB/2app gpu3=48C/17670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:30:38 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:32:11 poll  gpu0=55C/2429MiB/1app gpu1=47C/2429MiB/1app gpu2=64C/5389MiB/2app gpu3=55C/17670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:32:11 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 04:33:47 poll  gpu0=57C/2429MiB/1app gpu1=47C/2429MiB/1app gpu2=64C/5389MiB/2app gpu3=49C/17674MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 04:33:47 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
