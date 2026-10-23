@@ -1,6 +1,6 @@
 # Agentic Serving 叙事解剖（2026-10-23）
 
-方法：arXiv API + 全文 PDF（pdftotext）。只拆"怎么讲"，不比数据。
+方法：arXiv API + 全文 PDF。只拆"怎么讲"，不比数据。
 
 ## 一、核心五篇
 
@@ -8,39 +8,39 @@
 开场：KV 在容量耗尽**之前**就崩——"中段抖动"。
 gap：request 级 LRU 把暂停但语义关键的前缀当垃圾驱逐、逐轮重算；抖动期加 agent 反而更慢。
 insight：KV≈带宽，准入须提前、以 agent 为单位。
-机制/分析：admit/pause/resume 三原语 + cache-aware AIMD（用量 U_t、命中率 H_t 双信号）+ 中间件；论证靠"重算 O(L²) 是凸惩罚⇒乘性降 O(log N) 步退出"，无排队论。
-实验：SGLang／+request cap／+HiCache；headline 端到端 batch 时延 4.09×；用"固定 cap 不行"反证机制。
-可借：先造病理名字＋亮相反直觉曲线；再立稻草人。回避：只离线 batch、挂起态不落地、阈值启发式无核算、多卡非单卡。
+机制/分析：admit/pause/resume 三原语 + cache-aware AIMD（用量、命中率双信号）+ 中间件；论证靠"重算 O(L²) 凸惩罚⇒乘性降速 O(log N) 步退出"，无排队论。
+实验：SGLang／+request cap／+HiCache；端到端 batch 时延 4.09×；以"固定 cap 不行"反证机制。
+可借：造病理名＋亮反直觉曲线；再立稻草人。回避：只离线 batch、挂起态不落地、阈值启发式、多卡非单卡。
 
 **Continuum**（2511.02230, PVLDB 20(1) 2027）
 开场：end-of-turn eviction 在工具间隙毁掉 KV。
 gap：InferCept 只算 reload 成本，漏掉驱逐后重排队的 per-turn 队列延迟，且逐轮累积。
 insight：给 KV 一个 TTL，长度由 reload 成本与队列延迟的 breakeven 定。
 机制/分析：TTL 钉住 + program 级 FCFS + 工具时长历史估 P(τ,f)；成本式 CacheMissCost=Prefill-Reload+OutOfOrderCost，配大/小 TTL 两侧失效图。
-实验：vLLM／InferCept／Autellix；headline 平均 JCT >8×；机制证明=TTL 扫描。
-可借：把"留不留"写成两项成本比较再给一个旋钮；用逐程序 bubble 图画出 gap。回避：TTL 是概率启发式而非可行域，缺高负载前沿。
+实验：vLLM／InferCept／Autellix；平均 JCT >8×；机制验证=TTL 扫描。
+可借：把"留不留"写成两项成本比较再给一个旋钮；用逐程序 bubble 图画出 gap。回避：TTL 是启发式非可行域，缺高负载前沿。
 
 **ThunderAgent**（2602.13692, 2026-06）
 开场：engine+K8s 拼装、按 request 调度，命中率随并发塌。
-gap：三处结构性——KV 抖动、DP 副本内存不均、工具环境（磁盘/端口）生命周期失控。
+gap：三处结构性：KV 抖动、DP 副本内存不均、工具环境（磁盘/端口）失控。
 insight：把 workflow 抽象成 LLM Program，统一调度异构资源。
 机制/分析：LLM Program 抽象 + program-aware 队列（Restore/Pause）+ tool resource manager；Space-Time Product 五项成本分解，全局队列给 C_unused<c_min·Δt 上界，时间片 barrier。
 实验：vLLM／Continuum／vLLM+SGLang Gateway；吞吐 1.5–3.6×；按成本项拆解。
 可借：先给成本分解，每个机制对准一项浪费。回避：HBM 充裕；成本模型不含挂起态。
 
 **Talaria**（2607.17181, 2026-07，非正式 venue）
-开场：先甩测量——445 个 SWE session、中位 11 轮(p95 49)、中位 25K token(96.8% 复用>半)、工具间隙 0.39s vs 重算 4.3s。
+开场：先甩测量——445 个 SWE session、中位 11 轮、25K token（96.8% 复用半前缀）、工具间隙 0.39s vs 重算 4.3s。
 gap：request 是错的单元 ⇒ 空间错配（路由到无权重实例）+ 时间错配（轮转调度浪费 KV 局部性）。
 insight：把 session 连续性做成 placement 与 admission 的联合决策。
-机制/分析：session-aware router + soft reservation（为"可能回来"预留预算）+ session-prefill + memory substrate；论证是"连续性窗口"比较。
+机制/分析：session-aware router + soft reservation（为"可能回来"预留预算）+ session-prefill + memory substrate；论证=连续性窗口比较。
 实验：baseline=同引擎关掉 SP/host-KV/D2D 的自身消融；p50 SCT 1000→189s。
-可借：开门用测量数字造出物理窗口；拿自己的 ablated 版当 baseline。回避：测 SCT 不测容量上限，无拒绝语义，单服务器。
+可借：用测量数字造出物理窗口；拿自己的 ablated 版当 baseline。回避：测 SCT 不测容量上限、无拒绝语义、单服务器。
 
 **MORI**（2606.00866, 2026-05）
 开场：offload 后工具时长跨数量级，二分类 busy/idle 与硬件容量比不匹配。
 gap：固定分类 + 缺 CPU 侧准入 ⇒ 两层各自抖动。
 insight：idleness 是连续相对的谱，"比他人更闲"才决定去留。
-机制/分析：idleness 评分 + 分区边界随容量比移动 + 双层准入 + 亲和性负载均衡；论证是容量比匹配（1:1.6 vs 1:3.1）+ 容量不变量。
+机制/分析：idleness 评分 + 边界随容量比移动 + 双层准入 + 亲和性负载均衡；论证是容量比匹配（1:1.6 vs 1:3.1）+ 容量不变量。
 实验：SMG／TA／TA+Offload；吞吐 +20–71%；用 1×/2× 容量比与 DP=3 当压力测试。
 可借：一句话 insight 打掉二分法；把硬件容量比当自变量扫。回避：仍假设有 CPU 层；准入=填满，非预算。
 
@@ -62,6 +62,8 @@ insight：idleness 是连续相对的谱，"比他人更闲"才决定去留。
 5. 机制固定三件套：两个调度原语 + 一个成本/控制器，外加一个廉价旋钮（TTL、W_t、容量比）。
 6. 分析层三选一：成本分解、breakeven、不变量/上界；几乎无人做真排队论。
 7. 实验：baseline=引擎＋一个更聪明的同类＋自己的消融版；headline 单一倍数；机制靠"固定 cap 不行"或扫旋钮。
-8. 集体回避：**准入的可行性判据**与**挂起态的存放/复活代价**没人建模（MORI 只到"填满"、Talaria 只到"预算"）——这是我们的位置。
+8. 集体回避：**准入的可行性判据**与**挂起态的存放/复活代价**无人建模（MORI 只到"填满"、Talaria 只到"预算"）——我们的位置在此。
 
-（AgentMem-KV 全库无同名论文，最接近 2609 的 KV 工作；PBKV/PKAS 的 ID 未在本轮复验，叙事点取自 `survey_workload_design_6papers.md`。）
+→ 叙事空位：给准入一个**可核算的可行集**（谁能在卡上、住哪层、复活付多少搬运），并把边界写成可预测的，而不是阈值。
+
+（AgentMem-KV 全库无同名；PBKV/PKAS/Maestro 的 ID 本轮未复验，叙事点取自 `survey_workload_design_6papers.md`。）

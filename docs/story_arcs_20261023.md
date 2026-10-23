@@ -86,12 +86,14 @@ workload    19 会话 / 602 轮；终态工作集 1.306M token = 池（101,502�
 
 ## 3. 推荐组合与标题
 
-**主骨架 = A（单位）+ B（价格），C 作为机制章的核心，D 只做 Intro 的 hook。**
+**主骨架 = A（单位）+ B′（不预测，改挂起），C 作为机制章的核心；「价格」只作成本模型，
+不再当主创新点**（MORI 已经占了“per-tier admission”这个说法，见 §9）。D 只做 Intro 的 hook。
 
-标题候选：
-1. *Pricing the Session: Capacity-Accounted Admission for Long-Horizon Agentic Serving*
-2. *The Session Is the Unit: Reversible Admission for Agentic LLM Serving*
-3. *When a Session Does Not Fit: Capacity Accounting and Tier-Aware Admission*
+标题候选（按 §9 的定位更新）：
+1. *Don't Predict the Future: Reversible Sessions and Capacity-Accounted Admission for Agentic Serving*
+2. *Suspend, Don't Predict: Session-Level Admission for Long-Horizon Agentic LLM Serving*
+3. *The Session Stays: Capacity Accounting with Reversible Suspension for Agentic Serving*
+4. （保守版）*When a Session Does Not Fit: Capacity-Accounted Admission for Agentic LLM Serving*
 
 11 页章节计划：
 ```
@@ -199,3 +201,66 @@ workload    19 会话 / 602 轮；终态工作集 1.306M token = 池（101,502�
 > Existing work tells us the ceiling exists (2610.22863) or names the thrashing (CONCUR);
 > we show, on a single memory-bound GPU, how a **session-level capacity ledger** keeps the
 > server under that ceiling while meeting SLOs — and we name the price when it cannot.
+
+## 9. 来自 KV/分层调研的关键修正（2026-10-23，见 `survey_kv_memory_20261023.md`，24 篇全文）
+
+### 9.1 三个必须处理的事实
+
+1. **MORI（2606.00866）已经占了“每层准入”**：它把 idleness 连续化排序，明确写
+   “enforce admission control at each memory tier”。⇒ **“tier-aware admission”不能当我们的主创新**。
+2. **kvlive（2609.16215）的二分法 + 强负结果**：“机制是容易的一半，放置策略才是难的”；
+   连 future-reading oracle 预取都不赚带宽。⇒ 我们必须承认“**不是所有会话都值得挂起**”，
+   并给一个 breakeven——这反而让机制可信。
+3. **EfficientAgent（2609.33762）已有 OBR = 1 − T_load/T_rec**（搬运 vs 重算的不等式；
+   H20 上 0.86 vs ≥5.6 µs/token ⇒ OBR≥0.84）。⇒ 我们**不要重新发明**，而是把它扩一维：
+   **加“会话还剩多少轮/还要不要回来”这个时间维度**，得到“挂起 vs 重算”的会话级 breakeven。
+
+### 9.2 新的主叙事（取代“价格”）
+
+> **别人把“内存不够”当放置/驱逐问题，于是必须预测未来**（steps-to-execution / Beta 先验 /
+> OBR / 长度预测）。**长会话 agent 的真实结构是“可挂起”的**：承认会话可在轮边界暂停且保状态，
+> 问题就从“预测谁会被复用”变成“**核算还能容纳几个活跃会话**”——**预测需求消失**。
+>
+> 与 ConServe（2606.01839）“换调度单元而不是加预测器”是同一个动作，但我们换的是**状态**
+> （可挂起会话），不是单元。
+
+一句话 gap 句（可直接写进 Intro）：
+> Existing systems treat a memory shortfall as a placement problem,
+> which forces them to predict the future; we treat a session as suspendable,
+> which turns admission into accounting — and prediction disappears.
+
+### 9.3 分析装置（三种，全部可对拍）
+
+1. **容量核算界**：给定 device/host 容量与每会话 KV 工作集，活跃会话数的上界
+   `N_max = C / W̄`（配 12.9× 的实测超订）；准入就是守这个界。
+2. **挂起 breakeven（OBR 的会话级扩展）**：
+   `T_revive = n·β/B + τ`（n=KV 字节、β=每 token 每层字节、B=host 带宽、τ=固定开销），
+   `T_recompute = P(ctx)`；只有 `T_revive < T_recompute` 才值得挂起。
+   再加一维：**会话还会不会回来**（剩余轮数/工具等待分布）⇒ 期望收益 = p_return·(T_recompute − T_revive)。
+3. **带宽算术**（CachedAttention 式）：2K token KV 过 PCIe Gen4 ≈ ? ms，与 prefill 时间对比；
+   用我们机器上的实测参数（可测/可估）算，不引用别人的数当自己的。
+
+### 9.4 要主动预埋的负结果（“听起来有道理”的关键）
+
+- 不是所有长会话都值得挂起：当 `T_revive ≥ T_recompute`（上下文短/带宽低）时，重算更便宜；
+- 缓存足够大 / 并发很低时，机制会被淹没（MORI 自陈低并发下所有 offload 命中率都 87–96%）；
+- 主动写“我们什么时候不赚”——比多刷一个 1.2× 更能立住机制。
+
+### 9.5 定位表（related work 用）
+
+| 工作 | 他们的问题 | 我们的差异 |
+|---|---|---|
+| MORI 2606 | 每层准入 + idleness 排序 | 我们是**硬容量核算 + 命名许可 + 可逆挂起**；不做“按 idleness 排序”的软策略 |
+| EfficientAgent 2609 | working-set admission + OBR | 它是 per-token 决策、无会话级挂起；我们把 OBR 扩到**会话时间维度**并落到真引擎 |
+| kvlive 2609 | 模拟器里比较放置策略 | 我们承认它的负结果，给**挂起 breakeven**；真引擎端到端 |
+| ConServe 2606 | 换调度单元（turn→session） | 我们换的是**状态**（可挂起），不是单元；且给容量界 |
+| Mooncake 2407 | 过载早拒绝（拒绝即丢状态） | 我们是**挂起而非丢弃**，状态保留、可复活 |
+| KVFlow 2507 | 预测 steps-to-execution | 我们不预测，核算 + 挂起；预测需求消失 |
+| Mooncake/Continuum/Concur | 吞吐/延迟目标 | 我们单卡内存墙 + SLO/尾延迟 + 真引擎 |
+
+### 9.6 对 §2 的影响
+
+- **Arc B 的旧版本（Price the Tier 当主创新）作废**；tier 只作为 §9.2 成本模型里的一个量。
+- **Arc C（可逆挂起）从“机制章”升级为“主叙事的一半”**：它不再是实现细节，
+  而是让“预测消失”的那个结构性动作。
+- 新的 §2 主骨架：**A（单位）+ C（可逆挂起/不预测）**，B 降为成本模型，D 做 hook。
