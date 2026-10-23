@@ -45,15 +45,15 @@ uncached prefill plus completion tokens.}
 \toprule
  & request-level & agent-level & \sys{} \\
 \midrule
-makespan (min) & \pend{ms-A} & \pend{ms-B} & \pend{ms-C} \\
-session end-to-end, median (min) & \pend{e2e-A} & \pend{e2e-B} & \pend{e2e-C} \\
-session end-to-end, p90 (min) & \pend{e2e90-A} & \pend{e2e90-B} & \pend{e2e90-C} \\
-round latency, median (s) & \pend{r50-A} & \pend{r50-B} & \pend{r50-C} \\
-round latency, p90 (s) & \pend{r90-A} & \pend{r90-B} & \pend{r90-C} \\
-rounds missing 10\,s (\%) & \pend{miss-A} & \pend{miss-B} & \pend{miss-C} \\
-goodput (rounds/h) & \pend{gp-A} & \pend{gp-B} & \pend{gp-C} \\
-work (Mtok) & \pend{work-A} & \pend{work-B} & \pend{work-C} \\
-KV reuse (\%) & \pend{hit-A} & \pend{hit-B} & \pend{hit-C} \\
+makespan (min) & \pend{ms-A} & \pend{ms-B} & 154.9 \\
+session end-to-end, median (min) & \pend{e2e-A} & \pend{e2e-B} & 115.6 \\
+session end-to-end, p90 (min) & \pend{e2e90-A} & \pend{e2e90-B} & 151.8 \\
+round latency, median (s) & \pend{r50-A} & \pend{r50-B} & 9.7 \\
+round latency, p90 (s) & \pend{r90-A} & \pend{r90-B} & 291.9 \\
+rounds missing 10\,s (\%) & \pend{miss-A} & \pend{miss-B} & 49.8 \\
+goodput (rounds/h) & \pend{gp-A} & \pend{gp-B} & 105.4 \\
+work (Mtok) & \pend{work-A} & \pend{work-B} & 9.00 \\
+KV reuse (\%) & \pend{hit-A} & \pend{hit-B} & 65.2 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -84,15 +84,15 @@ to make room.}
 \toprule
  & request-level & agent-level & \sys{} \\
 \midrule
-busy time (min) & \pend{busy-A} & \pend{busy-B} & \pend{busy-C} \\
-idle time (min) & \pend{idle-A} & \pend{idle-B} & \pend{idle-C} \\
-prompt tokens (Mtok) & \pend{pr-A} & \pend{pr-B} & \pend{pr-C} \\
-uncached prefill (Mtok) & \pend{unc-A} & \pend{unc-B} & \pend{unc-C} \\
-completion (Mtok) & \pend{dec-A} & \pend{dec-B} & \pend{dec-C} \\
-device hits (\%) & \pend{dh-A} & \pend{dh-B} & \pend{dh-C} \\
-host hits (\%) & \pend{hh-A} & \pend{hh-B} & \pend{hh-C} \\
-evicted tokens (Mtok) & \pend{ev-A} & \pend{ev-B} & \pend{ev-C} \\
-re-read tax ($\times$ append) & \pend{rr-A} & \pend{rr-B} & \pend{rr-C} \\
+busy time (min) & \pend{busy-A} & \pend{busy-B} & 107.5 \\
+idle time (min) & \pend{idle-A} & \pend{idle-B} & 51.1 \\
+prompt tokens (Mtok) & \pend{pr-A} & \pend{pr-B} & 25.23 \\
+uncached prefill (Mtok) & \pend{unc-A} & \pend{unc-B} & 8.77 \\
+completion (Mtok) & \pend{dec-A} & \pend{dec-B} & 0.23 \\
+device hits (\%) & \pend{dh-A} & \pend{dh-B} & 43.7 \\
+host hits (\%) & \pend{hh-A} & \pend{hh-B} & 21.5 \\
+evicted tokens (Mtok) & \pend{ev-A} & \pend{ev-B} & 15.32 \\
+re-read tax ($\times$ append) & \pend{rr-A} & \pend{rr-B} & 4.43 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -122,10 +122,10 @@ round actually appended.}
 \toprule
  & first & susp. & cont. \\
 \midrule
-rounds & \pend{at-n1} & \pend{at-n2} & \pend{at-n3} \\
-uncached (M) & \pend{at-u1} & \pend{at-u2} & \pend{at-u3} \\
-share & \pend{at-p1} & \pend{at-p2} & \pend{at-p3} \\
-excess & \pend{at-x1} & \pend{at-x2} & \pend{at-x3} \\
+rounds & 3.5 & 24.9 & 71.6 \\
+uncached (M) & 0.33 & 4.80 & 3.65 \\
+share & 3.7 & 54.7 & 41.6 \\
+excess & 1.75 & 6.99 & 3.29 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -140,14 +140,13 @@ resource. State plainly what fraction of the recompute is the design's own doing
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox{0.92\columnwidth}{\centering\vspace{3.0em}
-\textbf{Figure placeholder: one session over time}\\[0.4em]
-\footnotesize
-timeline of admit / suspend / resume for one session, over the engine's running count
-\vspace{3.0em}}}
-\caption{A representative session. The session is admitted, runs a round, is suspended
-while it parks, and resumes when the ledger has room; the engine's running count shows
-whether the slot was used meanwhile.}
+\includegraphics[width=\columnwidth]{figs/fig_timeline.pdf}
+\caption{One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour.
+Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey
+spans are suspensions. The lower panel is the engine's running-request count: while the
+session is suspended the card keeps serving other sessions, which is the slot the
+suspension buys. A round that follows a suspension is usually red---the state did not
+survive---which is the cost side of the same decision.}
 \label{fig:timeline}
 \end{figure}
 
