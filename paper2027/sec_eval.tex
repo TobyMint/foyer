@@ -1,0 +1,159 @@
+\section{Evaluation}
+\label{sec:eval}
+
+Our evaluation asks three questions. Does accounting beat the two baselines that a
+practitioner would use instead (\S\ref{sec:eval-main})? Where does the time go---is the win
+an admission effect or a cache effect (\S\ref{sec:eval-decomp})? And when does it stop
+paying (\S\ref{sec:eval-neg})? We fix the metrics and the decision criteria before running,
+and report every arm on every metric whether or not it favours the design.
+
+\subsection{Setup and metrics}
+\label{sec:eval-setup}
+
+All arms replay the same 19-session, 602-round trace on the same GPU, model, memory
+fraction, and cache configuration (\S\ref{sec:impl}); they differ only in the controller.
+We report five quantities, defined once and computed by one script from the per-step logs.
+
+\emph{Makespan}: the time from the first arrival to the last completion---the batch time a
+server operator cares about. \emph{Session end-to-end}: for each session, the time from its
+arrival to its own last completion; we report the median and the 90th percentile, because
+the mean hides the tail. \emph{Round latency}: for each round, the time from the moment the
+session \emph{could} continue (its arrival, or the end of the previous round plus the
+simulated tool wait) to the first output token. This is the quantity a user experiences,
+and it includes both the time the controller makes the session wait at the door and the
+time the engine takes to produce a token; reporting engine-side TTFT alone would hide
+exactly the cost that admission control imposes. \emph{Deadline miss rate}: the fraction of
+rounds whose round latency exceeds 10\,s, the per-round budget we fixed in advance.
+\emph{Goodput}: rounds that meet the deadline per hour of makespan, which normalises for
+the fact that a faster batch also has less wall time in which to accumulate hits.
+\emph{Work}: the sum of uncached prompt tokens and completion tokens, i.e.\ the prefill the
+engine actually had to do, which is the quantity the mechanism claims to reduce.
+
+\subsection{Main result}
+\label{sec:eval-main}
+
+Table~\ref{tab:main} reports the three arms.
+
+\begin{table*}[t]
+\caption{Three arms, same trace, engine, and memory budget. Round latency includes the
+controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is
+uncached prefill plus completion tokens.}
+\label{tab:main}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ & request-level & agent-level & \sys{} \\
+\midrule
+makespan (min) & \pend{ms-A} & \pend{ms-B} & \pend{ms-C} \\
+session end-to-end, median (min) & \pend{e2e-A} & \pend{e2e-B} & \pend{e2e-C} \\
+session end-to-end, p90 (min) & \pend{e2e90-A} & \pend{e2e90-B} & \pend{e2e90-C} \\
+round latency, median (s) & \pend{r50-A} & \pend{r50-B} & \pend{r50-C} \\
+round latency, p90 (s) & \pend{r90-A} & \pend{r90-B} & \pend{r90-C} \\
+rounds missing 10\,s (\%) & \pend{miss-A} & \pend{miss-B} & \pend{miss-C} \\
+goodput (rounds/h) & \pend{gp-A} & \pend{gp-B} & \pend{gp-C} \\
+work (Mtok) & \pend{work-A} & \pend{work-B} & \pend{work-C} \\
+KV reuse (\%) & \pend{hit-A} & \pend{hit-B} & \pend{hit-C} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\pend{two paragraphs: the headline comparison (makespan and goodput), and the honest
+reading of the parts that do not separate. State explicitly which of the four
+pre-registered criteria hold.}
+
+\subsection{Where the time goes}
+\label{sec:eval-decomp}
+
+A faster makespan can come from three places: the engine does less work (fewer uncached
+prefill tokens), the engine is busier (less idle time while sessions are parked), or the
+work is better overlapped. We separate them from the logs, without running anything new.
+The re-read tax is the ratio of uncached prefill to appended tokens: it is $1$ when every
+session's prefix is retained and grows when state is lost.
+
+\begin{table*}[t]
+\caption{Decomposition. Busy and idle time are sampled from the engine's running-request
+count over each run's window; prompt, cached and uncached tokens are summed from the
+per-step records. The engine does not expose a device/host split of the hits in this
+version, so we report the aggregate hit rate and the re-read tax.}
+\label{tab:decomp}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ & request-level & agent-level & \sys{} \\
+\midrule
+busy time (min) & \pend{busy-A} & \pend{busy-B} & \pend{busy-C} \\
+idle time (min) & \pend{idle-A} & \pend{idle-B} & \pend{idle-C} \\
+prompt tokens (Mtok) & \pend{pr-A} & \pend{pr-B} & \pend{pr-C} \\
+cached tokens (Mtok) & \pend{ca-A} & \pend{ca-B} & \pend{ca-C} \\
+uncached prefill (Mtok) & \pend{unc-A} & \pend{unc-B} & \pend{unc-C} \\
+completion (Mtok) & \pend{dec-A} & \pend{dec-B} & \pend{dec-C} \\
+cache hit (\%) & \pend{hit2-A} & \pend{hit2-B} & \pend{hit2-C} \\
+re-read tax ($\times$ append) & \pend{rr-A} & \pend{rr-B} & \pend{rr-C} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\pend{paragraph interpreting the decomposition, including the cases where the design wins on
+work but not on busy time, or vice versa.}
+
+\subsection{Mechanism, in one session}
+\label{sec:eval-timeline}
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.92\columnwidth}{\centering\vspace{3.0em}
+\textbf{Figure placeholder: one session over time}\\[0.4em]
+\footnotesize
+timeline of admit / suspend / resume for one session, over the engine's running count
+\vspace{3.0em}}}
+\caption{A representative session. The session is admitted, runs a round, is suspended
+while it parks, and resumes when the ledger has room; the engine's running count shows
+whether the slot was used meanwhile.}
+\label{fig:timeline}
+\end{figure}
+
+\pend{paragraph reading the timeline: how often the session was suspended, what the
+suspension cost (revival vs recompute counts), and whether the slot was picked up by
+another session while it was parked.}
+
+\subsection{Log-based counterfactual: concurrency or state?}
+\label{sec:eval-cf}
+
+Our design differs from the agent-level baseline in two ways at once: it accounts for
+capacity, and it preserves state. To separate the two without another run, we replay the
+controller's own decisions offline and ask what would have happened under a concurrency-only
+variant of the same controller---same permits, same pausing, but no host-tier accounting
+and no revival pricing.
+
+\pend{the counterfactual numbers and the sentence that says how much of the gain comes from
+each half.}
+
+\subsection{When it does not pay}
+\label{sec:eval-neg}
+
+We report three regimes in which the mechanism loses or is neutral, and we say why.
+\emph{(i) Ample capacity.} If the working set fits, nothing is suspended, the ledger reduces
+to first-come-first-served, and the only difference from the request-level arm is a small
+amount of bookkeeping; the design cannot win and does not claim to. \emph{(ii) Short
+contexts.} If a round's context is small, the recompute is cheap and the break-even
+\eqref{eq:ratio} favours recomputation; suspension then buys nothing. \emph{(iii) Saturated
+engine.} When the engine is already busy, adding admission discipline removes capacity from
+the queue and can increase the tail, because the door wait moves from a place where it
+overlaps with other work to a place where it does not.
+
+\pend{the measured instances of (i)--(iii) in the arms, and the sensitivity to $\rho$ and
+$t^\ast$.}
+
+\subsection{Threats to validity}
+\label{sec:eval-threats}
+
+Every arm is a single run of one trace on one GPU, so we report measured differences and
+full distributions rather than significance tests; run-to-run variation is visible only in
+the per-session scatter, and a single batch cannot separate policy effects from the
+particular interleaving. The trace is reconstructed from agent transcripts rather than
+observed in production, and all sessions arrive together, which is the worst case for
+admission and the best case for a batch controller. The model is a 7B coding model on a
+24\,GB card; the constants in \S\ref{sec:analysis} would differ on other hardware, though
+the quantities in which the argument is stated would not.

@@ -1,0 +1,94 @@
+\section{Introduction}
+\label{sec:intro}
+
+A coding agent does not issue one request. It issues a \emph{session}: a multi-round job
+in which every round ends with a tool call, and every tool call returns with more context
+than the round before. The session is long-lived, its state is expensive to rebuild, and
+it is reused. On a serving engine that was designed for independent requests, none of
+these three properties is visible.
+
+We measured this on a replay of 19 long coding-agent sessions (602 rounds, median 28
+rounds per session, longest 81) collected from Claude and Codex conversations. A round
+arrives with a median 48.5K-token context (p90 71.1K, max 92.8K). The terminal working
+set---what all 19 sessions would occupy if every one of them were live---is 1.31M tokens.
+The KV pool of our engine, a 7B model served with a 96K context on a single 24\,GB GPU,
+holds 101.5K tokens. The working set is therefore $12.9\times$ the pool, and the average
+session alone needs 69K tokens: \emph{the pool holds 1.47 sessions}.
+
+The cost of ignoring this is paid every round. A round's new content is a median of 990
+tokens, but it arrives attached to a 44.9K-token prefix. Serving each round as an
+independent request re-reads that prefix: across the trace, the engine is asked to
+process $13.0\times$ more prefix than it appends, and a system with no reuse at all would
+do $14.0\times$ the prefill work of a perfect one. The trace makes the same point in the
+other direction: it is cheap to keep a session, and expensive to rebuild it.
+
+The obvious response---evict and recompute---runs into the shape of the workload rather
+than its size. Tool waits are bimodal: the median gap between rounds is 181\,ms, the mean
+is 15.9\,s, and the 13.1\% of gaps longer than ten seconds account for 93.4\% of all
+parked time. A session's idle period therefore tells you almost nothing about the next
+one: half of the time the agent is back before an eviction decision could pay for itself,
+and the other half it is gone for tens of seconds. A policy that suspends on every gap
+recomputes constantly; a policy that never suspends holds sessions it cannot afford.
+
+\paragraph{Prior fixes treat this as placement, and placement forces prediction.}
+Paged attention, prefix caching, and tiered KV stores decide \emph{where} a block lives;
+their admission counterpart is a replacement decision that presupposes a guess about the
+future---which prefix will be reused, when a session will return, how long its next round
+will be. The systems that address agentic workloads keep that presupposition: TTL-based
+scheduling predicts a session's reuse window, program-aware admission predicts the next
+step's demand, feedback controllers adjust a concurrency limit after congestion is
+observed, and overload handlers shed sessions outright. Each is a threshold on a
+predicted quantity. None of them states which set of sessions is \emph{feasible} under
+the capacity it actually has, and none prices what it costs to bring a suspended session
+back.
+
+\paragraph{Our position: make the session suspendable, then stop predicting.}
+If a session can be paused at a round boundary and resumed by \emph{copying} its KV back
+from a host tier, then the question ``should this session be admitted?'' stops being a
+forecast and becomes an accounting check against a ledger of bytes:
+\begin{quote}
+\emph{Admission is a feasibility test, not a threshold.}
+\end{quote}
+Three things follow, and they organise the paper. First, feasibility is stated in
+quantities we can measure now---the session's projected footprint, the capacity of each
+tier, the bandwidth between them---so no predictor is on the critical path. Second,
+suspension is not free and not always right: reviving a session costs a copy, recomputing
+it costs a prefill, and the two are comparable for short contexts, which yields a
+per-session break-even instead of a policy constant. Third, the one genuinely uncertain
+quantity, how much a session will grow before it returns, can be bounded by coverage
+rather than guessed by a point estimate, which turns the safety margin into a property
+one can state.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item \textbf{Formulation} (\S\ref{sec:model}): we cast admission for suspendable agent
+sessions as a feasibility problem over a two-tier capacity ledger, with an explicit
+revival cost. The formulation replaces a threshold on predicted load with a test on
+measured capacity, and it exposes the one parameter that remains---the fraction of the
+pool held in reserve (\S\ref{sec:design}).
+\item \textbf{Mechanism} (\S\ref{sec:design}--\ref{sec:impl}): named permits make the
+ledger enforceable at request granularity; reversible suspension at round boundaries
+keeps a session's state in the host tier instead of discarding it; a coverage-bounded
+growth estimate replaces a point forecast; and a revival break-even decides, per
+suspension, whether to copy or to recompute. We implement the design on SGLang with a
+hierarchical KV cache and a 96K-context 7B model.
+\item \textbf{Analysis and evidence} (\S\ref{sec:analysis}, \S\ref{sec:eval}): we give a
+feasible-set bound, a session-level revival-versus-recompute break-even, and a
+coverage-bounded admission guarantee; we evaluate request-level serving, an agent-level
+feedback controller, and our design on the same trace, engine, and memory budget; and we
+report the regimes in which suspension does not pay.
+\end{enumerate}
+
+\paragraph{Results in one line.}
+\pend{one-sentence headline with the three arms, e.g.\ ``on the 602-round replay our
+design finishes the batch in X minutes against Y (request-level) and Z (agent-level),
+while meeting the per-round deadline on W\% of rounds against V\% and U\%''}.
+
+\paragraph{Scope.}
+Our testbed is a single 24\,GB GPU running a 7B model with a 96K context. We choose this
+point because it makes the regime sharp, not because the mechanism is specific to the
+card: the binding variable is the ratio of the live working set to KV capacity, and when
+that ratio is small, admission is not the problem. We do not claim that our constants
+transfer to larger devices or to clusters; we do claim that the ledger, the break-even,
+and the coverage bound are stated in quantities---bytes, bandwidth, session
+horizon---that do transfer (\S\ref{sec:discussion}).

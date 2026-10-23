@@ -1,0 +1,54 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{What the argument is, and is not.} The claim is not that this card, this model,
+or this trace is representative. It is that once sessions can be suspended, admission stops
+being a forecast and becomes a feasibility test with a price, and that this reframing is
+what turns an unmanaged pool into a usable server under working-set overcommitment. The
+quantities in which the argument is stated---bytes of KV, bytes per second between tiers,
+rounds per session, rounds per second of prefill---are measurable on any deployment; the
+constants are not portable, and we do not present them as such.
+
+\begin{table}[t]
+\caption{The regime the design targets, and where it does not apply.}
+\label{tab:scope}
+\centering
+\small
+\begin{tabular}{@{}p{0.44\columnwidth}p{0.46\columnwidth}@{}}
+\toprule
+Applies & Does not apply \\
+\midrule
+working set $\gg$ KV pool: long sessions, large contexts &
+working set well below the pool: nothing is suspended and the ledger is inert \\
+single node with a host tier that can hold suspended state &
+cluster-level disaggregation, where placement is a different problem \\
+contexts large enough that recomputation dominates a copy &
+contexts short enough that the recompute is cheaper than the revival \\
+sessions that return: multi-round jobs with reusable prefixes &
+one-shot requests, where there is no state to preserve \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Why the negative cases matter.} A design of this kind is easy to oversell,
+because every mechanism in it can be made to look good on the workload it was tuned for.
+The three losing regimes in \S\ref{sec:eval-neg} are therefore part of the result: they
+delineate the ratio of working set to capacity at which accounting stops being the
+interesting question, and they explain why threshold controllers are not simply mistakes---
+in a regime where the working set is small, a window is a perfectly good answer, and the
+ledger has nothing to add.
+
+\paragraph{Implications for systems that already have a hierarchy.} The mechanism does not
+require a new engine. It requires that the engine expose enough for a controller to keep
+books---token usage, running counts, per-request cache accounting---and that the scheduler
+allow a request to be held at a session boundary rather than only admitted or dropped.
+Both are interface changes, not algorithmic ones, and both are absent from current engines
+mainly because the request, not the session, is their unit of work.
+
+\paragraph{Threats beyond the evaluation.} Our replay arrives all at once, which makes
+admission hardest and makes a batch controller look good; a Poisson arrival process would
+give the request-level arm more slack and shrink the measured gap, though it would not
+change which decisions are feasible. The trace's tool waits are simulated from the
+recorded distribution rather than observed live, so the interaction between admission
+delays and agent behaviour (an agent that waits longer may emit a longer next round) is
+not modelled. Both are directions for measurement rather than for mechanism.

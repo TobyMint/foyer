@@ -1,0 +1,39 @@
+key,value,unit,note,source
+n_sessions,19,sessions,trace 里的会话数,data/replay_long19.csv
+n_rounds,602,rounds,trace 里的轮数（= 请求数）,data/replay_long19.csv
+rounds_per_session_med,28,rounds,,data/replay_long19.csv
+rounds_per_session_max,81,rounds,,data/replay_long19.csv
+working_set_tok,1310581,tokens,每个会话最后一轮的 ctx 之和（全部驻留所需 KV）,data/replay_long19.csv
+pool_tok,101502,tokens,引擎报告的 KV 池（metadata.json pool_tokens）,data/replay_long19.csv
+overcommit_x,12.91,x,working_set / pool,data/replay_long19.csv
+ctx_med_tok,48536,tokens,逐轮上下文的中位,data/replay_long19.csv
+ctx_mean_tok,48158.0,tokens,逐轮上下文的均值,data/replay_long19.csv
+ctx_p90_tok,71091,tokens,,data/replay_long19.csv
+ctx_max_tok,92758,tokens,,data/replay_long19.csv
+working_set_per_session_tok,68978.0,tokens,均值会话的【终态】工作集 = working_set / n_sessions,data/replay_long19.csv
+pool_in_working_sets,1.47,sessions,pool 能装下几个【均值会话的终态工作集】—— 正文引的 1.47 就是这一行,data/replay_long19.csv
+pool_in_ctx_mean,2.11,sessions,pool / 逐轮上下文均值（另一种口径，别与上一行混用）,data/replay_long19.csv
+pool_in_ctx_med,2.09,sessions,pool / 逐轮上下文中位（另一种口径）,data/replay_long19.csv
+prefix_sum_tok,26924835,tokens,Σ prefix_len：不复用时每轮都要重读的量,data/replay_long19.csv
+append_sum_tok,2066326,tokens,Σ input_len：真正新增的量,data/replay_long19.csv
+reread_x,13.03,x,prefix_sum / append_sum = 重读税,data/replay_long19.csv
+prefix_p50_tok,44908,tokens,逐轮 prefix 的中位,data/replay_long19.csv
+append_p50_tok,990,tokens,逐轮 append 的中位,data/replay_long19.csv
+prefix_append_p50_x,45.4,x,单轮 prefix/append 中位之比,data/replay_long19.csv
+recompute_sum_tok,28991161,tokens,Σ ctx：完全不复用时的 prefill 工作量,data/replay_long19.csv
+recompute_bound_x,14.03,x,recompute_sum / append_sum,data/replay_long19.csv
+toolwait_med_ms,181.0,ms,,data/replay_long19.csv
+toolwait_mean_ms,15865.0,ms,,data/replay_long19.csv
+toolwait_p90_ms,28119.0,ms,,data/replay_long19.csv
+toolwait_max_ms,300000.0,ms,,data/replay_long19.csv
+toolwait_gt10s_pct,13.1,%,>10s 的间隔占条数比,data/replay_long19.csv
+toolwait_gt10s_share_pct,93.4,%,>10s 的间隔占总停放时长比,data/replay_long19.csv
+parked_total_h,2.65,h,Σ tool_wait,data/replay_long19.csv
+growth_med_tok,719,tokens,逐轮 ctx 增长的中位,data/replay_long19.csv
+growth_mean_tok,1688.0,tokens,,data/replay_long19.csv
+growth_p90_tok,4286,tokens,,data/replay_long19.csv
+growth_p99_tok,14287,tokens,,data/replay_long19.csv
+reserve_med_tok,3734.0,tokens,控制器那条储备 g_hat = margin*horizon*EMA（1.15*3*EMA(0.4)）的中位,data/replay_long19.csv
+reserve_frac_of_ctx,0.077,x,储备 / 逐轮上下文中位 —— 正文引的 7.7% 就是这一行,data/replay_long19.csv
+reserve_coverage_pct,99.5,%,下一轮实际增长 <= 储备 的比例（trace 上 583 个转移）,data/replay_long19.csv
+all_arrive_at_zero,1,bool,1 = 一次性全倒（atonce）,data/replay_long19.csv

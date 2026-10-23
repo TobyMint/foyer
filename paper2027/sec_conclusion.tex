@@ -1,0 +1,22 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+Serving agents is not serving requests. A session arrives with state, leaves it behind, and
+comes back to it, and on a single GPU the aggregate of that state exceeds the pool by an
+order of magnitude. The systems we have are built around a threshold---how many, how much
+concurrency, how high a watermark---which forces the operator to guess at a future the
+workload does not reveal until it happens.
+
+Once a session can be suspended and revived, the guess is unnecessary. Capacity becomes a
+ledger of bytes, admission becomes a feasibility test against that ledger, and the two
+decisions that remain---whose state deserves a slot, and whether to copy or recompute---are
+priced in measured time. The design needs no predictor of the next round, and the numbers
+say why: the part of the footprint that would have to be predicted is a few percent of the
+part that is measured.
+
+We have instantiated the principle as a controller outside an unmodified serving engine and
+measured it against request-level serving and an agent-level feedback controller on a
+19-session coding-agent replay. \pend{one-sentence result with the three arms}. The
+reusable part is not the constants but the shape of the argument: state the feasible set,
+price the recovery, and let the workload decide---rather than tune a threshold and hope the
+next round looks like the last.

@@ -1,0 +1,44 @@
+\section{Implementation}
+\label{sec:impl}
+
+\paragraph{Engine.} We use SGLang v0.5.10 \cite{zheng2024sglang} \emph{unmodified}, with
+paged KV \cite{kwon2023pagedattention} and its hierarchical cache enabled at a host ratio
+of $2\times$ with write-through policy. The model is Qwen2.5-Coder-7B-Instruct with YaRN
+extrapolation to a 96K context, whose weights and KV cache fit a single 24\,GB RTX 3090 at
+a static memory fraction of 0.85, leaving a device pool of 101,502 tokens and a host tier
+of 203,004. The engine exposes token usage, running-request counts, and cache statistics on
+its metrics endpoint; it has no concept of a session and no notion of suspension. Nothing
+in the engine was changed to support this paper---the design lives entirely outside it.
+
+\paragraph{Harness.} A session runner drives the replay: for each session it emits an
+arrival event, then for each round it waits for a permit, submits the round to the engine,
+records the step (prompt, cached and uncached tokens, first-token latency, duration), and
+simulates the inter-round tool wait before emitting the next round's arrival. The runner
+implements the round-boundary gate: a session that is not in the admit set blocks before
+its next request is issued, keeping its process state and its engine-side KV. The runner is
+written in Rust and is the only component that talks to the engine.
+
+\paragraph{Controller.} The controller is a Python process of 540 lines that polls
+the engine's metrics and the runner's event logs every two seconds, maintains the ledger of
+\S\ref{sec:m1}, evaluates the valve and the shedding rules of \S\ref{sec:m4}, and rewrites
+the permit file atomically with full-state semantics: each cycle publishes the complete
+admit set and the complete paused set, so the runner never acts on a stale delta. Decision
+records---resident bytes, projection, budget, valve state, running count, shed set---are
+appended to a log that the evaluation reads. The controller never opens the trace file: the
+only quantities it sees are the ones the deployment produces at run time.
+
+\paragraph{Arms.} All three arms use the same engine, model, trace, memory fraction, and
+cache configuration; they differ only in the control process, which is selected by a policy
+string. The \emph{request-level} arm runs with no controller at all---the engine admits
+every round on arrival and its own scheduler arbitrates. The \emph{agent-level} arm runs a
+Concur-style AIMD controller \cite{concur} that adjusts a concurrency window from observed
+utilisation and a cache-thrash signal, pausing and resuming sessions at step boundaries
+with the same named-permit mechanism. The \emph{capacity-accounted} arm is the design of
+\S\ref{sec:design}. Using one permit mechanism for both controllers matters: the comparison
+then isolates the decision rule (AIMD on a window versus accounting on a ledger), not the
+engineering of pausing.
+
+\paragraph{Reproducibility.} A run is one command per arm and writes a directory containing
+the per-step log, the controller's decisions, the admission events and a metadata file with
+the code hashes, trace hash, GPU, and pool size. The evaluation scripts in the artifact
+recompute every number in \S\ref{sec:eval} from those directories.

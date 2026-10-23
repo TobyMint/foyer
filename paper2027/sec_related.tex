@@ -1,0 +1,57 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{KV memory in serving engines.} PagedAttention \cite{kwon2023pagedattention}
+made the KV cache a paged allocator, and SGLang \cite{zheng2024sglang} made prefix sharing a
+first-class citizen through a radix tree; both are the substrate we stand on and neither has
+a notion of a session. Hierarchical and disaggregated stores extend the hierarchy---host
+memory, remote tiers, and prefill/decode separation \cite{mooncake,distserve}---and answer
+\emph{where} a block should live. Our question is prior to theirs: given that the hierarchy
+exists, which session is allowed to occupy the fast tier, and what does it cost to bring one
+back. Pensieve \cite{yu2025pensieve} argued that statelessness is the structural fault of
+current serving designs; we make the same argument quantitatively and add the admission
+decision that statelessness leaves open.
+
+\paragraph{Scheduling for agentic and multi-turn workloads.} CONCUR \cite{concur} controls
+concurrency at agent granularity with an AIMD law driven by a congestion signal, and it is
+the closest system to ours in scope; our agent-level arm is deliberately a faithful
+reimplementation of that control law, so that the comparison isolates the decision rule. We
+differ in what is being decided: AIMD adjusts a window and reacts after congestion appears,
+whereas the ledger tests feasibility before admitting and prices what happens when it
+cannot. Continuum \cite{continuum} attaches a time-to-live to a session's KV and uses cache
+miss cost to schedule, which is a prediction of the reuse window; our reserve is a
+measurement of growth, not of a horizon. KVFlow \cite{kvflow} predicts
+steps-to-execution to schedule workflows, and ThunderAgent \cite{thunderagent} decomposes
+program cost in space and time; both model the future of a program, and both would benefit
+from a feasibility layer underneath. Talaria \cite{talaria} targets session continuity in
+serverless serving, and ConServe changes the scheduling unit;
+% TODO(cite): ConServe arXiv:2606.01839 — 标题/作者核过后加进 refs.bib we change
+what the unit is allowed to own. MORI \cite{mori} exploits tool-call idle windows to offload
+per tier, and EfficientAgent admits by working set
+% TODO(cite): EfficientAgent arXiv:2609.33762 — 标题/作者核过后加进 refs.bib and ranks sessions
+for eviction by expected reuse; our problem statement overlaps theirs, and we make no claim
+of novelty on granularity, tiers, or working-set admission as such. The claim here is that
+the decision can be stated as a feasibility test with a measured ledger and a priced
+recovery, without a predictor of future demand.
+
+\paragraph{Measurement of agentic workloads.} A recent characterisation of production
+agentic traffic reports
+% TODO(cite): KV Residency arXiv:2610.22863 — 标题/作者核过后加进 refs.bib session lifetimes and per-session KV footprints
+at a scale where the aggregate working set would need hundreds of terabytes to hold; the
+conclusion there is that hold-all-live is impossible, which is the regime we make precise on
+one card: a working set $12.9\times$ the pool, a pool that holds 1.47 mean sessions, and a
+13$\times$ re-read tax paid by request-level serving. Our trace is a replay built from
+coding-agent transcripts \cite{zhu2026tracelab}, so it inherits their structure rather than
+observing a deployment; we state that as a threat to validity rather than as evidence of
+production behaviour.
+
+\paragraph{Admission and overload control.} Classical admission control reacts to
+utilisation with multiplicative decrease \cite{jacobson1988}; the working-set model
+\cite{denning1978} and Little's law \cite{little1961} describe when a set of jobs fits in
+memory and what concurrency a throughput target implies. We use the same vocabulary but a
+different object: the working set here is a set of \emph{sessions} with reusable state, so
+the cost of admitting the wrong one is not queueing delay but recomputation, and the
+relevant invariant is a byte budget rather than a window. Overload handlers that reject
+requests \cite{mooncake} are the limiting case of our design in which every suspension is
+made permanent; our point is that a rejection can be made reversible, and that the
+break-even (\S\ref{sec:analysis}) says when it should not be.

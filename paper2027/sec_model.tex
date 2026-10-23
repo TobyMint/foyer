@@ -1,0 +1,80 @@
+\section{Model}
+\label{sec:model}
+
+\subsection{Sessions, rounds, and state}
+
+A \emph{session} $s$ is a sequence of rounds $i=1,\dots,n_s$, arriving at time $a_s$.
+Round $i$ carries a reusable prefix of $p_{s,i}$ tokens, appends $q_{s,i}$ tokens, and
+asks for $o_{s,i}$ output tokens, so the context served by the engine is
+$c_{s,i}=p_{s,i}+q_{s,i}$ and the KV state after the round occupies
+$\Phi_{s,i}=\kappa\,(c_{s,i}+o_{s,i})$ bytes for $\kappa$ bytes per token. Between rounds
+the session is idle for $w_{s,i}$ (the tool call), which in our trace is drawn from a
+bimodal distribution (\S\ref{sec:background}). Because a session only appends, the prefix
+of round $i$ is a prefix of every later round: the reuse unit is the session, not the
+request.
+
+At any instant a live session is in one of three \emph{states}: \emph{resident} (its KV is
+in the device pool, so its next round prefills only $q_{s,i}$), \emph{suspended} (its KV
+is in the host tier, so its next round costs a copy plus $q_{s,i}$), or \emph{absent} (its
+state is gone, so its next round prefills all of $c_{s,i}$). The engine we build on
+implements the first and third; the design in \S\ref{sec:design} adds the second.
+
+\subsection{Capacity and the feasible set}
+
+Let the device tier hold $C_d$ tokens and the host tier $C_h$ tokens, and let $\rho\in(0,1]$
+be the fraction of the device pool the admission policy is allowed to commit. At time $t$
+let $A(t)$ be the resident set and $H(t)$ the suspended set. Feasibility is
+\begin{equation}
+\sum_{s\in A(t)}\Phi_s(t)\;\le\;\rho\,C_d,
+\qquad
+\sum_{s\in H(t)}\Phi_s(t)\;\le\;C_h .
+\label{eq:feasible}
+\end{equation}
+The \emph{feasible set} $\mathcal{F}(t)$ is the collection of resident sets satisfying
+\eqref{eq:feasible}; admission is the choice of $A(t)$, not of a concurrency count. This is
+the formal content of our claim. A threshold policy fixes $|A(t)|\le k$; because
+$\Phi_s$ varies by $2\times$ across sessions and by $2\times$ within a session over its
+life, a fixed $k$ is either infeasible for some $t$ or leaves capacity unused at others.
+The bound in \S\ref{sec:analysis} makes the gap explicit.
+
+\subsection{Two costs: revive or recompute}
+
+Bringing a session back has two possible prices. Copying it back from the host tier costs
+\begin{equation}
+\Trev(s)\;=\;\frac{\Phi_s}{B}\;+\;\tau ,
+\label{eq:trev}
+\end{equation}
+where $B$ is the effective host-to-device bandwidth and $\tau$ the fixed cost of
+restoring a sequence in the engine (allocation, descriptor rebuild, first-token
+latency). Recomputing the round from scratch costs the prefill of the whole context,
+\begin{equation}
+\Trec(s)\;=\;P\!\left(c_{s}\right),
+\label{eq:trec}
+\end{equation}
+with $P$ the prefill latency of the engine at the current batch load. For our workload
+the two are within a factor of a few: a 45K-token prefill on the 24\,GB card takes
+about 100\,s, while copying the corresponding 2.5\,GB of KV at \pend{GB/s}
+takes \pend{copy time}. Neither dominates, which is why the decision has to be priced
+rather than hard-coded.
+
+\subsection{Assumptions}
+
+We state the assumptions that the analysis uses, so that the guarantees are not read more
+broadly than they hold.
+\begin{enumerate}
+\item \textbf{Round-boundary suspension.} A session is suspended only between rounds. A
+round in flight is never preempted; this matches the engine, whose KV for an active
+sequence cannot be moved mid-decode.
+\item \textbf{Monotone growth.} Within a session the context grows: $c_{s,i+1}\ge c_{s,i}$.
+This holds in our trace and in the agent workloads we are aware of, and it is what makes
+a retained prefix reusable.
+\item \textbf{Known per-token cost.} $\kappa$, $B$, and $\tau$ are measured once on the
+deployment and are stable across sessions. We do not model bandwidth contention between
+concurrent copies.
+\item \textbf{Host capacity is finite and shared.} $C_h$ is a real budget; suspending
+always has a victim when the host is full. This is what makes the break-even a
+\emph{replacement} condition rather than a per-session one.
+\item \textbf{Growth is estimated with coverage, not point-predicted.} The estimator
+returns $\hat g_s$ such that the next round's growth $q_{s,i+1}+o_{s,i+1}$ is at most
+$\hat g_s$ with probability at least $1-\delta$.
+\end{enumerate}

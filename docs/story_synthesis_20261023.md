@@ -27,7 +27,7 @@
 2. **摘要四拍**：现象 → 为什么结构性失败 → 命名 insight → 单一倍数；
    **我们加第五拍：边界/反例**——调研里几乎没人写，这是我们能加分的地方。
 3. **Intro 第二段必放一个量化反直觉**：加 agent 反而更慢（CONCUR）、
-   0.39s vs 4.3s（Talaria）、88×（PerBank）。我们的是 **0.21s vs 18.6s** 与 **12.9× 超订**。
+   0.39s vs 4.3s（Talaria）、88×（PerBank）。我们的是 **0.18s vs 15.9s** 与 **12.9× 超订**。
 4. **gap 句式在本族是“粒度错了”**：request→agent→program→session。
    ⚠ 但 **agent 级准入已经被 CONCUR 占住**（PDF 内改题 *Proactive Agent-Level
    Admission Control*）；**per-tier admission 已经被 MORI 占住**。
@@ -90,8 +90,8 @@
 ```
 Agentic sessions are long-lived: each returns tens of times with a context that grows to
 48–93K tokens. On a single 24GB GPU the working set of 19 such sessions is 12.9× the KV
-pool — the pool holds 1.48 median sessions. Serving each return as an independent request
-re-reads the prefix every round (12× re-read tax) and wastes up to 12.7× of the prefill work.
+pool — the pool holds 1.47 mean sessions. Serving each return as an independent request
+re-reads the prefix every round (13× re-read tax) and wastes up to 14× of the prefill work.
 Existing fixes treat this as a placement problem and therefore predict the future; we make
 sessions suspendable. At a round boundary a session's KV is demoted, and a later round is
 restored by copy rather than recomputation. Admission then becomes a feasibility test over a
@@ -104,9 +104,9 @@ when suspension does not pay. [pending numbers]
 
 ### 3.3 Intro 五段弧
 
-1. **P1 现象**：长会话、多轮、上下文增长；12.9× 超订；池子只装 1.48 个中位会话。
-2. **P2 量化反直觉**：工具等待 0.21s（中位）vs 18.6s（均值），>10s 的间隔只占 15.6%
-   却吃掉 95% 停放时长；每步 prefix 42K vs append 1.1K（38×）；naive 服务每轮重读。
+1. **P1 现象**：长会话、多轮、上下文增长；12.9× 超订；池子只装 1.47 个均值会话。
+2. **P2 量化反直觉**：工具等待 0.18s（中位）vs 15.9s（均值），>10s 的间隔只占 13.1%
+   却吃掉 93.4% 停放时长；每步 prefix 45K vs append 1.0K（45×）；naive 服务每轮重读。
 3. **P3 为什么现有修法结构性不够**：
    分页/前缀树/分层（vLLM/SGLang/HiCache/LMCache）解决分配；
    TTL/放置（Continuum/KVFlow/MORI/EfficientAgent）必须预测未来；
@@ -131,7 +131,7 @@ when suspension does not pay. [pending numbers]
 
 ```
 1 Intro                 P1–P5；三条贡献；一张“超订/重读”图
-2 Background            会话解剖；工作集/池子；工具等待重尾；12.7× 上界
+2 Background            会话解剖；工作集/池子；工具等待重尾；14× 上界
 3 Model                 会话、KV 增长、层级、复活成本；可行集定义；假设
 4 Design                M1 账本+命名许可；M2 可逆挂起；M3 覆盖有界增长；M4 成本模型（含旋钮 ρ）
 5 Analysis              Prop1 可行集上界；Prop2 会话级 breakeven；Prop3 覆盖保证下的准入安全
@@ -145,8 +145,8 @@ when suspension does not pay. [pending numbers]
 ### 3.6 分析（三条，正文一行、证明进附录）
 
 - **Prop 1（可行性上界）**：给定 `C_dev`、`C_host`、每会话工作集 `W_s`，
-  任意时刻可同时活跃的会话数 `|F(t)| ≤ C_eff / W̄`；我们的 19 会话、1.306M 工作集
-  给出 `|F| ≈ 1.48`。⇒ 准入不是"调并发数"，是"选可行子集"。
+  任意时刻可同时活跃的会话数 `|F(t)| ≤ C_eff / W̄`；我们的 19 会话、1.311M 工作集
+  给出 `|F| ≈ 1.47`。⇒ 准入不是"调并发数"，是"选可行子集"。
 - **Prop 2（会话级 breakeven）**：
   `T_revive = n·β/B + τ`，`T_recompute = P(ctx)`；
   只有当 `T_revive < p_return · T_recompute` 才值得挂起（`p_return` 由剩余轮数/工具等待
@@ -178,12 +178,17 @@ when suspension does not pay. [pending numbers]
 
 ## 4. 现有证据 → 论文 claim（全部待新三臂确认）
 
+> **口径统一（2026-10-23 晚）**：以下 trace 事实一律由 `scripts/lab/gen_trace_facts.py`
+> 从 `data/replay_long19.csv`（602 轮全量、md5 `c753fa4f10`）现算，写入
+> `paper2027/data/trace_facts.csv`；**不要再用某条 run 的 steps.jsonl 反推**
+> （run 只跑到 562/602 步，缺的是最长的那些尾巴轮，会把上界算小：12.94× vs 14.03×）。
+
 | Claim | 证据来源 | 状态 |
 |---|---|---|
-| 长会话工作集 12.9× 超订、池子只装 1.48 个 | `long19_default/steps.jsonl` | ✅ 已复算 |
-| 12× 重读税、38× prefix/append | 同上 | ✅ 已复算 |
-| 12.7× 理论上界 | 建表 602 步 | ✅ 已复算 |
-| 工具等待重尾（0.21s vs 18.6s；15.6% 吃掉 95%） | 同上 | ✅ 已复算 |
+| 长会话工作集 12.9× 超订、池子只装 1.47 个 | `data/replay_long19.csv` → `gen_trace_facts.py` | ✅ 已复算 |
+| 13.0× 重读税、45× prefix/append | 同上 | ✅ 已复算 |
+| 14.0× 理论上界 | 同上 | ✅ 已复算 |
+| 工具等待重尾（0.18s vs 15.9s；13.1% 吃掉 93.4%） | 同上 | ✅ 已复算 |
 | A/B/C 三臂差异 | 新 run（C 在跑，A/B 等卡） | ⏳ |
 | busy/idle 分解、device/host 命中 | 三条 run 的 metrics/日志 | ⏳ |
 | 挂起 vs 重算 breakeven | 解析 + 机器参数 | ⏳ 分析 |

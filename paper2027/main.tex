@@ -1,0 +1,87 @@
+% ============================================================================
+%  RTAS 2027 submission — new paper (started 2026-10-23)
+%
+%  Paper/ : the frozen 2026-09-28 negative-result draft. It is SOURCE MATERIAL
+%           only (LaTeX shell, refs, background measurements). Do not submit it.
+%
+%  写作纪律（本项目的硬规矩，改正文时守住）：
+%   1. 每一个数字要么来自 scripts/lab/*.py 的产物（paper2027/data/*.csv），
+%      要么标 \pend{}。不许手抄，不许估。
+%   2. \pend{...} = 数字未落地。正文里出现 \pend 的地方，PENDING.md 必须有对应条目。
+%      投稿前 `grep -c '\pend{'` 必须是 0。
+%   3. 不写"显著"、不写置信区间、不写 3--4x（n=1）。
+%   4. 不宣称 agent-level admission（CONCUR）、per-tier admission（MORI）、
+%      working-set admission（EfficientAgent）。
+%   5. 只投这一篇。
+% ============================================================================
+\documentclass[10pt,conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+
+% ---- 未落地的数字：红色、方括号、可 grep -------------------------------
+\newcommand{\pend}[1]{\textcolor{red}{[PENDING: #1]}}
+% ---- 系统名 -----------------------------------------------------------
+\newcommand{\sys}{\textsc{Foyer}}
+% ---- 常用符号 ---------------------------------------------------------
+\newcommand{\Wset}{W}
+\newcommand{\Ceff}{C_{\mathrm{eff}}}
+\newcommand{\Trev}{T_{\mathrm{rev}}}
+\newcommand{\Trec}{T_{\mathrm{rec}}}
+
+\begin{document}
+
+\title{Admission Is a Feasibility Test, Not a Threshold:\\
+Capacity Accounting and Revival Pricing for Agentic LLM Serving}
+
+% RTAS 2027 是双盲（double-anonymous）。作者栏在投稿版必须保持匿名。
+\author{\IEEEauthorblockN{Anonymous Submission}}
+
+\maketitle
+
+\begin{abstract}
+An agentic LLM session is a long, multi-round job. Every round returns with a context
+that has grown, so a session's KV footprint is large, durable, and reused---and on a
+single GPU the live working set can exceed the KV pool by an order of magnitude.
+Existing systems frame this as placement, and placement forces prediction: which prefix
+will be reused, when a session will come back, how long the next round will be. We argue
+the prediction is unnecessary. A session can be \emph{suspended} at a round boundary and
+\emph{revived} by copying its KV back instead of recomputing it; admission then becomes a
+feasibility test over a capacity ledger---does this session's projected footprint fit,
+now, on which tier, and at what revival cost. We give a feasible-set bound, a
+session-level revival-versus-recompute break-even, and a coverage-bounded growth estimate
+that turns the safety margin into a stated property rather than a constant. On a
+19-session, 602-round coding-agent replay, the terminal working set is 12.9$\times$ the
+KV pool and a mean session needs 69K of its 101K tokens, so the pool holds
+1.47 mean sessions. Replaying every round as an independent request re-reads
+13$\times$ more prefix than it appends. We instantiate the design on SGLang with a
+two-tier KV cache and compare it against request-level serving and an agent-level
+feedback controller: \pend{headline number}. We also state where the mechanism loses---
+when the working set fits, and when revival costs as much as recomputation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+LLM serving, agentic workloads, KV cache, admission control, capacity accounting,
+performance evaluation
+\end{IEEEkeywords}
+
+\input{sec_intro}
+\input{sec_background}
+\input{sec_model}
+\input{sec_design}
+\input{sec_analysis}
+\input{sec_impl}
+\input{sec_eval}
+\input{sec_related}
+\input{sec_discussion}
+\input{sec_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

@@ -1,0 +1,106 @@
+\section{Analysis}
+\label{sec:analysis}
+
+We state three results. The first bounds the resident set in sessions and shows why a
+concurrency threshold cannot be the right control variable. The second prices a revival
+and locates the real scarcity. The third bounds how much a wrong growth reserve can move
+the ledger, which is the formal reason the design can afford a crude estimate.
+
+\subsection{Prop.~1: the feasible set is small, and a threshold cannot track it}
+
+Let $\bar\Phi(t)$ be the mean projected footprint of the live sessions and $\rho C_d$ the
+committed device budget. Any resident set satisfying \eqref{eq:feasible} obeys
+\begin{equation}
+|\mathcal{F}(t)|\;\le\;\frac{\rho\,C_d}{\bar\Phi(t)} .
+\label{eq:prop1}
+\end{equation}
+At $\rho=0.95$ our budget is 96.4K tokens against a mean session footprint of 69.0K, so
+the bound is $1.40$: \emph{at most one session is resident}, and a second fits only if it
+is smaller than the mean. The bound follows from the working-set ratio alone: when the
+working set is $m$ times the pool, at most $|\mathcal{S}|/m$ sessions are resident, here
+$19/12.9=1.47$.
+
+Three consequences contradict a habit of the literature.
+(i) A concurrency threshold $k$ is infeasible for some $t$ unless $k\le1$: with two
+median sessions, $2\times48.5$K$=97.0$K exceeds the 96.4K budget, so $k=2$ sits exactly on
+the edge and $k=3$ is always over-committed. The threshold is not a tuning knob but a
+constant that the workload invalidates.
+(ii) Queueing reasoning about arrival rates is the wrong instrument: there is no stable
+operating point with many sessions in flight, so latency is set not by utilisation but by
+\emph{which} session holds the card.
+(iii) The interesting quantity is not how many sessions are admitted but how much
+recomputable work is kept alive per byte held---which is what \S\ref{sec:m4} ranks.
+
+\subsection{Prop.~2: revivals are cheap; slots are not}
+
+With a linear prefill model $P(c)=c/R$ and per-token KV size $\kappa$, substituting
+\eqref{eq:trev} and \eqref{eq:trec} gives
+\begin{equation}
+\frac{\Trev(s)}{\Trec(s)}
+=\frac{\kappa R}{B}+\frac{\tau R}{c}.
+\label{eq:ratio}
+\end{equation}
+On our deployment $\kappa=56$\,KiB/token (the model's KV shape) and $R=465$\,tok/s (the
+median over 131 cold rounds), with $B=\pend{GB/s}$ measured for host-to-device copies, so
+the first term is $\pend{ratio}$ and \emph{restoring a session's state costs about two orders of magnitude
+less than recomputing it}, for any context beyond a few hundred tokens.
+
+This changes what the problem is. If revivals were expensive, the right design would be a
+careful oracle about when to keep state; the measurement says the transfer is not the
+bottleneck---the \emph{slot} is. The host tier holds $C_h=203$K tokens, and
+the working set is $12.9\times$ the device pool and $6.5\times$ the host tier,
+so at most 2.9 sessions can be parked at once and all the others must lose
+their state. The decision that matters is a replacement decision between sessions.
+
+Its marginal condition follows from (2): holding $s$ rather than $t$ is worth it when the
+prefill time kept alive per byte is larger,
+\begin{equation}
+\frac{p_s\,\Trec(s)}{\Phi_s}\;>\;\frac{p_t\,\Trec(t)}{\Phi_t},
+\label{eq:rank}
+\end{equation}
+with $p_s$ the probability that the session returns before its state would be evicted
+anyway. The controller instantiates \eqref{eq:rank} in two coarse but observable forms:
+victims are the youngest (smallest invested context, so smallest $\Trec$), and a session is
+suspended only after it has been idle longer than the time it takes to run a replacement
+round,
+\begin{equation}
+t^\ast\;=\;\text{time to serve one round of another session},
+\label{eq:tstar}
+\end{equation}
+because a session that returns sooner than $t^\ast$ would pay a revival for a slot the
+replacement could not have used. In the long-session trace, $t^\ast=\pend{t-star}$.
+
+Equation~\eqref{eq:rank} is a \emph{replacement} condition, not a per-session one: when the
+host tier is full, suspending a session always ejects another, and the cost of a
+suspension is the revival-or-recompute it causes elsewhere. This is why the design tracks
+host occupancy instead of treating the host tier as free capacity.
+
+\subsection{Prop.~3: a wrong growth reserve cannot move the ledger far}
+
+Write the projection error of session $s$ as
+$\Phi_s^{\text{next}}-\hat\Phi_s = g_s-\hat g_s$, with $g_s$ the realised growth. Then
+\begin{equation}
+\frac{|\Phi_s^{\text{next}}-\hat\Phi_s|}{\Phi_s}
+\;\le\;\frac{g_s}{\Phi_s}+\frac{|\hat g_s-g_s|}{\Phi_s}
+\;\le\;\varepsilon_s+\varepsilon'_s ,
+\label{eq:err}
+\end{equation}
+where $\varepsilon_s=g_s/\Phi_s$ is the growth-to-footprint ratio and $\varepsilon'_s$
+its estimation error, both normalised by the same footprint. On the trace the reserve
+$\hat g_s$ has a median of 3.7K tokens against a 48.5K-token context, so
+$\varepsilon_s\approx7.7\%$, and it covers the realised growth in 99.5\% of the 583 round
+transitions. A reserve that is wrong by a factor of two therefore moves the ledger by less
+than a tenth of a footprint, which is smaller than the spread between the mean session
+(69.0K) and the median one (48.5K). The projection is dominated by measured bytes, not by
+the estimate.
+
+Two readings follow. First, the design does not need an accurate predictor, because the
+predicted term is a few percent of the quantity it protects---an argument that would not
+hold in a regime where a round appends a large fraction of its context. Second, the
+reserve is what keeps admission \emph{conservative} rather than what makes it accurate: it
+absorbs the case where a session's next round is unusually large, and its cost is
+proportional to its size, which the trace bounds at $\varepsilon_s$.
+
+We report the empirical version of \eqref{eq:err} in \S\ref{sec:eval}: the distribution of
+the realised projection error over all admissions, and the fraction of admitted sessions
+whose next round exceeded the reserve.

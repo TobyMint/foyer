@@ -1,0 +1,135 @@
+\section{Design}
+\label{sec:design}
+
+The design has one idea and four mechanisms. The idea is that the controller should keep
+a byte-accurate account of which session occupies which tier, and should make every
+admission decision against that account. The mechanisms are what it takes to keep the
+account true: a way to \emph{enforce} it (\S\ref{sec:m1}), a way to \emph{hold} a session
+that is not being served (\S\ref{sec:m2}), a way to \emph{reserve} room for growth
+(\S\ref{sec:m3}), and a way to \emph{price} the two decisions the account cannot make by
+itself (\S\ref{sec:m4}). Figure~\ref{fig:overview} shows the control path.
+
+\subsection{M1: a capacity ledger with named permits}
+\label{sec:m1}
+
+The controller keeps one entry per live session,
+$\ell_s=(\text{id},\text{tier},\hat\Phi_s)$, where $\hat\Phi_s$ is the projected footprint
+the session needs for its next round. The projection has two parts: the session's
+\emph{measured} resident context---the prompt length of its completed rounds, as reported
+by the engine---and a growth reserve $\hat g_s$ (\S\ref{sec:m3}). The ledger maintains
+$\sum_{s\in A}\hat\Phi_s$ and $\sum_{s\in H}\hat\Phi_s$ and checks them against
+\eqref{eq:feasible} before every decision.
+
+Accounting alone is only a model, so the decision is made binding by a \emph{named
+permit}. Once per control cycle the controller writes the complete set of session ids
+allowed to hold an engine slot, together with the set that is paused; the runner blocks
+any session whose id is not in the admit set at its next round boundary. There is no
+scalar concurrency limit anywhere in the path: the permit names sessions, so the set the
+ledger has accounted for and the set the engine may serve are the same set by
+construction. This is what separates the design from a threshold controller---a threshold
+changes how many requests may run and hopes the resulting set fits, whereas a permit
+cannot be issued until the set has been shown to fit.
+
+\subsection{M2: suspension at round boundaries, not eviction mid-flight}
+\label{sec:m2}
+
+When a session is not allowed to continue, the design does not let the engine evict it
+mid-round and does not drop its state. The session is \emph{suspended}: it keeps its
+ledger entry, its permit identity, and its KV, and it blocks at the next round boundary
+until the ledger admits it again. Suspension is a state of the session, not a side effect
+of cache replacement.
+
+Two properties make this work in practice. The engine's hierarchical cache keeps the
+prefix of an evicted sequence in the host tier, so a suspended session that is admitted
+again usually resumes by \emph{copying} its prefix back rather than recomputing it
+(\S\ref{sec:analysis} shows the copy is two orders of magnitude cheaper than the
+prefill). And the host tier is finite, so suspension is a replacement decision like any
+other: admitting a session's state into the host tier means some other session's state
+cannot be there. The ledger therefore tracks host occupancy as a first-class sum, and
+\S\ref{sec:m4} decides who gets a host slot.
+
+\subsection{M3: reserve for growth from observed growth}
+\label{sec:m3}
+
+A session that is admitted now will keep growing while it is resident, so the ledger must
+reserve room for the next round. We reserve the session's own recent growth:
+\[
+\hat g_s=\underbrace{\mathrm{EMA}\bigl(q_{s,j}+o_{s,j}\bigr)}_{\text{own history}}\;\cdot\;h
+\]
+over the session's completed rounds, where $h$ is the number of rounds the session may run
+before the next control decision (three in our runs, with a 1.15 safety factor). For a
+session with fewer than three observed rounds the estimate is blended toward a global prior
+estimated from all sessions, so a young session is not over-reserved.
+
+The justification for estimating growth so crudely is in the numbers. On the trace the
+reserve has a median of 3.7K tokens against a 48.5K-token context---\emph{7.7\% of the
+footprint it protects}---and it covers the next round's growth in 99.5\% of the 583 round
+transitions. Two things follow. The reserve is a statistic of the session's own history,
+not a model of its future, so it cannot be wrong in the way a TTL or a steps-to-execution
+predictor can be wrong; and because it is under a tenth of the footprint, even a two-fold
+error in it moves the ledger by less than 8\%, which is smaller than the spread between the
+mean session (69.0K) and the median one (48.5K). The measured part of the
+projection---the resident context, read from the engine's own records---is what admission
+actually turns on.
+
+\subsection{M4: pricing the two decisions the ledger cannot make}
+\label{sec:m4}
+
+The ledger says what fits; it does not say what is worth doing. Two decisions remain, and
+both are priced in the same currency---time.
+
+\paragraph{Who gives way, and when.} When the pool is over-committed (the engine's own
+utilisation crosses the budget, or the observed first-token latency crosses the
+deadline), the controller suspends sessions until the remainder fits. Two rules order the
+victims. First, it suspends the \emph{youngest} sessions first: they have the least
+invested context, so the recompute they may incur is the smallest, and they are the least
+likely to have accumulated state worth keeping. Second, it suspends only sessions that
+have been idle for longer than a break-even time $t^\ast$: a session that has been parked
+for 100\,ms will return before a replacement round can use the slot, so pausing it buys
+nothing and risks a recompute. We calibrate $t^\ast$ from the measured tool-wait
+distribution---the time to serve one round of another session, \pend{t-star}---rather
+than tuning it.
+
+\paragraph{Resuming.} A suspended session re-enters the ordinary admission path and is
+admitted when the ledger's projection fits. Because its prefix is usually still in the
+host tier, resumption is a copy; when the host tier has lost the prefix the same round is
+served as a cold prefill, and the accounting charges it as such.
+
+\paragraph{The round gate.} The controller also caps how many sessions may be
+\emph{running} (as opposed to live) in the engine. The distinction matters: in our trace a
+cap on live sessions leaves the engine idle whenever all of the admitted sessions happen
+to be parked, whereas a cap on the running count keeps the engine's concurrent work at the
+intended level and lets suspended sessions queue at their boundaries. The gate is driven
+by the engine's own running-request counter, not by the controller's session count.
+
+\subsection{The knob}
+
+One parameter remains: the fraction $\rho$ of the pool the ledger is allowed to commit
+($\rho=0.95$ in our runs, with the fixpoint pushed to $0.90$ of the budget before shedding).
+It is the only tuned quantity in the design. Everything else---the projected footprint,
+the resident context, the running count, the observed latency---is measured. We report the
+sensitivity of the evaluation to $\rho$ rather than presenting it as a constant of the
+mechanism.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.92\columnwidth}{\centering\vspace{2.0em}
+\textbf{Figure placeholder: control path}\\[0.4em]
+\footnotesize
+runner $\to$ arrival/pause/resume events $\to$ ledger (resident + $\hat g_s$)\\
+$\to$ named permit (admit set, paused set) $\to$ runner gate $\to$ engine\\
+engine \texttt{/metrics} $\to$ valve $\to$ shedding (youngest, idle $>t^\ast$)
+\vspace{2.0em}}}
+\caption{Control path. The permit names sessions, not a count; suspension and resumption
+are ledger transitions enforced at round boundaries.}
+\label{fig:overview}
+\end{figure}
+
+\subsection{What is deliberately absent}
+
+There is no predictor of the next round's length, no estimate of a session's remaining
+horizon, and no per-request latency model. The only estimated quantity is a per-session
+growth reserve whose error cannot move the ledger by more than a few percent, and the only
+tuned quantity is $\rho$. The design degrades gracefully at both ends: with ample capacity
+nothing is suspended and the ledger admits first-come-first-served; with short contexts
+the growth reserve is negligible and admission is a pure capacity check.
