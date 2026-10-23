@@ -36,17 +36,10 @@ deadline  2026-11-05 23:59 AoE = 北京时间 2026-11-06 19:59   （从 10-23 �
 `scripts/lab/autopilot_worklist_20261023.txt` 逐卡启动（用户 2026-10-23 授权「卡空就直接起」）。
 **唯一论文的故事/理论若立不住，实验跑得再多也没用** —— 所以写作与实验并行，不串行。
 
-## 0.6 ⚠ 池子基线变更（2026-10-23）
+## 0.6 池子基线（2026-10-23）
 
-- 旧基线：KV pool = **101432** tokens（memfrac 0.85，控制台有一个已登录的 Xorg 会话）。
-- 2026-10-23 用户要求注销了控制台的 xubowen Xorg 会话（那个 4MiB 的"我们的进程"）；
-  释放显存后，同 memfrac 下池子变成 **101502**（+70 tokens ≈ 4MiB），池子守卫在 ±20
-  容差内无法回到 101432。
-- **本 campaign 统一用 101502**：autopilot 启动时传 `TURNSTILE_EXPECT_POOL=101502`，
-  所有新 run（含 hc8/nohc/atonce/mid17）保持同一池子；9 月的 101432 数据不参与新论文
-  的对比（需要对比的臂全部重跑）。metadata 会记录实际 pool。
-- 若有人重新在物理控制台登录，池子会回到 ~101432 —— 此时守卫会报 mismatch，
-  需要统一改成当时的基线（不要两条基线混用）。
+pool = **101502** tokens（旧基线 101432，差 70 tokens / 0.07%，可忽略；只是守卫容差 ±20
+太紧导致起不来，故本 campaign 固定用 101502，metadata 记录实际值）。
 
 ## 1. 论文要讲的故事（三段论）
 
@@ -75,44 +68,57 @@ deadline  2026-11-05 23:59 AoE = 北京时间 2026-11-06 19:59   （从 10-23 �
 |---|---|---|---|
 | A1 | 复用/耗时模型 | 步时间 = D + P(ctx)；无控制重算 P(ctx)，我们只算 P(inc) ⇒ 可检验预测 (D+P(60K))/(D+P(inc)) ≈ 1.4–2.4× | **已有实测**（1.429×）对拍 |
 | A2 | 增长估计的覆盖保证 | 每轮上下文增长的在线分位数 + conformal 覆盖；准入安全垫 = 覆盖上界，不引入凭感觉的百分比 | 需实现 + 离线验证覆盖率（现有 steps 日志即可） |
-| A3 | 复活代价模型 | 复活 = host→device 搬运 β·KV；重算 = P(ctx)；breakeven 条件；解释 hc8 反向（搬运费 > 重算省） | 部分实测（hc8 0.888×），需补 device/host 分解 |
-| A4 | 分层定价准入 | 有效容量 C_eff = C_dev + C_host·(1 − β/P)；可准入性条件；tier price | 需实现 + 实验 |
+| A3 | 复活代价模型 | 复活 = host→device 搬运 β·KV；重算 = P(ctx)；breakeven 条件 | 用 C 臂的 device/host 命中分解做**分析**（不额外跑 hc 变化实验） |
+| A4 | 分层定价准入 | 有效容量 C_eff = C_dev + C_host·(1 − β/P)；可准入性条件；tier price | 作为设计/分析写进论文；**不单独跑实验**（2026-10-23 收缩） |
 | A5 | 公平/有界复活 | 按 wait / revive-cost 排序的调度判据；尾部/饿死指标 | 需实现 + 实验 |
 | A6 | 控制周期/稳定性 | 从观测噪声与切换代价推出周期（design doc §4.3） | 设计已有，需实验验证 |
 
 > 原则：**能推出、能对拍的理论优先**；推不出的就写成设计取舍，不硬凑。
 
-## 3. 三类对照（实验定义）
+## 3. 实验设计 v3（2026-10-23 收缩，用户定调）
 
-| 臂 | 定义 | 状态 |
-|---|---|---|
-| **B1 request-level** | `default`：SGLang 全放行、FIFO、HiCache 开；请求级调度 | 已有（long19/hc2 干净一对） |
-| **B2 agent-level** | Concur 式：复用 `controller_aimd2.py`（AIMD + agent 粒度 pause/resume + permit）；报原文参数与 3090 重调两档 | 代码在，需在 long19 上跑通并公平调参 |
-| **Ours** | `budget3:hw=0;target=0.95;base=resident` + tier-aware 原型 | 已有 + 待补 tier 版 |
+**只用一套评测数据集：long19**（19 会话 / 602 步；arrival_time 全 0 = 一次性全倒）。
+**HiCache 只用默认配置：开、ratio=2。**
+**每个方案只跑一次**：不做重复、不换 hc ratio、不做 noHC 消融、不换 trace。
 
-## 4. 实验矩阵（机器空卡后按序；单卡约 3–5 h/run）
+三套处理（同一数据集、同一模型、同一机器、同一 HiCache，只改准入/调度策略）：
 
-| # | 臂 | trace | n | 目的 |
+| 臂 | run | policy | 含义 |
+|---|---|---|---|
+| A request 级 | `l19_default_r2` | `default` | SGLang 全放行、FIFO；请求来了就进，看不见"会话" |
+| B agent 级 | `l19_aimd2` | `aimd2` | Concur 式：agent 轮边界暂停/恢复 + 缓存压力 AIMD 反馈调并发 |
+| C 我们 | `l19_foyer_r2` | `budget3:hw=0;target=0.95;base=resident` | 容量核算准入 + 命名许可 + 状态保留（HiCache） |
+
+分析口径（每条 run 都算，不分主次）：
+- makespan（最后 complete − 最早 arrival）
+- 单会话端到端 中位 / p90（从 arrival 起算，**不许用 submit 当时刻**）
+- deadline miss rate（per-step 10s TTFT；另报 session-level deadline 扫描）
+- 工作量：Σ uncached prefill + Σ completion（"少做了多少重算"）
+- 引擎忙/闲、KV 命中（device/host 分解，来自 SGLang metrics）
+- 逐会话 / 逐步配对对比（602 步足够看分布）
+
+**因为 n=1**：论文措辞只能说"测得"，不写"显著"、不报置信区间；用完整分布 +
+逐会话配对呈现不确定性。
+
+## 4. 运行矩阵（只剩两条，C 已在跑）
+
+| # | 臂 | run | 预计 | 目的 |
 |---|---|---|---|---|
-| 1 | B1 / Ours | long19 hc2 | 2+2 | 主对照（干净、重复） |
-| 2 | B2 | long19 hc2 | 2 | 第三方 agent 级基线（首次在该负载） |
-| 3 | Ours-tier | long19 hc2 / hc8 | 2+2 | 分层定价：hc8 从 0.888× 恢复 |
-| 4 | Ours / B1 | long19 nohc | 2+2 | HiCache 消融 |
-| 5 | B1/B2/Ours | mid17 | 1 each | 第二条 trace 泛化 |
-| 6 | B1/Ours | big27 | 2+2 | 大 trace 干净重跑（旧数据受污染） |
+| 1 | A request 级 | `l19_default_r2` | ~4.0h | 无控制基线 |
+| 2 | B agent 级 | `l19_aimd2` | ~3.5h | Concur 式基线 |
 
-粗算 ≈ **50 GPU·h** ⇒ 两张卡 2–3 天（含温度门/重试按 4 天排）。
+（C `l19_foyer_r2` 2026-10-23 15:48 起在卡 1 运行，约 2.8h。）
 
 ## 5. 预注册判据（跑前写死）
 
 ```
-主指标：deadline miss rate（沿用 per-step 10s SLO，另报 session-level deadline 扫描）
-支撑：单会话端到端 median/p90、makespan、工作量、内存占用
-成立判据（n≥2 + paired bootstrap）：
-  (i)   对 B1 和 B2 的 miss rate 都显著更好（CI 下界 > 0）；
-  (ii)  单会话中位 ≥ 1.2×；
-  (iii) 引擎空转/利用率给出解释（不能出现"靠让引擎空转赢"）。
-若 B2 打平或赢：照实写，贡献改成 tier-aware / 长上下文边界 —— 不许改判据。
+主判据（long19 单次，三臂）：
+  (i)   C 的 makespan < A 且 < B；
+  (ii)  C 的单会话端到端 中位/p90 不劣于 A、B；
+  (iii) C 的 deadline miss rate 最低；
+  (iv)  C 的工作量（uncached+completion token）最低。
+若 B 打平或赢：照实写，贡献改成「容量核算 + 状态保留在长会话下的收益分析」。
+n=1，不声称统计显著性；差异用逐会话/逐步配对 + 完整分布呈现。
 ```
 
 ## 6. 现在就能做（CPU，不需要卡）

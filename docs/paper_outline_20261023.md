@@ -38,19 +38,18 @@ deadline miss 由 99.4% 降到 2.3%；在 host 缓存更大的配置下收益反
 | 8 Related work | 与 Concur/Continuum/Maestro/PKAS/ThunderAgent 的边界 | — | 6 篇横查 |
 | 9 Discussion | 适用范围与未解问题 | — | 诚实清单 |
 
-## 四、Claims → Evidence 矩阵
+## 四、Claims → Evidence 矩阵（2026-10-23 收缩后）
+
+评测只有 **long19** 一套数据集；HiCache 默认开、ratio=2；每个方案**只跑一次**。
 
 | 主张 | 证据 | 状态 |
 |---|---|---|
-| 无控制会造成约 10× 冗余 prefill、且会打死会话 | long19 无控制臂 | ✅ 有（干净） |
-| 我们整批 1.43×、单会话中位 1.30×、18 个里 17 个更快 | long19 hc2 干净一对 | ✅ 有 |
-| deadline miss 99.4% → 2.3% | atonce25 部分运行 | ⚠ 需完整 run 确认 |
-| 工作量少 3.39× | long19 | ✅ 有 |
-| 收益与缓存层级强相关（hc8 反向 0.888×） | long19 hc8 干净一对 | ✅ 有 |
-| 分层计价能恢复 hc8 | tier-aware 原型 | ❌ 待实现/跑 |
-| 对 agent 级基线（Concur 式）也赢 | B2 臂 | ❌ 待跑（首次） |
-| 增长估计有覆盖保证 | A2 + 离线验证 | ❌ 待实现 |
-| 有界复活/公平性改善尾部 | A5 | ❌ 待实现 |
+| 无控制（request 级）造成大量重复 prefill、会打死会话 | A 臂 `l19_default_r2` | 待跑（等空卡） |
+| 我们（C）比 request 级（A）快、工作量少、deadline miss 低 | A vs C | C 在跑；A 待跑 |
+| 我们（C）比 agent 级（Concur 式，B）也更好 | B 臂 `l19_aimd2` | 待跑 |
+| 机制解释：容量核算 + 状态保留的收益 | 三条 run 的逐步/逐会话分解、device/host 命中 | 待算（不额外跑实验） |
+| 复活代价/层级定价的论证 | 引擎 metrics 的 device/host 命中 + 搬运/重算代价推算 | 分析，不做 hc 变化实验 |
+| n=1 的不确定性 | 逐会话 / 逐步配对 + 完整分布；论文不写"显著" | 写作约束 |
 
 ## 五、写作 pattern（待抽，读 6 篇后填）
 
