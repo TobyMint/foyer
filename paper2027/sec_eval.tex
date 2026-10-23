@@ -58,9 +58,14 @@ KV reuse (\%) & \pend{hit-A} & \pend{hit-B} & 65.2 \\
 \end{tabular}
 \end{table*}
 
-\pend{two paragraphs: the headline comparison (makespan and goodput), and the honest
-reading of the parts that do not separate. State explicitly which of the four
-pre-registered criteria hold.}
+The capacity-accounted arm finishes the 542 rounds it completed in 154.9 minutes. Its
+engine was busy for 67.8\% of the wall clock and idle for 51.1 minutes; it served 65.2\%
+of its prompt tokens from cache---43.7\% from the device tier and 21.5\% from the host
+tier---and still re-read 4.43 times the tokens it appended, evicting 15.3M tokens to do
+so. The median round returns in 9.7\,s, but the tail does not: the 90th percentile is
+291.9\,s, and half of the rounds miss the 10\,s budget. \pend{comparison against the two
+baselines on the common completion set, and which of the four pre-registered criteria
+hold.}
 
 \subsection{Where the time goes}
 \label{sec:eval-decomp}
@@ -111,10 +116,10 @@ throughout, so a miss is the engine's own eviction). The classification is mecha
 reads the admission event log and the step log, and needs no new run.
 
 \begin{table}[t]
-\caption{Attribution of the re-read tax. Rounds are classified by what happened between the
-previous round and this one. \emph{rounds} and \emph{share} are percentages, \emph{uncached}
-is in millions of tokens, and \emph{excess} is uncached prefill divided by the tokens the
-round actually appended.}
+\caption{Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified
+by what happened between the previous round and this one. \emph{rounds} and \emph{share} are
+percentages, \emph{uncached} is in millions of tokens, and \emph{excess} is uncached prefill
+divided by the tokens the round actually appended.}
 \label{tab:attrib}
 \centering
 \footnotesize
@@ -130,10 +135,21 @@ excess & 1.75 & 6.99 & 3.29 \\
 \end{tabular}
 \end{table}
 
-\pend{paragraph: the reading. In the regime we study the host tier holds only a few
-sessions, so a suspension often cannot keep the state it suspends; the table quantifies
-that, and it is the empirical form of the claim that the slot, not the copy, is the scarce
-resource. State plainly what fraction of the recompute is the design's own doing.}
+Table~\ref{tab:attrib} gives the answer for the capacity-accounted arm. Of its 8.77M
+uncached prefill tokens, 3.7\% are first rounds that no policy can avoid, 41.6\% belong to
+rounds that were never suspended---the engine evicted the prefix on its own---and
+\emph{54.7\% follow a suspension by our own controller}. In those rounds the excess is
+$7.0\times$ the tokens the round actually appended and 68\% are full recomputations:
+suspension is the largest single source of recompute in our own arm.
+
+The same decision is what keeps the engine fed. Over the 138 suspensions of the run
+(20.4 hours of session-time in total), the engine was running another session's round in
+72.1\% of the sampled intervals. The host tier holds only a few sessions---203K tokens
+against a 1.31M working set---so most suspensions cannot keep the state they suspend; the
+ledger is choosing which state to lose, and it is paying for that choice with the
+recompute in Table~\ref{tab:attrib}. This is the empirical form of the claim that the
+slot, not the copy, is the scarce resource, and it is the cost that the two baselines are
+compared against in \S\ref{sec:eval-main}.
 
 \subsection{Mechanism, in one session}
 \label{sec:eval-timeline}
