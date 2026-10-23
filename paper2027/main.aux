@@ -7,24 +7,26 @@
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {I-}0a}Prior fixes treat this as placement, and placement forces prediction}{1}{paragraph.1.0.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {I-}0b}Our position: make the session suspendable, then stop predicting}{1}{paragraph.1.0.0.2}\protected@file@percent }
 \citation{zhu2026tracelab}
-\citation{zheng2024sglang}
-\citation{kwon2023pagedattention}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {I-}0c}Contributions}{2}{paragraph.1.0.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {I-}0d}Results in one line}{2}{paragraph.1.0.0.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {I-}0e}Scope}{2}{paragraph.1.0.0.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {II}Background: What a Long Session Costs}{2}{section.2}\protected@file@percent }
 \newlabel{sec:background}{{II}{2}{Background: What a Long Session Costs}{section.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}The replay}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Left: the working set if every session alive at that round were resident (black), against the engine's KV pool (dashed). The aggregate peaks above one million tokens---ten times the pool---while no single session's context ever exceeds the pool on its own. Summing every session's terminal context gives 1.31M tokens, $12.9\times $ the pool. Right: the tool wait between rounds, as a complementary CDF. The distribution is bimodal: half of the gaps are under 0.2\,s, and the 13.1\% above ten seconds carry 93.4\% of the parked time.}}{2}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:workload}{{1}{2}{Left: the working set if every session alive at that round were resident (black), against the engine's KV pool (dashed). The aggregate peaks above one million tokens---ten times the pool---while no single session's context ever exceeds the pool on its own. Summing every session's terminal context gives 1.31M tokens, $12.9\times $ the pool. Right: the tool wait between rounds, as a complementary CDF. The distribution is bimodal: half of the gaps are under 0.2\,s, and the 13.1\% above ten seconds carry 93.4\% of the parked time}{figure.caption.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Four numbers that decide the design}{2}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-B}0a}The working set is an order of magnitude larger than the pool}{2}{paragraph.2.2.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-B}0b}Almost all of the work is re-reading}{2}{paragraph.2.2.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-B}0c}Reuse is worth a lot, and it is perishable}{2}{paragraph.2.2.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {II-B}0d}Idle time is bimodal, so ``park'' is not one thing}{2}{paragraph.2.2.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}What a round does to the engine}{2}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}The engine and its memory hierarchy}{2}{subsection.2.4}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Workload characterisation of the 19-session, 602-round replay. Context is measured at the start of a round; the working set sums the terminal context of each session. All values are recomputed from the trace by \texttt  {gen\_trace\_facts.py}.}}{3}{table.caption.1}\protected@file@percent }
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{tab:workload}{{I}{3}{Workload characterisation of the 19-session, 602-round replay. Context is measured at the start of a round; the working set sums the terminal context of each session. All values are recomputed from the trace by \texttt {gen\_trace\_facts.py}}{table.caption.1}{}}
+\citation{zheng2024sglang}
+\citation{kwon2023pagedattention}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Workload characterisation of the 19-session, 602-round replay. Context is measured at the start of a round; the working set sums the terminal context of each session. All values are recomputed from the trace by \texttt  {gen\_trace\_facts.py}.}}{3}{table.caption.2}\protected@file@percent }
+\newlabel{tab:workload}{{I}{3}{Workload characterisation of the 19-session, 602-round replay. Context is measured at the start of a round; the working set sums the terminal context of each session. All values are recomputed from the trace by \texttt {gen\_trace\_facts.py}}{table.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}What a round does to the engine}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}The engine and its memory hierarchy}{3}{subsection.2.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Model}{3}{section.3}\protected@file@percent }
 \newlabel{sec:model}{{III}{3}{Model}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Sessions, rounds, and state}{3}{subsection.3.1}\protected@file@percent }
@@ -33,7 +35,7 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Two costs: revive or recompute}{3}{subsection.3.3}\protected@file@percent }
 \newlabel{eq:trev}{{2}{3}{Two costs: revive or recompute}{equation.3.2}{}}
 \newlabel{eq:trec}{{3}{3}{Two costs: revive or recompute}{equation.3.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Assumptions}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Assumptions}{4}{subsection.3.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Design}{4}{section.4}\protected@file@percent }
 \newlabel{sec:design}{{IV}{4}{Design}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}M1: a capacity ledger with named permits}{4}{subsection.4.1}\protected@file@percent }
@@ -45,10 +47,10 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}M4: pricing the two decisions the ledger cannot make}{4}{subsection.4.4}\protected@file@percent }
 \newlabel{sec:m4}{{\mbox  {IV-D}}{4}{M4: pricing the two decisions the ledger cannot make}{subsection.4.4}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0a}Who gives way, and when}{4}{paragraph.4.4.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0b}Resuming}{4}{paragraph.4.4.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0c}The round gate}{4}{paragraph.4.4.0.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries.}}{5}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:overview}{{1}{5}{Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries}{figure.caption.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries.}}{5}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:overview}{{2}{5}{Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0b}Resuming}{5}{paragraph.4.4.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0c}The round gate}{5}{paragraph.4.4.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}The knob}{5}{subsection.4.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}What is deliberately absent}{5}{subsection.4.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {V}Analysis}{5}{section.5}\protected@file@percent }
@@ -57,11 +59,11 @@
 \newlabel{eq:prop1}{{4}{5}{Prop.~1: the feasible set is small, and a threshold cannot track it}{equation.5.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Prop.~2: revivals are cheap; slots are not}{5}{subsection.5.2}\protected@file@percent }
 \newlabel{eq:ratio}{{5}{5}{Prop.~2: revivals are cheap; slots are not}{equation.5.5}{}}
-\newlabel{eq:rank}{{6}{5}{Prop.~2: revivals are cheap; slots are not}{equation.5.6}{}}
-\newlabel{eq:tstar}{{7}{5}{Prop.~2: revivals are cheap; slots are not}{equation.5.7}{}}
 \citation{zheng2024sglang}
 \citation{kwon2023pagedattention}
 \citation{concur}
+\newlabel{eq:rank}{{6}{6}{Prop.~2: revivals are cheap; slots are not}{equation.5.6}{}}
+\newlabel{eq:tstar}{{7}{6}{Prop.~2: revivals are cheap; slots are not}{equation.5.7}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Prop.~3: a wrong growth reserve cannot move the ledger far}{6}{subsection.5.3}\protected@file@percent }
 \newlabel{eq:err}{{8}{6}{Prop.~3: a wrong growth reserve cannot move the ledger far}{equation.5.8}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Implementation}{6}{section.6}\protected@file@percent }
@@ -71,24 +73,32 @@
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0c}Controller}{6}{paragraph.6.0.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0d}Arms}{6}{paragraph.6.0.0.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0e}Reproducibility}{6}{paragraph.6.0.0.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Evaluation}{6}{section.7}\protected@file@percent }
-\newlabel{sec:eval}{{VII}{6}{Evaluation}{section.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Setup and metrics}{6}{subsection.7.1}\protected@file@percent }
-\newlabel{sec:eval-setup}{{\mbox  {VII-A}}{6}{Setup and metrics}{subsection.7.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Evaluation}{7}{section.7}\protected@file@percent }
+\newlabel{sec:eval}{{VII}{7}{Evaluation}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Setup and metrics}{7}{subsection.7.1}\protected@file@percent }
+\newlabel{sec:eval-setup}{{\mbox  {VII-A}}{7}{Setup and metrics}{subsection.7.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}Main result}{7}{subsection.7.2}\protected@file@percent }
 \newlabel{sec:eval-main}{{\mbox  {VII-B}}{7}{Main result}{subsection.7.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Where the time goes}{7}{subsection.7.3}\protected@file@percent }
 \newlabel{sec:eval-decomp}{{\mbox  {VII-C}}{7}{Where the time goes}{subsection.7.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-D}}Where the recompute comes from}{7}{subsection.7.4}\protected@file@percent }
 \newlabel{sec:eval-attrib}{{\mbox  {VII-D}}{7}{Where the recompute comes from}{subsection.7.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision.}}{7}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:timeline}{{2}{7}{One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-E}}Mechanism, in one session}{7}{subsection.7.5}\protected@file@percent }
 \newlabel{sec:eval-timeline}{{\mbox  {VII-E}}{7}{Mechanism, in one session}{subsection.7.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-F}}Log-based counterfactual: concurrency or state?}{7}{subsection.7.6}\protected@file@percent }
 \newlabel{sec:eval-cf}{{\mbox  {VII-F}}{7}{Log-based counterfactual: concurrency or state?}{subsection.7.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-G}}When it does not pay}{7}{subsection.7.7}\protected@file@percent }
 \newlabel{sec:eval-neg}{{\mbox  {VII-G}}{7}{When it does not pay}{subsection.7.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens.}}{8}{table.caption.4}\protected@file@percent }
+\newlabel{tab:main}{{II}{8}{Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens}{table.caption.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room.}}{8}{table.caption.5}\protected@file@percent }
+\newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room}{table.caption.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph  {rounds} and \emph  {share} are percentages, \emph  {uncached} is in millions of tokens, and \emph  {excess} is uncached prefill divided by the tokens the round actually appended.}}{8}{table.caption.6}\protected@file@percent }
+\newlabel{tab:attrib}{{IV}{8}{Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph {rounds} and \emph {share} are percentages, \emph {uncached} is in millions of tokens, and \emph {excess} is uncached prefill divided by the tokens the round actually appended}{table.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}Threats to validity}{8}{subsection.7.8}\protected@file@percent }
+\newlabel{sec:eval-threats}{{\mbox  {VII-H}}{8}{Threats to validity}{subsection.7.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision.}}{8}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:timeline}{{3}{8}{One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision}{figure.caption.7}{}}
 \citation{kwon2023pagedattention}
 \citation{zheng2024sglang}
 \citation{mooncake,distserve}
@@ -98,35 +108,24 @@
 \citation{thunderagent}
 \citation{talaria}
 \citation{mori}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens.}}{8}{table.caption.3}\protected@file@percent }
-\newlabel{tab:main}{{II}{8}{Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens}{table.caption.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room.}}{8}{table.caption.4}\protected@file@percent }
-\newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room}{table.caption.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph  {rounds} and \emph  {share} are percentages, \emph  {uncached} is in millions of tokens, and \emph  {excess} is uncached prefill divided by the tokens the round actually appended.}}{8}{table.caption.5}\protected@file@percent }
-\newlabel{tab:attrib}{{IV}{8}{Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph {rounds} and \emph {share} are percentages, \emph {uncached} is in millions of tokens, and \emph {excess} is uncached prefill divided by the tokens the round actually appended}{table.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}Threats to validity}{8}{subsection.7.8}\protected@file@percent }
-\newlabel{sec:eval-threats}{{\mbox  {VII-H}}{8}{Threats to validity}{subsection.7.8}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VIII}Related Work}{8}{section.8}\protected@file@percent }
-\newlabel{sec:related}{{VIII}{8}{Related Work}{section.8}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0a}KV memory in serving engines}{8}{paragraph.8.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0b}Scheduling for agentic and multi-turn workloads}{8}{paragraph.8.0.0.2}\protected@file@percent }
 \citation{zhu2026tracelab}
 \citation{jacobson1988}
 \citation{denning1978}
 \citation{little1961}
 \citation{mooncake}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Related Work}{9}{section.8}\protected@file@percent }
+\newlabel{sec:related}{{VIII}{9}{Related Work}{section.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0a}KV memory in serving engines}{9}{paragraph.8.0.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0b}Scheduling for agentic and multi-turn workloads}{9}{paragraph.8.0.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0c}Measurement of agentic workloads}{9}{paragraph.8.0.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0d}Admission and overload control}{9}{paragraph.8.0.0.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The regime the design targets, and where it does not apply.}}{9}{table.caption.8}\protected@file@percent }
+\newlabel{tab:scope}{{V}{9}{The regime the design targets, and where it does not apply}{table.caption.8}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{9}{section.9}\protected@file@percent }
 \newlabel{sec:discussion}{{IX}{9}{Discussion}{section.9}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}What the argument is, and is not}{9}{paragraph.9.0.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0b}Why the negative cases matter}{9}{paragraph.9.0.0.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The regime the design targets, and where it does not apply.}}{9}{table.caption.7}\protected@file@percent }
-\newlabel{tab:scope}{{V}{9}{The regime the design targets, and where it does not apply}{table.caption.7}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0c}Implications for systems that already have a hierarchy}{9}{paragraph.9.0.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0d}Threats beyond the evaluation}{9}{paragraph.9.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion}{9}{section.10}\protected@file@percent }
-\newlabel{sec:conclusion}{{X}{9}{Conclusion}{section.10}{}}
 \bibstyle{IEEEtran}
 \bibdata{refs}
 \bibcite{zhu2026tracelab}{1}
@@ -143,5 +142,8 @@
 \bibcite{jacobson1988}{12}
 \bibcite{denning1978}{13}
 \bibcite{little1961}{14}
-\@writefile{toc}{\contentsline {section}{References}{10}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0d}Threats beyond the evaluation}{10}{paragraph.9.0.0.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion}{10}{section.10}\protected@file@percent }
+\newlabel{sec:conclusion}{{X}{10}{Conclusion}{section.10}{}}
+\@writefile{toc}{\contentsline {section}{References}{10}{section*.9}\protected@file@percent }
 \gdef \@abspage@last{10}

@@ -14,10 +14,24 @@ at $t=0$: we model the batch-of-agents case (a nightly evaluation, a benchmark s
 fleet of assistants started together), which is the case that stresses admission hardest
 and the case an offline batch server is actually configured for.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_workload.pdf}
+\caption{Left: the working set if every session alive at that round were resident (black),
+against the engine's KV pool (dashed). The aggregate peaks above one million tokens---ten
+times the pool---while no single session's context ever exceeds the pool on its own.
+Summing every session's terminal context gives 1.31M tokens, $12.9\times$ the pool. Right:
+the tool wait between rounds, as a complementary CDF. The distribution is bimodal: half of
+the gaps are under 0.2\,s, and the 13.1\% above ten seconds carry 93.4\% of the parked
+time.}
+\label{fig:workload}
+\end{figure}
+
 \subsection{Four numbers that decide the design}
 
-Table~\ref{tab:workload} collects the characterisation; every entry is regenerated from
-the trace by \texttt{gen\_trace\_facts.py}. Four of them drive everything that follows.
+Table~\ref{tab:workload} collects the characterisation and Fig.~\ref{fig:workload}
+shows its two shapes; every entry is regenerated from the trace by
+\texttt{gen\_trace\_facts.py}. Four of them drive everything that follows.
 
 \paragraph{The working set is an order of magnitude larger than the pool}
 The terminal footprint of all 19 sessions is 1.31M tokens. The engine's KV pool on a
