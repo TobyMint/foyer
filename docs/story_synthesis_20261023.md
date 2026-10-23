@@ -198,3 +198,58 @@ when suspension does not pay. [pending numbers]
 3. 用 `hypothesis-generation` 模板把 §4 升级成正式 claim/evidence ledger + prereg。
 4. 写 §3 模型与 §5 分析的三条命题（正文一行、附录证明）。
 5. 四份 survey 里的 citations 逐个回原文核（项目纪律：不许二手转述）。
+
+---
+
+## 6. Scope 与定位：能不能说“面向资源受限场景”？
+
+### 6.1 结论
+
+**能讲，但不建议原样说。** “面向资源受限场景中的 Agent 任务处理”这句话有两个问题：
+
+1. **太泛**：resource-constrained 可以指 IoT、手机、边缘盒子、单卡服务器——读者会自行脑补成“小规模/玩具”，反而削弱我们。
+2. **比我们真正的主张弱**：我们不是“因为只有 3090 所以将就”，而是“**单卡内存墙是这个问题最尖锐的形态**”；机制（容量核算 + 可逆挂起）是由**工作集/池子比**驱动的，不是由卡型号驱动的。
+
+**更强、也更准确的说法**：`memory-bound single-GPU serving of long-horizon agent sessions`。
+把 3090 写成**实例**，把“工作集 > 池子”写成**regime 的定义量**。
+
+### 6.2 可直接用的英文句子
+
+**Abstract / Intro 定位句：**
+> We target **memory-bound single-GPU serving of long-horizon agent sessions** — the regime
+> where the aggregate working set of live sessions exceeds the KV pool. We instantiate on a
+> 24GB RTX 3090; **the design target is the regime, not the card.**
+
+**Scope 段（放在 Intro 末尾或 §Discussion）：**
+> **Scope.** Our testbed is a single 24GB RTX 3090 running a 7B model with a 96K context.
+> We choose this point because it makes the regime sharp: the working set of 19 sessions is
+> 12.9× the pool, and a median session does not fit twice. The binding variable is the ratio
+> of session working set to KV capacity; when that ratio is small, admission is not the
+> problem. We do not claim that the same constants transfer to larger devices or clusters;
+> we do claim that the capacity ledger and the revival break-even are stated in quantities
+> (bytes, bandwidth, session horizon) that do transfer.
+
+**Contribution 的一句“为什么值得做”：**
+> We make **a single commodity GPU a usable agent server** under working-set overcommitment —
+> the deployment regime of on-prem coding assistants, privacy-sensitive enterprise agents,
+> and cost-constrained serving.
+
+**Discussion 的“适用/不适用”表：**
+| 适用 | 不适用 |
+|---|---|
+| 工作集 ≫ KV 池（长会话、大上下文） | 工作集远小于池子（机制被淹没，MORI 也承认） |
+| 单卡/单机、无集群调度器 | 集群级 P/D 分离（DistServe/Splitwise/Mooncake 的地盘） |
+| 有 host 层（HiCache/CPU DRAM）可承接挂起 | 上下文短到 T_revive ≥ T_recompute（重算更便宜） |
+
+### 6.3 不要说的话
+
+- ❌ “适用于所有资源受限场景”（overclaim，且没有多场景证据）
+- ❌ “edge / IoT / mobile”（会把我们带到另一个评价体系）
+- ❌ “在 H100/集群上同样成立”（没跑过，不能推）
+- ❌ “我们只有 3090”（把设计选择说成能力不足）
+- ✅ “we choose the hardest instance of the regime”（把限制变成论证优势）
+
+### 6.4 一句话版本
+
+> Not *for small devices*, but *for the memory-bound regime* — and a single GPU is where
+> that regime bites hardest.
