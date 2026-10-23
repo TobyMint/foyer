@@ -26,12 +26,14 @@ LOGDIR=/root/paper/foyer/logs/autopilot_20261023
 mkdir -p "$LOGDIR"
 LOG=$LOGDIR/autopilot_v3.log
 STATE=$LOGDIR/state_v3.txt
-log() { echo "$(date '+%F %T') $*" | tee -a "$LOG" >&2; }
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
 
 mapfile -t ITEMS < <(grep -v '^#' "$WL" | grep -vE '^[[:space:]]*$')
 N=${#ITEMS[@]}
 NEXT=0
 declare -a S_RUN=("" "") S_CARD=("" "") S_LINE=("" "") S_MISS=(0 0) PENDING=()
+declare -A PREV_READY=()   # 上一轮该卡是否 ready（双确认，减少"刚看空就被抢"的竞争）
+LAUNCHED_THIS_POLL=0
 declare -A RETRIED=()
 
 log "v3 start: items=$N slots=2 candidates='$CANDIDATES' temp_max=$TEMP_MAX poll=${POLL}s dry=$DRY"
@@ -91,6 +93,7 @@ while :; do
   done < <(echo "$OUT" | sed -n '/@@APPS/,/@@PROCS/p' | grep '^APPS')
   DONE_LIST=$(echo "$OUT" | sed -n '/@@DONE/,$p' | tail -n +2)
   PROCS=$(echo "$OUT" | sed -n '/@@PROCS/,/@@DONE/p' | sed '1d;$d')
+  LAUNCHED_THIS_POLL=0
   gsum=""
   for c in 0 1 2 3; do gsum="$gsum gpu$c=${GT[$c]:-?}C/${GM[$c]:-?}MiB/${GA[$c]:-?}app"; done
   log "poll $gsum | s0=${S_RUN[0]:-none}@${S_CARD[0]:-?} s1=${S_RUN[1]:-none}@${S_CARD[1]:-?} next=$NEXT/$N pending=${#PENDING[@]}"
@@ -130,15 +133,28 @@ while :; do
       [ "${GA[$c]:-1}" -eq 0 ] || continue
       [ "${GM[$c]:-99999}" -lt 200 ] || continue
       [ "${GT[$c]:-999}" -lt "$TEMP_MAX" ] || continue
+      [ "${PREV_READY[$c]:-0}" = "1" ] || continue   # 双确认：上一轮也空
       picked=$c; break
     done
     if [ -z "$picked" ]; then
-      PENDING=("$ITEM" "${PENDING[@]}"); log "slot$i 待启动 $run：暂无空卡"; break
+      PENDING=("$ITEM" "${PENDING[@]}"); log "slot$i 待启动 $run：暂无空卡（或空卡未双确认）"; break
+    fi
+    if [ "$LAUNCHED_THIS_POLL" -ge 1 ]; then
+      PENDING=("$ITEM" "${PENDING[@]}"); log "slot$i 待启动 $run：本轮已启动过一条，下一轮再起"; break
     fi
     if [ "$(launch_item "$ITEM" "$picked")" = "ok" ]; then
-      S_RUN[$i]=$run; S_CARD[$i]=$picked; S_LINE[$i]="$ITEM"; S_MISS[$i]=0
+      S_RUN[$i]=$run; S_CARD[$i]=$picked; S_LINE[$i]="$ITEM"; S_MISS[$i]=0; LAUNCHED_THIS_POLL=1
     else
       if [ -z "${RETRIED[$run]:-}" ]; then RETRIED[$run]=1; PENDING+=("$ITEM"); log "launch 失败，排队重试：$run"; else log "launch 失败且已重试过，跳过：$run"; fi
+    fi
+  done
+
+  # 记录本轮各卡 ready，供下一轮双确认
+  for c in 0 1 2 3; do
+    if [ "${GA[$c]:-1}" -eq 0 ] && [ "${GM[$c]:-99999}" -lt 200 ] && [ "${GT[$c]:-999}" -lt "$TEMP_MAX" ]; then
+      PREV_READY[$c]=1
+    else
+      PREV_READY[$c]=0
     fi
   done
 

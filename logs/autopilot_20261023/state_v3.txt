@@ -1,4 +1,4 @@
-updated 2026-10-23 16:47:38
-slot0: run=l19_default_r2 card=1
+updated 2026-10-23 17:23:08
+slot0: run=l19_default_r2 card=0
 slot1: run=l19_aimd2 card=2
 next: 2/2 pending=0
