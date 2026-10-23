@@ -1,8 +1,8 @@
-# autopilot worklist v3（2026-10-23 16:3x，用户收缩实验后）
-# 只用一套数据集 long19；HiCache 默认开、ratio=2；每个方案只跑一次。
-# C（我们）的 l19_foyer_r2 已在卡 1 运行中，不在此列表。
-# 这里只剩 A（request 级）和 B（agent 级 / Concur 式），谁先空卡谁先跑。
-#
-# 格式: run|policy|trace|port|hc|hcr
+# autopilot worklist v4（2026-10-23 16:49）
+# 一套数据集 long19；HiCache 默认开 ratio=2；每方案一次。
+# 顺序：C（我们，加 vnp=1 修阀门锁死）→ A（request 级）→ B（Concur 式）。
+# 2026-10-23 事故：l19_foyer_r2 被热守卫误杀（31°C 空闲时钟 210MHz 当热降频）+ 阀门锁死；
+# 已修 drive_one 热判据，C 用 vnp=1 重跑（新名 l19_foyer_r3）。
+l19_foyer_r3|budget3:hw=0;target=0.95;base=resident;vnp=1|replay_long19.csv|30160|hc|2
 l19_default_r2|default|replay_long19.csv|30161|hc|2
 l19_aimd2|aimd2|replay_long19.csv|30162|hc|2

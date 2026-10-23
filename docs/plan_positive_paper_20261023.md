@@ -41,6 +41,23 @@ deadline  2026-11-05 23:59 AoE = 北京时间 2026-11-06 19:59   （从 10-23 �
 pool = **101502** tokens（旧基线 101432，差 70 tokens / 0.07%，可忽略；只是守卫容差 ±20
 太紧导致起不来，故本 campaign 固定用 101502，metadata 记录实际值）。
 
+## 0.7 事故记录：l19_foyer_r2 被误杀（2026-10-23）
+
+```
+15:48  C 臂 l19_foyer_r2 起跑（pool 101502）
+16:42  控制器 SLO 阀门锁死：ttft_p50=208s（长上下文本身的 prefill 时间）> 10s
+       ⇒ valve=true；引擎空闲 usage=0 也不放开 ⇒ waiting 17 / admitted 0
+16:44  drive_one 热守卫把【空闲 P8 的 210MHz】当成热降频（温度只有 31°C）→ 杀掉
+       VOID_THERMAL_1644；run 停在 256/602 步
+```
+
+两处修复，都已部署：
+1. **drive_one 热判据**：只有 `clocks_throttle_reasons` 报 SW/HW thermal（0x20/0x40），
+   或「温度 ≥78°C 且时钟 <800MHz」才判热降频；空闲/工具等待的 210MHz 不再误杀。
+2. **控制器策略加 `vnp=1`**（`--valve-needs-pressure`）：这正是为这个负载写的修复——
+   池子占用 <0.5 时强制打开阀门；长上下文的高 TTFT 是请求自身的服务时间，不是过载证据。
+   C 臂改用 `budget3:hw=0;target=0.95;base=resident;vnp=1` 重跑（新名 `l19_foyer_r3`）。
+
 ## 1. 论文要讲的故事（三段论）
 
 ```
@@ -87,7 +104,7 @@ pool = **101502** tokens（旧基线 101432，差 70 tokens / 0.07%，可忽略�
 |---|---|---|---|
 | A request 级 | `l19_default_r2` | `default` | SGLang 全放行、FIFO；请求来了就进，看不见"会话" |
 | B agent 级 | `l19_aimd2` | `aimd2` | Concur 式：agent 轮边界暂停/恢复 + 缓存压力 AIMD 反馈调并发 |
-| C 我们 | `l19_foyer_r2` | `budget3:hw=0;target=0.95;base=resident` | 容量核算准入 + 命名许可 + 状态保留（HiCache） |
+| C 我们 | `l19_foyer_r3` | `budget3:hw=0;target=0.95;base=resident;vnp=1` | 容量核算准入 + 命名许可 + 状态保留（HiCache） |
 
 分析口径（每条 run 都算，不分主次）：
 - makespan（最后 complete − 最早 arrival）

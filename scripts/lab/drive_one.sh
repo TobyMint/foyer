@@ -33,6 +33,7 @@ say() { echo "$(date '+%m-%d %H:%M')  $*" >> $LOG; }
 free_mib() { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$1" 2>/dev/null; }
 temp_c()   { nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits -i "$1" 2>/dev/null; }
 clock_mhz(){ nvidia-smi --query-gpu=clocks.sm --format=csv,noheader,nounits -i "$1" 2>/dev/null; }
+throttle_reasons(){ nvidia-smi -i "$1" --query-gpu=clocks_throttle_reasons.active --format=csv,noheader 2>/dev/null | tr -d " \n"; }
 
 # 热降频门（2026-10-19 加）。
 #
@@ -116,7 +117,17 @@ while kill -0 $RM 2>/dev/null; do
   if [ "$n" -gt 0 ] && [ "$stall" -eq 0 ]; then
     c=$(clock_mhz "$GPU"); c=${c:-9999}
     t=$(temp_c "$GPU");    t=${t:-0}
-    if [ "$c" -lt "$CLOCK_MIN" ]; then
+    # 2026-10-23 修：旧判据【只看时钟】会把"引擎空闲/工具等待时的 P8 210MHz"当成热降频。
+    # 实证：l19_foyer_r2 在 31°C、引擎 0% 时被误判并杀掉（VOID_THERMAL_1644）。
+    # 新判据二选一：① nvidia-smi 报 SW/HW thermal slowdown（0x20/0x40）；
+    #               ② 温度 >= THERMAL_TEMP_MIN 且时钟 < CLOCK_MIN。
+    THERMAL_TEMP_MIN=${THERMAL_TEMP_MIN:-78}
+    rsn=$(throttle_reasons "$GPU"); thermal_bit=0
+    case "$rsn" in
+      0x*) _h=${rsn#0x}; _low=${_h: -2}
+           [ $((16#${_low:-0} & 0x60)) -ne 0 ] && thermal_bit=1 ;;
+    esac
+    if [ "$thermal_bit" = 1 ] || { [ "$t" -ge "$THERMAL_TEMP_MIN" ] && [ "$c" -lt "$CLOCK_MIN" ]; }; then
       slow=$((slow+1))
       say "[$RUN] ⚠ gpu$GPU 时钟 ${c}MHz < ${CLOCK_MIN}，温度 ${t}°C（第 $slow/3 次）"
       if [ "$slow" -ge 3 ]; then
