@@ -1,0 +1,2 @@
+run,wall_min,busy_pct,idle_min,n_steps,prompt_Mtok,cached_Mtok,uncached_Mtok,evict_Mtok,append_Mtok,decode_Mtok,hit_pct,dev_hit_pct,host_hit_pct,reread_x
+l19_foyer_r3,158.5,67.8,51.1,542,25.23,16.46,8.77,15.32,1.98,0.23,65.2,43.7,21.5,4.43

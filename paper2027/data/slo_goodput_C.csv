@@ -1,0 +1,2 @@
+run,done,n_steps,n_sessions,makespan_min,steps_per_h,door_p50_s,door_p90_s,door_max_s,door_sum_h,ttft_p50_s,ttft_p90_s,ttft_max_s,round_p50_s,round_p90_s,round_max_s,step_p50_s,step_p90_s,miss10_engine_pct,miss10_round_pct,goodput_steps_per_h,goodput_ratio_pct,e2e_med_min,e2e_p90_min,sess_dl_60_pct,sess_dl_120_pct,sess_dl_240_pct,sess_dl_480_pct,uncached_Mtok,decode_Mtok,work_Mtok
+l19_foyer_r3,1,542,19,154.9,210.0,0.0,209.54,5489.2,20.36,6.25,131.27,291.8,9.66,291.85,5545.8,27.0,310.87,45.8,49.8,105.4,50.2,115.6,151.8,5.3,63.2,100.0,100.0,8.77,0.23,9.0

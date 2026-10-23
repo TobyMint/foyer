@@ -1,0 +1,4 @@
+run,class,steps,steps_pct,uncached_Mtok,uncached_pct,append_Mtok,excess_x
+l19_foyer_r3,first,19,3.5,0.33,3.7,0.19,1.75
+l19_foyer_r3,suspended,135,24.9,4.8,54.7,0.69,6.99
+l19_foyer_r3,continuous,388,71.6,3.65,41.6,1.11,3.29

@@ -1,0 +1,11 @@
+key,value,unit,note,source
+run,l19_foyer_r3,,run 目录名,/data/xbw/turnstile/results/night/l19_foyer_r3
+n_steps,542,steps,SUCCESS 且 first_token_ms 非空,/data/xbw/turnstile/results/night/l19_foyer_r3
+n_cold,156,steps,uncached/prompt > 0.9,/data/xbw/turnstile/results/night/l19_foyer_r3
+n_warm,337,steps,uncached/prompt < 0.2,/data/xbw/turnstile/results/night/l19_foyer_r3
+cold_prefill_p50_s,87.1,s,,/data/xbw/turnstile/results/night/l19_foyer_r3
+cold_prefill_p90_s,202.6,s,,/data/xbw/turnstile/results/night/l19_foyer_r3
+prefill_rate_p50_tok_s,527,tok/s,prompt/(ttft) 的中位（冷步）,/data/xbw/turnstile/results/night/l19_foyer_r3
+prefill_rate_p90_tok_s,3081,tok/s,,/data/xbw/turnstile/results/night/l19_foyer_r3
+warm_ttft_p50_s,1.26,s,暖步 TTFT（含排队，不是纯 prefill）,/data/xbw/turnstile/results/night/l19_foyer_r3
+warm_ttft_p90_s,35.95,s,,/data/xbw/turnstile/results/night/l19_foyer_r3
