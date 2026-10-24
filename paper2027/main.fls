@@ -290,13 +290,13 @@ INPUT ./figs/fig_timeline.pdf
 INPUT ./figs/fig_timeline.pdf
 INPUT ./figs/fig_timeline.pdf
 INPUT ./figs/fig_timeline.pdf
+INPUT /usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmrc7t.vf
+INPUT /usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmr8r.tfm
 INPUT ./sec_related.tex
 INPUT ./sec_related.tex
 INPUT ./sec_related.tex
 INPUT ./sec_related.tex
 INPUT sec_related.tex
-INPUT /usr/share/texlive/texmf-dist/fonts/vf/adobe/times/ptmrc7t.vf
-INPUT /usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmr8r.tfm
 INPUT ./sec_discussion.tex
 INPUT ./sec_discussion.tex
 INPUT ./sec_discussion.tex

@@ -92,12 +92,10 @@
 \newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room}{table.caption.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph  {rounds} and \emph  {share} are percentages, \emph  {uncached} is in millions of tokens, and \emph  {excess} is uncached prefill divided by the tokens the round actually appended.}}{8}{table.caption.6}\protected@file@percent }
 \newlabel{tab:attrib}{{IV}{8}{Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph {rounds} and \emph {share} are percentages, \emph {uncached} is in millions of tokens, and \emph {excess} is uncached prefill divided by the tokens the round actually appended}{table.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-G}}When it does not pay}{8}{subsection.7.7}\protected@file@percent }
-\newlabel{sec:eval-neg}{{\mbox  {VII-G}}{8}{When it does not pay}{subsection.7.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-G}}Does a better predictor help?}{8}{subsection.7.7}\protected@file@percent }
+\newlabel{sec:eval-predictor}{{\mbox  {VII-G}}{8}{Does a better predictor help?}{subsection.7.7}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision.}}{8}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:timeline}{{3}{8}{One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision}{figure.caption.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}Threats to validity}{8}{subsection.7.8}\protected@file@percent }
-\newlabel{sec:eval-threats}{{\mbox  {VII-H}}{8}{Threats to validity}{subsection.7.8}{}}
 \citation{kwon2023pagedattention}
 \citation{zheng2024sglang}
 \citation{mooncake,distserve}
@@ -112,19 +110,18 @@
 \citation{denning1978}
 \citation{little1961}
 \citation{mooncake}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Predictors of the three-round growth, scored by accuracy and by what they do to admission. \emph  {fit} is the median number of sessions that fit the budget at an instant; \emph  {fit$\ge $2} is the share of instants where two fit. Leave-one-session-out throughout.}}{9}{table.caption.8}\protected@file@percent }
+\newlabel{tab:predictor}{{V}{9}{Predictors of the three-round growth, scored by accuracy and by what they do to admission. \emph {fit} is the median number of sessions that fit the budget at an instant; \emph {fit$\ge $2} is the share of instants where two fit. Leave-one-session-out throughout}{table.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}When it does not pay}{9}{subsection.7.8}\protected@file@percent }
+\newlabel{sec:eval-neg}{{\mbox  {VII-H}}{9}{When it does not pay}{subsection.7.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-I}}Threats to validity}{9}{subsection.7.9}\protected@file@percent }
+\newlabel{sec:eval-threats}{{\mbox  {VII-I}}{9}{Threats to validity}{subsection.7.9}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VIII}Related Work}{9}{section.8}\protected@file@percent }
 \newlabel{sec:related}{{VIII}{9}{Related Work}{section.8}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0a}KV memory in serving engines}{9}{paragraph.8.0.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0b}Scheduling for agentic and multi-turn workloads}{9}{paragraph.8.0.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0c}Measurement of agentic workloads}{9}{paragraph.8.0.0.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The regime the design targets, and where it does not apply.}}{9}{table.caption.8}\protected@file@percent }
-\newlabel{tab:scope}{{V}{9}{The regime the design targets, and where it does not apply}{table.caption.8}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0d}Admission and overload control}{9}{paragraph.8.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{9}{section.9}\protected@file@percent }
-\newlabel{sec:discussion}{{IX}{9}{Discussion}{section.9}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}What the argument is, and is not}{9}{paragraph.9.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0b}Why the negative cases matter}{9}{paragraph.9.0.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0c}Implications for systems that already have a hierarchy}{9}{paragraph.9.0.0.3}\protected@file@percent }
 \bibstyle{IEEEtran}
 \bibdata{refs}
 \bibcite{zhu2026tracelab}{1}
@@ -136,13 +133,20 @@
 \bibcite{yu2025pensieve}{7}
 \bibcite{continuum}{8}
 \bibcite{thunderagent}{9}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces The regime the design targets, and where it does not apply.}}{10}{table.caption.9}\protected@file@percent }
+\newlabel{tab:scope}{{VI}{10}{The regime the design targets, and where it does not apply}{table.caption.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{10}{section.9}\protected@file@percent }
+\newlabel{sec:discussion}{{IX}{10}{Discussion}{section.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}What the argument is, and is not}{10}{paragraph.9.0.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0b}Why the negative cases matter}{10}{paragraph.9.0.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0c}Implications for systems that already have a hierarchy}{10}{paragraph.9.0.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0d}Threats beyond the evaluation}{10}{paragraph.9.0.0.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion}{10}{section.10}\protected@file@percent }
+\newlabel{sec:conclusion}{{X}{10}{Conclusion}{section.10}{}}
+\@writefile{toc}{\contentsline {section}{References}{10}{section*.10}\protected@file@percent }
 \bibcite{talaria}{10}
 \bibcite{mori}{11}
 \bibcite{jacobson1988}{12}
 \bibcite{denning1978}{13}
 \bibcite{little1961}{14}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0d}Threats beyond the evaluation}{10}{paragraph.9.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion}{10}{section.10}\protected@file@percent }
-\newlabel{sec:conclusion}{{X}{10}{Conclusion}{section.10}{}}
-\@writefile{toc}{\contentsline {section}{References}{10}{section*.9}\protected@file@percent }
-\gdef \@abspage@last{10}
+\gdef \@abspage@last{11}
