@@ -55,8 +55,8 @@ the prediction is unnecessary. A session can be \emph{suspended} at a round boun
 recomputing it; admission then becomes a
 feasibility test over a capacity ledger---does this session's projected footprint fit,
 now, on which tier, and at what revival cost. We give a feasible-set bound, a
-session-level revival-versus-recompute break-even, and a coverage-bounded growth estimate
-that turns the safety margin into a stated property rather than a constant. On a
+session-level revival-versus-recompute break-even, and a bound on how far a wrong growth
+reserve can move the ledger---which is why the design needs no predictor of the next round. On a
 19-session, 602-round coding-agent replay, the terminal working set is 12.9$\times$ the
 KV pool and a mean session needs 69K of its 101K tokens, so the pool holds
 1.47 mean sessions. Replaying every round as an independent request re-reads

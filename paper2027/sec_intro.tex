@@ -55,9 +55,9 @@ tier, the bandwidth between them---so no predictor is on the critical path. Seco
 suspension is not free and not always right: reviving a session costs a copy, recomputing
 it costs a prefill, and the two are comparable for short contexts, which yields a
 per-session break-even instead of a policy constant. Third, the one genuinely uncertain
-quantity, how much a session will grow before it returns, can be bounded by coverage
-rather than guessed by a point estimate, which turns the safety margin into a property
-one can state.
+quantity, how much a session will grow before it returns, is small enough---a few percent
+of the footprint it protects---that a crude estimate of it cannot move the ledger, which is
+why the design needs no predictor.
 
 \paragraph{Contributions}
 \begin{enumerate}
@@ -68,13 +68,13 @@ measured capacity, and it exposes the one parameter that remains---the fraction 
 pool held in reserve (\S\ref{sec:design}).
 \item \textbf{Mechanism} (\S\ref{sec:design}--\ref{sec:impl}): named permits make the
 ledger enforceable at request granularity; reversible suspension at round boundaries
-keeps a session's state in the host tier instead of discarding it; a coverage-bounded
-growth estimate replaces a point forecast; and a revival break-even decides, per
-suspension, whether to copy or to recompute. We implement the design on SGLang with a
+keeps a session's state in the host tier instead of discarding it; a growth reserve
+estimated from the session's own history replaces a point forecast; and the admission
+accounting is dominated by measured bytes rather than by that estimate. We implement the design on SGLang with a
 hierarchical KV cache and a 96K-context 7B model.
 \item \textbf{Analysis and evidence} (\S\ref{sec:analysis}, \S\ref{sec:eval}): we give a
-feasible-set bound, a session-level revival-versus-recompute break-even, and a
-coverage-bounded admission guarantee; we evaluate request-level serving, an agent-level
+feasible-set bound, a session-level revival-versus-recompute break-even, and a bound on
+the projection error; we evaluate request-level serving, an agent-level
 feedback controller, and our design on the same trace, engine, and memory budget; and we
 report the regimes in which suspension does not pay.
 \end{enumerate}
@@ -90,5 +90,5 @@ point because it makes the regime sharp, not because the mechanism is specific t
 card: the binding variable is the ratio of the live working set to KV capacity, and when
 that ratio is small, admission is not the problem. We do not claim that our constants
 transfer to larger devices or to clusters; we do claim that the ledger, the break-even,
-and the coverage bound are stated in quantities---bytes, bandwidth, session
+and the projection bound are stated in quantities---bytes, bandwidth, session
 horizon---that do transfer (\S\ref{sec:discussion}).

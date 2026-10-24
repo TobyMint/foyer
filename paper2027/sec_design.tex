@@ -78,29 +78,28 @@ actually turns on.
 The ledger says what fits; it does not say what is worth doing. Two decisions remain, and
 both are priced in the same currency---time.
 
-\paragraph{Who gives way, and when} When the pool is over-committed (the engine's own
-utilisation crosses the budget, or the observed first-token latency crosses the
-deadline), the controller suspends sessions until the remainder fits. Two rules order the
-victims. First, it suspends the \emph{youngest} sessions first: they have the least
-invested context, so the recompute they may incur is the smallest, and they are the least
-likely to have accumulated state worth keeping. Second, it suspends only sessions that
-have been idle for longer than a break-even time $t^\ast$: a session that has been parked
-for 100\,ms will return before a replacement round can use the slot, so pausing it buys
-nothing and risks a recompute. We calibrate $t^\ast$ from the measured tool-wait
-distribution---the time to serve one round of another session, \pend{t-star}---rather
-than tuning it.
+\paragraph{Who gives way, and when} The valve opens when the engine's own utilisation
+crosses a hard stop or when the observed first-token latency crosses the round deadline;
+the second signal is gated on pressure, so that a long prefill on an otherwise idle card
+is not mistaken for congestion. When the valve opens, the controller suspends sessions
+until the survivors fit in $0.90$ of the committed budget, and it takes the
+\emph{youngest} sessions first: they have the least invested context, so the recompute
+they may incur is the smallest, and they are the least likely to have accumulated state
+worth keeping. This is the observable form of the per-byte ranking in \S\ref{sec:analysis}:
+youngest-first is smallest-$\Trec$ first.
 
 \paragraph{Resuming} A suspended session re-enters the ordinary admission path and is
 admitted when the ledger's projection fits. Because its prefix is usually still in the
 host tier, resumption is a copy; when the host tier has lost the prefix the same round is
 served as a cold prefill, and the accounting charges it as such.
 
-\paragraph{The round gate} The controller also caps how many sessions may be
-\emph{running} (as opposed to live) in the engine. The distinction matters: in our trace a
-cap on live sessions leaves the engine idle whenever all of the admitted sessions happen
-to be parked, whereas a cap on the running count keeps the engine's concurrent work at the
-intended level and lets suspended sessions queue at their boundaries. The gate is driven
-by the engine's own running-request counter, not by the controller's session count.
+\paragraph{Two refinements, implemented but not enabled} The controller also supports an
+idle-time gate on suspension (suspend only after a session has been parked longer than the
+time to serve a replacement round, \S\ref{sec:analysis}) and a gate on the number of
+\emph{running} sessions rather than live ones. Both were left at their defaults in the runs
+we report, so the evaluation measures the ledger, the growth reserve, and youngest-first
+shedding alone; we say so because the mechanisms are easy to confuse with the ones that
+produced the numbers.
 
 \subsection{The knob}
 

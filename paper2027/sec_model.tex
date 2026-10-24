@@ -74,7 +74,7 @@ concurrent copies.
 \item \textbf{Host capacity is finite and shared.} $C_h$ is a real budget; suspending
 always has a victim when the host is full. This is what makes the break-even a
 \emph{replacement} condition rather than a per-session one.
-\item \textbf{Growth is estimated with coverage, not point-predicted.} The estimator
-returns $\hat g_s$ such that the next round's growth $q_{s,i+1}+o_{s,i+1}$ is at most
-$\hat g_s$ with probability at least $1-\delta$.
+\item \textbf{Growth is estimated from observed history, not modelled.} The reserve
+$\hat g_s$ is a statistic of the session's own completed rounds (\S\ref{sec:m3}); the
+analysis bounds how far its error can move the projection.
 \end{enumerate}

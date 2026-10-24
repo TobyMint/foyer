@@ -62,16 +62,13 @@ prefill time kept alive per byte is larger,
 \label{eq:rank}
 \end{equation}
 with $p_s$ the probability that the session returns before its state would be evicted
-anyway. The controller instantiates \eqref{eq:rank} in two coarse but observable forms:
-victims are the youngest (smallest invested context, so smallest $\Trec$), and a session is
-suspended only after it has been idle longer than the time it takes to run a replacement
-round,
-\begin{equation}
-t^\ast\;=\;\text{time to serve one round of another session},
-\label{eq:tstar}
-\end{equation}
-because a session that returns sooner than $t^\ast$ would pay a revival for a slot the
-replacement could not have used. In the long-session trace, $t^\ast=\pend{t-star}$.
+anyway. The controller instantiates \eqref{eq:rank} in an observable form: victims are the
+youngest, and the youngest session is the one with the smallest invested context, hence the
+smallest $\Trec$. An idle-time gate---suspend only after a session has been parked longer
+than $t^\ast$, the time to serve one round of another session---is the natural refinement
+of \eqref{eq:rank}, because a session that returns sooner than $t^\ast$ would pay a revival
+for a slot the replacement could not have used. It is implemented but disabled in the runs
+we report (\S\ref{sec:m4}), so the evaluation reflects youngest-first shedding alone.
 
 Equation~\eqref{eq:rank} is a \emph{replacement} condition, not a per-session one: when the
 host tier is full, suspending a session always ejects another, and the cost of a
