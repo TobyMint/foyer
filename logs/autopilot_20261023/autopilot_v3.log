@@ -1957,3 +1957,20 @@
 2026-10-24 17:35:48 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
 2026-10-24 17:37:25 poll  gpu0=64C/5184MiB/3app gpu1=78C/10692MiB/3app gpu2=73C/7904MiB/3app gpu3=59C/4670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
 2026-10-24 17:37:25 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:39:03 poll  gpu0=81C/13584MiB/5app gpu1=79C/8097MiB/2app gpu2=76C/8600MiB/4app gpu3=60C/4670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:39:03 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:40:41 poll  gpu0=83C/14196MiB/5app gpu1=78C/8097MiB/2app gpu2=74C/8600MiB/4app gpu3=59C/7276MiB/4app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:40:41 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:42:16 poll  gpu0=82C/14196MiB/5app gpu1=78C/8097MiB/2app gpu2=66C/5180MiB/3app gpu3=57C/4670MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:42:16 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:43:53 poll  gpu0=82C/14196MiB/5app gpu1=78C/8097MiB/2app gpu2=64C/5186MiB/3app gpu3=61C/9328MiB/4app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:43:53 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:45:30 poll  gpu0=83C/14196MiB/5app gpu1=79C/8097MiB/2app gpu2=66C/5798MiB/3app gpu3=64C/7962MiB/3app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:45:30 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:47:07 poll  gpu0=84C/10827MiB/2app gpu1=80C/8097MiB/2app gpu2=56C/16MiB/0app gpu3=65C/4671MiB/1app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:47:07 slot0 待启动 l19_default_r2：暂无空卡（或空卡未双确认）
+2026-10-24 17:48:45 poll  gpu0=84C/10829MiB/2app gpu1=80C/8097MiB/2app gpu2=35C/14MiB/0app gpu3=54C/4669MiB/1app | s0=none@? s1=none@? next=1/2 pending=1
+2026-10-24 17:49:32 launch card2: l19_default_r2 -> pid=3463681
+2026-10-24 17:57:44 v3 start: items=1 slots=2 candidates='1 2 3 0' temp_max=68 poll=90s dry=0
+2026-10-24 17:57:45 poll  gpu0=70C/10831MiB/2app gpu1=69C/8097MiB/2app gpu2=47C/22176MiB/1app gpu3=60C/4669MiB/1app | s0=none@? s1=none@? next=0/1 pending=0
+2026-10-24 17:57:45 slot0 待启动 l19_aimd2：暂无空卡（或空卡未双确认）

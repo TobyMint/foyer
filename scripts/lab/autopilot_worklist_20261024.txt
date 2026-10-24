@@ -1,0 +1,4 @@
+# autopilot worklist v6（2026-10-24 17:5x）
+# A（l19_default_r2）已在卡 2 上手工启动，不在列表里，避免重复起。
+# 剩 B（Concur 式），等空卡。
+l19_aimd2|aimd2|replay_long19.csv|30162|hc|2

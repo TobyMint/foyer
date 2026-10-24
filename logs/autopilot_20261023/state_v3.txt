@@ -1,4 +1,4 @@
-updated 2026-10-24 17:37:25
+updated 2026-10-24 17:57:45
 slot0: run=none card=?
 slot1: run=none card=?
-next: 1/2 pending=1
+next: 1/1 pending=1
