@@ -46,9 +46,9 @@
 \newlabel{sec:m3}{{\mbox  {IV-C}}{4}{M3: reserve for growth from observed growth}{subsection.4.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}M4: pricing the two decisions the ledger cannot make}{4}{subsection.4.4}\protected@file@percent }
 \newlabel{sec:m4}{{\mbox  {IV-D}}{4}{M4: pricing the two decisions the ledger cannot make}{subsection.4.4}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0a}Who gives way, and when}{4}{paragraph.4.4.0.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries.}}{5}{figure.caption.3}\protected@file@percent }
 \newlabel{fig:overview}{{2}{5}{Control path. The permit names sessions, not a count; suspension and resumption are ledger transitions enforced at round boundaries}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0a}Who gives way, and when}{5}{paragraph.4.4.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0b}Resuming}{5}{paragraph.4.4.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0c}Two refinements, implemented but not enabled}{5}{paragraph.4.4.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}The knob}{5}{subsection.4.5}\protected@file@percent }
@@ -71,7 +71,7 @@
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0b}Harness}{6}{paragraph.6.0.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0c}Controller}{6}{paragraph.6.0.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0d}Arms}{6}{paragraph.6.0.0.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0e}Reproducibility}{6}{paragraph.6.0.0.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0e}Reproducibility}{7}{paragraph.6.0.0.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VII}Evaluation}{7}{section.7}\protected@file@percent }
 \newlabel{sec:eval}{{VII}{7}{Evaluation}{section.7}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Setup and metrics}{7}{subsection.7.1}\protected@file@percent }
@@ -86,18 +86,18 @@
 \newlabel{sec:eval-timeline}{{\mbox  {VII-E}}{7}{Mechanism, in one session}{subsection.7.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-F}}Log-based counterfactual: concurrency or state?}{7}{subsection.7.6}\protected@file@percent }
 \newlabel{sec:eval-cf}{{\mbox  {VII-F}}{7}{Log-based counterfactual: concurrency or state?}{subsection.7.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-G}}When it does not pay}{7}{subsection.7.7}\protected@file@percent }
-\newlabel{sec:eval-neg}{{\mbox  {VII-G}}{7}{When it does not pay}{subsection.7.7}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens.}}{8}{table.caption.4}\protected@file@percent }
 \newlabel{tab:main}{{II}{8}{Three arms, same trace, engine, and memory budget. Round latency includes the controller's door wait and the engine's TTFT; the deadline is 10\,s per round. Work is uncached prefill plus completion tokens}{table.caption.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room.}}{8}{table.caption.5}\protected@file@percent }
 \newlabel{tab:decomp}{{III}{8}{Decomposition. Busy and idle time are sampled from the engine's running-request count over each run's window. Prompt, device-hit and host-hit tokens are the engine's cumulative counters over the same window; uncached prefill, completion and the re-read tax are summed from the per-step records. Evicted tokens are what the engine had to throw away to make room}{table.caption.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph  {rounds} and \emph  {share} are percentages, \emph  {uncached} is in millions of tokens, and \emph  {excess} is uncached prefill divided by the tokens the round actually appended.}}{8}{table.caption.6}\protected@file@percent }
 \newlabel{tab:attrib}{{IV}{8}{Attribution of the re-read tax in the capacity-accounted arm. Rounds are classified by what happened between the previous round and this one. \emph {rounds} and \emph {share} are percentages, \emph {uncached} is in millions of tokens, and \emph {excess} is uncached prefill divided by the tokens the round actually appended}{table.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}Threats to validity}{8}{subsection.7.8}\protected@file@percent }
-\newlabel{sec:eval-threats}{{\mbox  {VII-H}}{8}{Threats to validity}{subsection.7.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-G}}When it does not pay}{8}{subsection.7.7}\protected@file@percent }
+\newlabel{sec:eval-neg}{{\mbox  {VII-G}}{8}{When it does not pay}{subsection.7.7}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision.}}{8}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:timeline}{{3}{8}{One session of the capacity-accounted arm (39 rounds, 17 suspensions), first hour. Each bar is a round, coloured by how much of its prefix the engine had to recompute; grey spans are suspensions. The lower panel is the engine's running-request count: while the session is suspended the card keeps serving other sessions, which is the slot the suspension buys. A round that follows a suspension is usually red---the state did not survive---which is the cost side of the same decision}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-H}}Threats to validity}{8}{subsection.7.8}\protected@file@percent }
+\newlabel{sec:eval-threats}{{\mbox  {VII-H}}{8}{Threats to validity}{subsection.7.8}{}}
 \citation{kwon2023pagedattention}
 \citation{zheng2024sglang}
 \citation{mooncake,distserve}
@@ -117,9 +117,9 @@
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0a}KV memory in serving engines}{9}{paragraph.8.0.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0b}Scheduling for agentic and multi-turn workloads}{9}{paragraph.8.0.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0c}Measurement of agentic workloads}{9}{paragraph.8.0.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0d}Admission and overload control}{9}{paragraph.8.0.0.4}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The regime the design targets, and where it does not apply.}}{9}{table.caption.8}\protected@file@percent }
 \newlabel{tab:scope}{{V}{9}{The regime the design targets, and where it does not apply}{table.caption.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-}0d}Admission and overload control}{9}{paragraph.8.0.0.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{9}{section.9}\protected@file@percent }
 \newlabel{sec:discussion}{{IX}{9}{Discussion}{section.9}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}What the argument is, and is not}{9}{paragraph.9.0.0.1}\protected@file@percent }

@@ -46,26 +46,33 @@ def load(path):
 
 
 def growth_facts(by_sess, alpha=0.4, horizon=3, margin=1.15):
-    """每会话的逐轮增长 + 控制器那条 EMA 储备的覆盖率。
+    """逐轮增长 + 控制器的储备/投影统计。
 
-    储备口径与控制器的默认值一致（controller_budget3.py：--ema-alpha 0.4、
-    --horizon-rounds 3、--margin 1.15），即 g_hat = margin * horizon * EMA(growth)。
+    口径必须与 controller_budget3.py 一致：
+        forecast = horizon * EMA(alpha)        # 没有 margin
+        charge   = (ctx + forecast) * margin   # margin 乘的是整个投影
+    所以"储备"和"多留的余量"是两个数，不能混：
+        reserve_frac = forecast / ctx
+        slack_frac   = (charge - ctx_next) / ctx   ← 真正浪费掉的容量
+    coverage = P(ctx_next <= charge)
     """
-    g, res, cov, tot = [], [], 0, 0
+    g, res, slack, cov, tot = [], [], [], 0, 0
     for v in by_sess.values():
         ema = None
         for i in range(len(v) - 1):
-            c = v[i]["prefix"] + v[i]["input"]
-            gr = v[i + 1]["prefix"] + v[i + 1]["input"] - c
+            ctx = v[i]["prefix"] + v[i]["input"]
+            nxt = v[i + 1]["prefix"] + v[i + 1]["input"]
+            gr = nxt - ctx
             ema = gr if ema is None else alpha * gr + (1 - alpha) * ema
-            r = margin * horizon * ema
+            ghat = horizon * ema
+            charge = (ctx + ghat) * margin
             g.append(gr)
-            res.append(r)
+            res.append(ghat / ctx)
+            slack.append((charge - nxt) / ctx)
             tot += 1
-            cov += 1 if gr <= r else 0
-    g.sort()
-    res.sort()
-    return g, res, (100.0 * cov / tot if tot else float("nan"))
+            cov += 1 if nxt <= charge else 0
+    g.sort(); res.sort(); slack.sort()
+    return g, res, slack, (100.0 * cov / tot if tot else float("nan"))
 
 
 def facts(rows, pool):
@@ -77,7 +84,7 @@ def facts(rows, pool):
 
     n_rounds = len(rows)
     n_sess = len(by_sess)
-    g_sorted, res_sorted, cov = growth_facts(by_sess)
+    g_sorted, res_sorted, slack_sorted, cov = growth_facts(by_sess)
     ctx = [r["prefix"] + r["input"] for r in rows]          # 每轮开始时的上下文
     terminal = [v[-1]["prefix"] + v[-1]["input"] for v in by_sess.values()]
     W = sum(terminal)
@@ -138,12 +145,14 @@ def facts(rows, pool):
         ("growth_mean_tok", round(st.mean(g_sorted), 0), "tokens", ""),
         ("growth_p90_tok", g_sorted[int(.9 * len(g_sorted))], "tokens", ""),
         ("growth_p99_tok", g_sorted[int(.99 * len(g_sorted))], "tokens", ""),
-        ("reserve_med_tok", round(res_sorted[len(res_sorted) // 2], 0), "tokens",
-         "控制器那条储备 g_hat = margin*horizon*EMA（1.15*3*EMA(0.4)）的中位"),
-        ("reserve_frac_of_ctx", round(res_sorted[len(res_sorted) // 2] / q(ctx_s, .5), 3), "x",
-         "储备 / 逐轮上下文中位 —— 正文引的 7.7% 就是这一行"),
-        ("reserve_coverage_pct", round(cov, 1), "%",
-         "下一轮实际增长 <= 储备 的比例（trace 上 583 个转移）"),
+        ("reserve_med_tok", round(res_sorted[len(res_sorted) // 2] * q(ctx_s, .5), 0), "tokens",
+         "g_hat = horizon*EMA(0.4) 的中位（不含 margin）"),
+        ("reserve_frac_of_ctx", round(res_sorted[len(res_sorted) // 2], 3), "x",
+         "g_hat / ctx 的中位"),
+        ("proj_slack_frac", round(slack_sorted[len(slack_sorted) // 2], 3), "x",
+         "投影 (ctx+g_hat)*margin 比实际下一轮 ctx 多留的比例（中位）"),
+        ("proj_coverage_pct", round(cov, 1), "%",
+         "实际下一轮 ctx <= 投影 的比例（583 个转移）"),
         ("all_arrive_at_zero", int(max(r["arrival"] for r in rows) == 0), "bool",
          "1 = 一次性全倒（atonce）"),
     ]

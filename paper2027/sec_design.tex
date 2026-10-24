@@ -62,15 +62,18 @@ session with fewer than three observed rounds the estimate is blended toward a g
 estimated from all sessions, so a young session is not over-reserved.
 
 The justification for estimating growth so crudely is in the numbers. On the trace the
-reserve has a median of 3.7K tokens against a 48.5K-token context---\emph{7.7\% of the
-footprint it protects}---and it covers the next round's growth in 99.5\% of the 583 round
-transitions. Two things follow. The reserve is a statistic of the session's own history,
-not a model of its future, so it cannot be wrong in the way a TTL or a steps-to-execution
-predictor can be wrong; and because it is under a tenth of the footprint, even a two-fold
-error in it moves the ledger by less than 8\%, which is smaller than the spread between the
-mean session (69.0K) and the median one (48.5K). The measured part of the
-projection---the resident context, read from the engine's own records---is what admission
-actually turns on.
+reserve has a median of 4.0K tokens against a 48.5K-token context---8.2\% of the footprint
+it protects---and the ledger charges $1.15\times(\text{context}+\hat g)$, which at the
+median is 22.1\% more than the context itself. That margin is not free: it holds back about
+10.7K tokens, a tenth of the pool, and it is the price of never under-reserving. The
+coverage it buys is complete on this trace: in all 583 round transitions the projection
+exceeded the realised next-round footprint (\S\ref{sec:analysis}). A cheaper corner exists
+---$h=1$, margin $1.05$ covers 94.5\% of the transitions with 5.3\% slack---but the two
+constants were fixed before the evaluation and left alone, and we report the sweep rather
+than claiming the deployed corner is optimal.
+
+The measured part of the projection---the resident context, read from the engine's own
+records---is what admission actually turns on; the estimated part is under a tenth of it.
 
 \subsection{M4: pricing the two decisions the ledger cannot make}
 \label{sec:m4}

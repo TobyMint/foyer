@@ -87,19 +87,21 @@ $\Phi_s^{\text{next}}-\hat\Phi_s = g_s-\hat g_s$, with $g_s$ the realised growth
 \end{equation}
 where $\varepsilon_s=g_s/\Phi_s$ is the growth-to-footprint ratio and $\varepsilon'_s$
 its estimation error, both normalised by the same footprint. On the trace the reserve
-$\hat g_s$ has a median of 3.7K tokens against a 48.5K-token context, so
-$\varepsilon_s\approx7.7\%$, and it covers the realised growth in 99.5\% of the 583 round
-transitions. A reserve that is wrong by a factor of two therefore moves the ledger by less
-than a tenth of a footprint, which is smaller than the spread between the mean session
-(69.0K) and the median one (48.5K). The projection is dominated by measured bytes, not by
-the estimate.
+$\hat g_s$ has a median of 4.0K tokens against a 48.5K-token context, so
+$\varepsilon_s\approx8.2\%$, and the margin of \S\ref{sec:m3} makes the projection exceed
+the realised footprint in all 583 round transitions, by a median of 22.1\% of the context.
+The projection therefore errs in the safe direction, and its error is dominated by the
+margin, not by the estimate: replacing the per-session EMA with the global mean growth
+moves the projection by less than the margin does.
 
-Two readings follow. First, the design does not need an accurate predictor, because the
-predicted term is a few percent of the quantity it protects---an argument that would not
-hold in a regime where a round appends a large fraction of its context. Second, the
-reserve is what keeps admission \emph{conservative} rather than what makes it accurate: it
-absorbs the case where a session's next round is unusually large, and its cost is
-proportional to its size, which the trace bounds at $\varepsilon_s$.
+The cost of that conservatism is capacity. Sweeping the two constants offline over the same
+583 transitions gives coverage between 67.4\% ($h=1$, no margin) and 100\%, with slack
+between 0.2\% and 22.1\%; the deployed corner ($h=3$, margin $1.15$) is the most
+conservative of the nine, and the cheapest corner that still covers 99.5\% of transitions
+($h=2$, margin $1.05$) would hold back 8.0\% instead of 22.1\%. This is the one place where
+the design leaves performance on the table, and it is a tuning question rather than a
+structural one---which is why we report the sweep instead of claiming the setting is
+optimal.
 
 We report the empirical version of \eqref{eq:err} in \S\ref{sec:eval}: the distribution of
 the realised projection error over all admissions, and the fraction of admitted sessions

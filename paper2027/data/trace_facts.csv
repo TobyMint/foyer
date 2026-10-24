@@ -34,7 +34,8 @@ growth_med_tok,719,tokens,逐轮 ctx 增长的中位,data/replay_long19.csv
 growth_mean_tok,1688.0,tokens,,data/replay_long19.csv
 growth_p90_tok,4286,tokens,,data/replay_long19.csv
 growth_p99_tok,14287,tokens,,data/replay_long19.csv
-reserve_med_tok,3734.0,tokens,控制器那条储备 g_hat = margin*horizon*EMA（1.15*3*EMA(0.4)）的中位,data/replay_long19.csv
-reserve_frac_of_ctx,0.077,x,储备 / 逐轮上下文中位 —— 正文引的 7.7% 就是这一行,data/replay_long19.csv
-reserve_coverage_pct,99.5,%,下一轮实际增长 <= 储备 的比例（trace 上 583 个转移）,data/replay_long19.csv
+reserve_med_tok,3994.0,tokens,g_hat = horizon*EMA(0.4) 的中位（不含 margin）,data/replay_long19.csv
+reserve_frac_of_ctx,0.082,x,g_hat / ctx 的中位,data/replay_long19.csv
+proj_slack_frac,0.221,x,投影 (ctx+g_hat)*margin 比实际下一轮 ctx 多留的比例（中位）,data/replay_long19.csv
+proj_coverage_pct,100.0,%,实际下一轮 ctx <= 投影 的比例（583 个转移）,data/replay_long19.csv
 all_arrive_at_zero,1,bool,1 = 一次性全倒（atonce）,data/replay_long19.csv
